@@ -25,6 +25,8 @@
 
                 <p>This tutorial demonstrates how to train a large Transformer-like model across hundreds to thousands of GPUs using Tensor Parallel and Fully Sharded Data Parallel.</p>
 
+                <p>Umar Jamil's <a href="https://www.youtube.com/watch?v=XoGvCBRnwLs">distributed training from first principles</a> is the lecture for this chapter. This page splits one layer across devices.</p>
+
                 <h3>14.3.1 How Tensor Parallel works?</h3>
 
                 <p>Tensor Parallel (TP) was originally proposed in the Megatron-LM paper, and it is an efficient model parallelism technique to train large scale Transformer models. Sequence Parallel (SP) we mention in this tutorial is a variant of Tensor Parallel that shards on the sequence dimension for nn.LayerNorm or RMSNorm to further save activation memory during training. As the model becomes larger, the activation memory becomes the bottleneck, so in Tensor Parallel training it usually applies Sequence Parallel to LayerNorm or RMSNorm layers.</p>

@@ -25,6 +25,8 @@
 
                 <p>This tutorial uses two simple examples to demonstrate how to build distributed training with the torch.distributed.rpc package which was first introduced as an experimental feature in PyTorch v1.4. Source code of the two examples can be found in PyTorch examples.</p>
 
+                <p>Umar Jamil's <a href="https://www.youtube.com/watch?v=XoGvCBRnwLs">distributed training from first principles</a> is the lecture for this chapter. Remote calls are how one process asks another to run a piece of that job.</p>
+
                 <p>Previous tutorials, Getting Started With Distributed Data Parallel and Writing Distributed Applications With PyTorch, described DistributedDataParallel which supports a specific training paradigm where the model is replicated across multiple processes and each process handles a split of the input data.</p>
 
                 <p>Sometimes, you might run into scenarios that require different training paradigms. For example:</p>

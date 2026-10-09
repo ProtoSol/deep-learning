@@ -25,6 +25,8 @@
 
                 <p>A table is the honest way to store an action value: one number for each state and action. CartPole's observation is four continuous numbers, and the inverted pendulum in the PPO chapter is continuous as well. The table does not fit. Function approximation replaces the table with a parameterized function, and in this book that function is a neural network.</p>
 
+                <p>David Silver's <a href="https://www.youtube.com/watch?v=UoPei5o4fps">Lecture 6, Value Function Approximation</a> is the lecture for this page.</p>
+
                 <h3>10.6.1 From a table to a network</h3>
                 <p>Write \(Q(s, a; \theta)\) for the network that stands in for the action-value table, and \(\pi(a|s; \theta)\) for a policy network. Learning is no longer "write down the new number." It is a gradient step on \(\theta\), the same step as every earlier chapter, with a reinforcement-learning loss in place of cross-entropy.</p>
                 <p>Two failures show up as soon as the table is gone. Nearby states share parameters, so an update that fixes one state moves the prediction at other states. And the training target itself moves, because it is built from the same network (DQN) or from the same policy (PPO). A frozen target network, a replay buffer, or a clipped probability ratio are three different ways of slowing that moving target down.</p>

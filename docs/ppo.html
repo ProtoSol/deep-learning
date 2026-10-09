@@ -24,6 +24,8 @@
                 <p style="color: #a0a0a0;">Created Date: 2025-06-19</p>
 
                 <p>This tutorial demonstrates how to use PyTorch and <code>torchrl</code> to train a parametric policy network to solve the Inverted Pendulum task from the OpenAI-Gym/Farama-Gymnasium control library.</p>
+
+                <p>Edan Meyer's <a href="https://www.youtube.com/watch?v=HrapVFNBN64">Proximal Policy Optimization Explained</a> is the picture for this page. John Schulman's bootcamp lecture is <a href="https://www.youtube.com/watch?v=xvRrgxcpaHY">Natural Policy Gradients, TRPO, PPO</a>.</p>
                 <p>Proximal Policy Optimization (PPO) is a policy-gradient algorithm where a batch of data is being collected and directly consumed to train the policy to maximise the expected return given some proximality constraints. You can think of it as a sophisticated version of REINFORCE, the foundational policy-optimization algorithm. For more information, see the Proximal Policy Optimization Algorithms paper.</p>
                 <p>PPO is usually regarded as a fast and efficient method for online, on-policy reinforcement algorithm. TorchRL provides a loss-module that does all the work for you, so that you can rely on this implementation and focus on solving your problem rather than re-inventing the wheel every time you want to train a policy.</p>
                 <p>For completeness, here is a brief overview of what the loss computes, even though this is taken care of by our ClipPPOLoss module—the algorithm works as follows: </p>

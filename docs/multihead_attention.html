@@ -25,6 +25,8 @@
 
                 <p>One attention head scores every query against every key and returns a weighted sum of values. Multi-head attention runs several of those heads side by side, each in its own slice of the embedding, then mixes the slices back together. Different heads can follow different relations — one tracks position, another tracks a copied word — because each head has its own projection.</p>
 
+                <p>Umar Jamil's <a href="https://www.youtube.com/watch?v=bCz4OMemCcA">Attention is all you need</a> derives the multi-head split this page codes.</p>
+
                 <h3>5.4.1 One head, then several</h3>
                 <p>Start from a token matrix \(X\) of shape <code>(batch, sequence, embed_dim)</code>. A single head computes</p>
                 <div class="highlight-math" style="text-align: center; overflow-x: auto;">

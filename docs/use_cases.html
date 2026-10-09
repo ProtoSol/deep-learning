@@ -25,6 +25,8 @@
 
                 <p>The GCN in the previous chapter computes one vector per node. What you do with that vector is the task. Three tasks cover most applications, and they differ only in where the loss is attached.</p>
 
+                <p>Microsoft Research's <a href="https://www.youtube.com/watch?v=zCEYiCxrL_0">Introduction to Graph Neural Networks</a> spends its second half on the tasks this page names.</p>
+
                 <h3>15.4.1 Node prediction</h3>
                 <p>Each node has a label, or a number. Citation networks, fraud flags on accounts, and traffic sensors are this shape. The loss is cross-entropy or squared error on the labeled nodes, and the unlabeled nodes still pass messages. The prediction at a node depends on its neighborhood because the layer summed that neighborhood.</p>
 

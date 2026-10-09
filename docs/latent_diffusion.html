@@ -23,6 +23,8 @@
                 <p class="title-subtext">High-Resolution Image Synthesis with Latent Diffusion Models</p>
                 <p style="color: #a0a0a0;">Created Date: 2025-06-16</p>
                 <p>By decomposing the image formation process into a sequential application of denoising autoencoders, diffusion models (DMs) achieve state-of-the-art synthesis results on image data and beyond. Additionally, their formulation allows for a guiding mechanism to control the image generation process without retraining.</p>
+
+                <p>Computerphile's <a href="https://www.youtube.com/watch?v=1CIpzeNxIhU">How AI Image Generators Work</a> is the picture of latent diffusion.</p>
                 <p>However, since these models typically operate directly in pixel space, optimization of powerful DMs often consumes hundreds of GPU days and inference is expensive due to sequential evaluations.</p>
                 <p>To enable DM training on limited computational resources while retaining their quality and flexibility, we apply them in the latent space of powerful pretrained autoencoders. In contrast to previous work, training diffusion models on such a representation allows for the first time to reach a near-optimal point between complexity reduction and detail preservation, greatly boosting visual fidelity.</p>
                 <p>By introducing cross-attention layers into the model architecture, we turn diffusion models into powerful and flexible generators for general conditioning inputs such as text or bounding boxes and high-resolution synthesis becomes possible in a convolutional manner.</p>

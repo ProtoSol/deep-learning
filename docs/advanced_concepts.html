@@ -25,6 +25,8 @@
 
                 <p>The GCN in the previous chapter runs on one small graph that fits in a single <code>edge_index</code>. These four topics are what changes when the graph does not fit, or when the training step should be compiled. The notes point at the PyG write-ups; the idea of each one is below.</p>
 
+                <p>Microsoft Research's <a href="https://www.youtube.com/watch?v=zCEYiCxrL_0">Introduction to Graph Neural Networks</a> is the lecture for the models these training tricks serve.</p>
+
                 <h3>15.5.1 Advanced Mini-Batching</h3>
                 <p>A batch of graphs is stored as one disconnected graph. Node features are concatenated, and <code>edge_index</code> is shifted so each graph keeps its own nodes. A <code>batch</code> vector records which graph a node belongs to, and a readout (mean or sum over that vector) produces one embedding per graph. Pairing nodes across graphs by accident is the bug this vector prevents. <a href="https://pytorch-geometric.readthedocs.io/en/latest/advanced/batching.html">Advanced Mini-Batching</a> covers the collate rules, including when a follow-batch index has to be built for a second tensor.</p>
 

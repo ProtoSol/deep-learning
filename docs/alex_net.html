@@ -34,6 +34,8 @@
                 <p class="title-subtext">ImageNet Classification with Deep Convolutional Neural Networks</p>
                 <p style="color: #a0a0a0;">Created Date: 2025-06-14</p>
                 <p>We trained a large, deep <a href="cnn_classify_stratch.html">convolutional neural network</a> to classify the 1.2 million high-resolution images in the ImageNet LSVRC-2010 contest into the 1000 different classes. On the test data, we achieved top-1 and top-5 error rates of 37.5% and 17.0% which is considerably better than the previous state-of-the-art.</p>
+
+                <p>Stanford's <a href="https://www.youtube.com/watch?v=bNb2fEVKeEo">Lecture 5, Convolutional Neural Networks</a> is the lecture that puts AlexNet in the line of vision models.</p>
                 <p>The neural network, which has 60 million parameters and 650,000 neurons, consists of five <a href="cnn_classify_stratch.html#convolution">convolutional layers</a>, some of which are followed by <a href="cnn_classify_stratch.html#pooling">max-pooling layers</a>, and three fully-connected layers with a final 1000-way softmax. To make training faster, we used non-saturating neurons and a very efficient GPU implementation of the convolution operation.</p>
                 <p>To reduce overfitting in the fully-connected layers we employed a recently-developed regularization method called "dropout" that proved to be very effective. We also entered a variant of this model in the ILSVRC-2012 competition and achieved a winning top-5 test error rate of 15.3%, compared to 26.2% achieved by the second-best entry.</p>
                 

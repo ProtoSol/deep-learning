@@ -25,6 +25,8 @@
 
                 <p>PyTorch FSDP2 provides a fully sharded data parallelism (FSDP) implementation targeting performant eager-mode while using per-parameter sharding for improved usability.</p>
 
+                <p>Umar Jamil's <a href="https://www.youtube.com/watch?v=XoGvCBRnwLs">distributed training from first principles</a> is the lecture for this chapter. This page is the sharded, fully parallel piece.</p>
+
                 <h3>14.2.1 How FSDP2 works</h3>
                 <p>In DistributedDataParallel (DDP) training, each rank owns a model replica and processes a batch of data, finally it uses all-reduce to sync gradients across ranks.</p>
 

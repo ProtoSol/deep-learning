@@ -25,6 +25,8 @@
 
                 <p>In this section we introduce the formal problem of finite Markov decision processes, or finite MDPs. This problem involves evaluative feedback, as in bandits, but also an associative aspect—choosing different actions in di↵erent situations. MDPs are a classical formalization of sequential decision making, where actions influence not just immediate rewards, but also subsequent situations, or states, and through those future rewards.</p>
 
+                <p>David Silver's <a href="https://www.youtube.com/watch?v=lfHX2hHRMVQ">Lecture 2, Markov Decision Process</a> is the lecture for this page.</p>
+
                 <p>Thus MDPs involve delayed reward and the need to tradeoff immediate and delayed reward. Whereas in bandit problems we estimated the value \(q_*(a)\) of each action \(a\), in MDPs we estimate the value \(q_*(s, a)\) of each action \(a\) in each state \(s\), or we estimate the value \(v_*(s)\) of each state given optimal action selections. These state-dependent quantities are essential to accurately assigning credit for long-term consequences to individual action selections.</p>
                 
                 <p>MDPs are a mathematically idealized form of the reinforcement learning problem for which precise theoretical statements can be made. We introduce key elements of the problem’s mathematical structure, such as returns, value functions, and Bellman equations.</p>
