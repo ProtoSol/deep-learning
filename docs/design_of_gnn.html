@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="laptop_coding_48.png" type="image/png">
+    <title>Mainstream Models</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" rel="stylesheet">
+    <link href="article_style.css" rel="stylesheet">
+</head>
+
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <nav class="col-md-2 left-sidebar">
+
+            </nav>
+
+            <main class="col-md-8 content">
+                <h2 class="custom-title">15.3 Design of GNN</h2>
+                <p class="title-subtext">Design of Graph Neural Networks</p>
+                <p style="color: #a0a0a0;">Created Date: 2025-07-21</p>
+
+                <h3>15.3.1 Creating Message Passing Networks</h3>
+                <p>Generalizing the convolution operator to irregular domains is typically expressed as a <em>neighborhood aggregation</em> or <em>message passing</em> scheme. With \(\mathbf{x}^{(k-1)}_i \in \mathbb{R}^F\) denoting node features of node \(i\) in layer \((k-1)\) and \(\mathbf{e}_{j,i} \in \mathbb{R}^D\) denoting (optional) edge features from node \(j\) to node \(i\), message passing graph neural networks can be described as:</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \[\mathbf{x}_i^{(k)} = \gamma^{(k)} \left( \mathbf{x}_i^{(k-1)}, \bigoplus_{j \in \mathcal{N}(i)} \, \phi^{(k)}\left(\mathbf{x}_i^{(k-1)}, \mathbf{x}_j^{(k-1)},\mathbf{e}_{j,i}\right) \right),\]
+                </div>
+                <p>where \(\bigoplus\) denotes a differentiable, permutation invariant function, <em>e.g.</em>, sum, mean or max, and \(\gamma\) and \(\phi\) denote differentiable functions such as MLPs (Multi Layer Perceptrons).</p>
+
+                <h4>15.3.1.1 The "MessagePassing" Base Class</h4>
+                <p>PyTorch Geometric's <code>MessagePassing</code> turns the formula above into five hooks. <code>forward</code> prepares node features and the edge index. <code>message</code> builds one vector per edge from the source node (and, if you ask, the target node and the edge attribute). The base class aggregates those messages with the <code>aggr</code> you chose in the constructor — <code>"add"</code>, <code>"mean"</code>, or <code>"max"</code> — which is the \(\bigoplus\) in the formula. <code>update</code> is the optional last map, \(\gamma\). You rarely call <code>propagate</code>'s pieces yourself; <code>propagate(edge_index, ...)</code> runs message, aggregate, and update in order.</p>
+
+                <h4>15.3.1.2 Implementing the GCN Layer</h4>
+                <p><a href="https://github.com/artinte/deep-learning/blob/develop/15_graph/3_design/message_passing.py">message_passing.py</a> is a graph-convolution layer on that base class. The constructor sets <code>aggr="add"</code> and a bias-free linear map. <code>forward</code> follows the Kipf-Welling normalization:</p>
+                <ol class="with-bullets">
+                    <li><p>Add self-loops so a node is included in its own sum.</p></li>
+                    <li><p>Apply <code>self.lin</code> to the node matrix. Shape <code>[N, in_channels]</code> becomes <code>[N, out_channels]</code>.</p></li>
+                    <li><p>Compute \(1/\sqrt{\deg(i)\deg(j)}\) from the edge index. A degree of zero would produce an infinity; those entries are set to zero.</p></li>
+                    <li><p><code>propagate</code> calls <code>message</code>, which multiplies the neighbor features <code>x_j</code> by that coefficient.</p></li>
+                    <li><p>Add the bias.</p></li>
+                </ol>
+                <p>The message function only sees the source node. The symmetric degree scaling is what makes this GCN rather than a plain sum of neighbors.</p>
+
+                <h4>15.3.1.3 Implementing the Edge Convolution</h4>
+                <p>Edge convolution uses the same base class and a different message. Instead of a scaled copy of \(x_j\), the message is a small network on the pair \((x_i, x_j - x_i)\), and the aggregator is usually <code>"max"</code> rather than <code>"add"</code>. The subtraction is what makes the layer notice local shape: a neighbor that sits in the same place as the center contributes a zero offset. The repository's implementation stops at GCN. An edge-convolution layer is that class with <code>aggr="max"</code>, a <code>message</code> that receives both <code>x_i</code> and <code>x_j</code>, and an MLP in place of the scalar <code>norm</code>.</p>
+
+                <h4>15.3.1.4 Exercises</h4>
+                <ol class="with-bullets">
+                    <li><p>Build a three-node path, run <code>GCNConv(1, 1)</code>, and check that the two endpoints receive a different mix than the middle node.</p></li>
+                    <li><p>Change <code>aggr</code> from <code>"add"</code> to <code>"mean"</code> and watch the scale of the output drop as the degree grows.</p></li>
+                    <li><p>Write the edge-convolution <code>message</code> described above and confirm it returns zero offset on a pair of identical node vectors.</p></li>
+                </ol>
+
+                <div class="navigation">
+                    <a href="core_idea.html">Prev: 15.2 Core Ideas</a>
+                    <a href="use_cases.html">Next: 15.4 Use-Cases & Applications</a>
+                </div>
+            </main>
+
+            <aside class="col-md-2 right-sidebar">
+                <h5><a href="index.html#section15">Graph Netural Network</a></h5>
+                <ul id="dynamic-sidebar" class="nav flex-column">
+                </ul>
+            </aside>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script type="text/javascript" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="article_script.js"></script>
+    <script>
+        hljs.highlightAll();
+    </script>
+</body>
+
+</html>

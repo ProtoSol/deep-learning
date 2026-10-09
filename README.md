@@ -1,0 +1,996 @@
+# Deep Learning with PyTorch
+
+This folder is the book and the code. Open [docs/index.html](docs/index.html). The pages explain the ideas, and the Python files next to them are the checks.
+
+## Run it
+
+From this folder:
+
+```bash
+pip install -r requirements.txt
+cd docs && python -m http.server 8000
+```
+
+Then open `http://localhost:8000/`. The study order is on that index. These checks match it. Each one prints a short `ok` line.
+
+```bash
+python 01_basic/5_calculus/demo_calculus_figures.py
+python 01_basic/6_gradient/demo_compound.py
+python 01_basic/7_nn_stratch/demo_simple_network_numpy.py
+python 00_ml/linear_models.py
+python 00_ml/tree_models.py
+python 00_ml/other_models.py
+python 04_rnn/1_scratch/lstm_scratch.py
+python 03_cnn/4_unet/unet_model.py
+python 05_transformer/4_stratch/attention_kinds.py
+python 05_transformer/7_vit/vit_scratch.py
+python 06_diffusion/4_scratch/mnist_diffusion_scratch.py
+python 10_rl/3_dp/policy_eval.py
+```
+
+`requirements.txt` is `torch`, `numpy`, and `matplotlib`. Chapters after the diffusion check are optional.
+
+The code is highly practical. For example, in the Transformer chapter, four methods are used to implement the English-German translation task described in the [paper](https://arxiv.org/abs/1706.03762) :
+
+- Directly use the pre-trained models from transformers;
+- Use [torch.nn.Transformer](https://docs.pytorch.org/docs/stable/generated/torch.nn.Transformer.html) API;
+- Use [torch.nn.functional.scaled_dot_product_attention](https://docs.pytorch.org/docs/stable/generated/torch.nn.functional.scaled_dot_product_attention.html) function;
+- Implement from scratch.
+
+These four methods are progressive in hierarchy and serve as excellent learning materials. The following is the table of contents of the book:
+
+### 00 Classical Machine Learning
+
+0.1 [Linear Models](docs/ml_linear.html)
+
+0.2 [Trees and Ensembles](docs/ml_trees.html)
+
+0.3 [Other Models](docs/ml_models.html)
+
+NumPy only: `python 00_ml/linear_models.py`, `python 00_ml/tree_models.py`, `python 00_ml/other_models.py`.
+
+### 01 Tensor and Gradient Basics
+
+1.1 [Install PyTorch](docs/pytorch_install.html)
+
+`demo_verify.py` checks if PyTorch is installed and working correctly by verifying its version, it also determines which hardware device (GPU or CPU) is being used for computations.
+
+```
+pip3 install torch torchvision torchaudio
+```
+
+In this section, we will set up all the development environments, such as the [Visual Studio Code](https://code.visualstudio.com/) , CUDA installation, Python installation, and Windows Terminal.
+
+1.2 [Introduction to Tensors](docs/tensor_intro.html)
+
+`demo_create.py` demonstrates the fundamental ways to create and manipulate PyTorch tensors, which are the core data structures in the PyTorch framework.
+
+![Tensor of PyTorch](docs/res/01/tensor_three_dims.png)
+
+`demo_indexing.py` demonstrates Tensor indexing and slicing in PyTorch, it's very similar to how you would use NumPy. Indexing is very important because it's seen everywhere in code.
+
+- Basic slicing occurs when obj is a `slice` object (constructed by `start:stop:step` notation inside of brackets), an integer, or a tuple of `slice` objects and integers.
+
+- `Ellipsis` expands to the number of `:` objects needed for the selection tuple to index all dimensions.
+
+- Each `newaxis` object in the selection tuple serves to expand the dimensions of the resulting selection by one unit-length dimension.
+
+```
+tensor2d = torch.tensor([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+assert (tensor2d[0] == torch.tensor([1, 2, 3])).all()
+assert (tensor2d[:, 1] == torch.tensor([2, 5, 8])).all()
+assert (tensor2d[1:, 1:] == torch.tensor([[5, 6], [8, 9]])).all()
+```
+
+The `torch` package contains data structures for multi-dimensional tensors and defines mathematical operations over these tensors. Additionally, it provides many utilities for efficient serialization of Tensors and arbitrary types, and other useful utilities. The `demo_operate.py` file contains just a few key examples; you can refer to the [PyTorch API](https://docs.pytorch.org/docs/stable/torch.html) for more.
+
+`demo_dot_product.py` demonstrates dot product operations on tensors by implementing them using basic Python loops, then confirming the results with PyTorch's optimized `torch.matmul()` function. It's a clear illustration of what matrix multiplication and related operations do under the hood.
+
+![Dot Product of Matrix](docs/res/01/matrix_dot_product.jpg)
+
+```
+def naive_matrix_dot(matrix_a, matrix_b):
+    assert len(matrix_a.shape) == 2
+    assert len(matrix_b.shape) == 2
+    assert matrix_a.shape[1] == matrix_b.shape[0]
+    result = torch.zeros((matrix_a.shape[0], matrix_b.shape[1]))
+    for i in range(matrix_a.shape[0]):
+        for j in range(matrix_b.shape[1]):
+            row_x = matrix_a[i, :]
+            column_y = matrix_b[:, j]
+            result[i, j] = naive_vector_dot(row_x, column_y)
+    return result
+```
+
+1.3 [Data Representation](docs/data_represent.html)
+
+In machine learning and pattern recognition, a feature is an individual measurable property or characteristic of a data set. `demo_features.py` generates and visualizes a simple linear regression dataset. It creates a set of noisy data points that follow a linear trend and then plots both the data and the underlying true linear function.
+
+`demo_text_data.py` downloads, extracts, and explores a dataset of movie reviews for sentiment analysis. In machine learning, text must be converted into numerical data for computation. We'll learn how to use tokenization for this process later.
+
+`demo_audio_data.py` analyzes and visualizes audio data, specifically focusing on spoken digits.
+
+![Audio Sample Waveform](docs/res/01/audio_sample_data.png)
+
+In deep learning, audio is typically converted into a spectrogram. For more detailed information, please refer to [Section 8.1](docs/speech_feature.html) .
+
+`demo_image_data.py` uses [matplotlib](https://matplotlib.org/) to visualize images from the MNIST dataset, a common dataset of handwritten digits. This is a dataset of 60,000 28x28 grayscale images of the 10 digits, along with a test set of 10,000 images.
+
+![Samples of MNIST](docs/res/01/samples_mnist.png)
+
+```
+def mnist_read(images_path, labels_path):
+    labels = []
+    with open(labels_path, 'rb') as file:
+        magic, size = struct.unpack('>II', file.read(8))
+        if magic != 2049:
+            raise ValueError('Magic number mismatch, got {}'.format(magic))
+        labels = array.array('B', file.read())
+
+    with open(images_path, 'rb') as file:
+        magic, size, rows, cols = struct.unpack('>IIII', file.read(16))
+        if magic != 2051:
+            raise ValueError('Magic number mismatch, got {}'.format(magic))
+        image_data = array.array('B', file.read())
+
+    images = []
+    for k in range(size):
+        images.append([0] * rows * cols)
+    for j in range(size):
+        img = numpy.array(image_data[j * rows * cols:(j + 1) * rows * cols])
+        img = img.reshape(28, 28)
+        images[j][:] = img
+
+    return numpy.array(images), numpy.array(labels)
+```
+
+1.4 [Principles of Deep Learning](docs/principle_learn.html)
+
+We will explore the fundamental principles of deep learning, including the concepts of machine learning, rules and representations, neural networks, and optimization techniques such as gradient descent.
+
+![Training Process of Deep Learning](docs/res/01/train_process_640.png)
+
+In deep learning, layers are used to store the weights that need to be updated. Here, we'll use `cnn_activation_visual.py` to show the information inside different layers. Remember, the diagram above is very important. We will frequently encounter concrete examples of concepts like loss functions, optimizers, activation functions, and backpropagation in the future.
+
+![Activations of Conv Layer](docs/res/01/conv_activations.png)
+
+To better understand the whole process, `demo_simple_train_anim.py` and `demo_simple_linear_torch.py` find the best fitting line `y = mx + b` for some randomly distributed points.
+
+![Animation of Simple Traning Process](docs/res/01/simple_train_anim.gif)
+
+This pattern is fundamental to deep learning and you'll see it in many examples that follow. A solid understanding of this diagram lays the groundwork for all of deep learning.
+
+1.5 [Calculus](docs/calculus.html)
+
+Calculus is an essential math prerequisite for deep learning; it's the core of how deep learning models are able to learn. The page walks through the ideas the later chapters use: limits, derivatives, the chain rule, and integrals, with plots and two short animations. The full course is still the open textbook.
+
+[Calculus](https://openstax.org/details/books/calculus-volume-1) is designed for the typical two- or three-semester general calculus course, incorporating innovative features to enhance student learning. The book guides students through the core concepts of calculus and helps them understand how those concepts apply to their lives and the world around them. Due to the comprehensive nature of the material, we are offering the book in three volumes for flexibility and efficiency.
+
+Our goal is to master the concepts of calculus, as all subsequent calculations are performed using the `torch.Tensor.backward` function. If you'd like to see how `backward` is implemented, you can check out the small example [micrograd](https://github.com/karpathy/micrograd) . For teaching purposes, we will be hand-writing the gradient calculations later on, but this is not recommended for production tasks.
+
+1.6 [Gradient Descent](docs/gradient_descent.html)
+
+Before we start this section, we need to clarify two things: what is a gradient, and what is its purpose? From the [Principles of Deep Learning](docs/principle_learn.html) section, we already know that the goal of training a neural network is to minimize the loss function. In simple terms, a gradient is just a derivative, and one of the most important uses of a derivative is to find the minimum value.
+
+`demo_compound.py` demonstrates the use of the chain rule to calculate a circuit diagram for just three parameters: `x`, `y`, and `z`.
+
+![Circuit Diagram](docs/res/01/simple_compound_gradient.png)
+
+```
+# set some inputs
+x = -2
+y = 5
+z = -4
+
+# perform the forward pass
+q = x + y  # q becomes 3
+f = q * z  # f becomes -12
+
+# perform the backward pass (backpropagation) in reverse order:
+# first backprop through f = q * z
+df_dz = q  # df/dz = q, so gradient on z becomes 3
+df_dq = z  # df/dq = z, so gradient on q becomes -4
+dq_dx = 1.0
+dq_dy = 1.0
+
+# now backprop through q = x + y
+df_dx = df_dq * dq_dx  # the multiplication here is the chain rule
+df_dy = df_dq * dq_dy
+
+assert df_dx == -4
+assert df_dy == -4
+assert df_dz == 3
+```
+
+The code above manually calculates the gradients, while the code below uses the `torch.Tensor.backward` function.
+
+```
+x = torch.tensor(-2.0, requires_grad=True)
+y = torch.tensor(5.0, requires_grad=True)
+z = torch.tensor(-4.0, requires_grad=True)
+
+q = x + y
+f = q * z
+
+f.backward()
+
+assert x.grad.item() == -4
+assert y.grad.item() == -4
+assert z.grad.item() == 3
+```
+
+1.7 [Neural Network from Scratch](docs/network_scratch.html)
+
+`demo_simple_network_numpy.py` trains a small neural network from scratch using NumPy to classify a simple dataset of people's heights and weights as either male or female.
+
+![Archtecture of Simple DNN](docs/res/01/dnn_scratch_arch.png)
+
+The code below implements the neural network shown in the image above, which has one input layer, one hidden layer, and one output layer, for a total of nine parameters. Input data is passed through a forward propagation to get a result, then a loss function is used to calculate the loss, and finally, backpropagation updates the parameters. This process is repeated until the system stabilizes and the desired results are obtained.
+
+```
+class OurNeuralNetwork:
+    """
+    A neural network with:
+        - 2 inputs
+        - a hidden layer with 2 neurons (h1, h2)
+        - an output layer with 1 neuron (o1)
+    """
+
+    def __init__(self):
+        rng = numpy.random.default_rng(0)
+        # weights
+        self.w1 = rng.random()
+        self.w2 = rng.random()
+        self.w3 = rng.random()
+        self.w4 = rng.random()
+        self.w5 = rng.random()
+        self.w6 = rng.random()
+        # biases
+        self.b1 = rng.random()
+        self.b2 = rng.random()
+        self.b3 = rng.random()
+
+    def feedforward(self, x):
+        # x is a numpy array with 2 elements.
+        h1 = sigmoid(self.w1 * x[0] + self.w2 * x[1] + self.b1)
+        h2 = sigmoid(self.w3 * x[0] + self.w4 * x[1] + self.b2)
+        o1 = sigmoid(self.w5 * h1 + self.w6 * h2 + self.b3)
+        return o1
+```
+
+`demo_simple_network_torch.py` is the same as `demo_simple_network_numpy.py` , trains a simple neural network using PyTorch to classify a person's gender (1 for male, 0 for female) based on their weight and height.
+
+```
+class OurNeuralNetwork(torch.nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.hidden = torch.nn.Sequential(torch.nn.Linear(2, 2), torch.nn.Sigmoid())
+        self.output = torch.nn.Sequential(torch.nn.Linear(2, 1), torch.nn.Sigmoid())
+
+    def forward(self, x):
+        x = self.hidden(x)
+        x = self.output(x)
+        return x
+```
+
+### 02 Fully Connected Network
+
+2.1 [Linear Algebra](docs/linear_algebra.html)
+
+As we've seen, when we only have a few parameters, we can use a simple notation like `w1` , `w2` , and so on. But when there are tens of billions, or even hundreds of billions, of parameters, we need to use a multidimensional vector representation. This is why linear algebra is an essential subject for deep learning.
+
+In deep learning, vectors are represented by `torch.Tensor` , which contain a vast number of computational functions. The chapter works the small matrix from `simple_matrix.py` through combinations, least squares, eigenvalues, and the SVD. If you want the full course, read [Introduction to Linear Algebra, Sixth Edition](https://math.mit.edu/~gs/linearalgebra/ila6/indexila6.html) .
+
+2.2 [Points Classification](docs/point_classify.html)
+
+`demo_simple_dnn_scratch.py` constructs a simple fully connected neural network, also known as a dense network, is a type of neural network layer where every neuron in one layer is connected to every neuron in the next layer.
+
+![Architecture of DNN](docs/res/02/point_classify_arch.jpg)
+
+`demo_simple_dnn_torch.py` demonstrates how to build and train a simple, two-layer neural network using PyTorch to solve a classification problem. The network is designed to classify data points generated from a "make_moons" dataset, which is a non-linear dataset.
+
+![Output of DNN Classification](docs/res/02/dnn_classify_torch.png)
+
+2.3 [PyTorch Basics](docs/pytorch_basics.html)
+
+Most machine learning workflows involve working with data, creating models, optimizing model parameters, and saving the trained models. This tutorial introduces you to a complete ML workflow implemented in PyTorch, with links to learn more about each of these concepts.
+
+`demo_quick_start.py` is a complete demonstration of training a simple neural network on the MNIST dataset using PyTorch. The entire process, from data preparation to model training and evaluation, is covered.
+
+```
+model = NeuralNetwork().to(device)
+criterion = torch.nn.CrossEntropyLoss()
+optimizer = torch.optim.SGD(model.parameters(), lr=1e-3)
+
+def train(dataloader, model, loss_fn, optimizer):
+    model.train()
+    for batch, (X, y) in enumerate(dataloader):
+        X, y = X.to(device), y.to(device)
+        optimizer.zero_grad()
+
+        # compute prediction error
+        pred = model(X)
+        loss = loss_fn(pred, y)
+
+        # backpropagation
+        loss.backward()
+        optimizer.step()
+```
+
+Practice makes perfect, so here is the official [PyTorch Basic](https://docs.pytorch.org/tutorials/beginner/basics/intro.html) tutorial. Being proficient with PyTorch is important, as all subsequent tutorials will be written based on it, and these fundamental concepts will not be revisited.
+
+- Tensors
+- Datasets and DataLoaders
+- Transforms
+- Build Model
+- Automatic Differentiation
+- Optimization Loop
+- Save, Load and Use Model
+
+`demo_auto_differentation.py` demonstrates automatic computation of gradient for any computational graph.
+
+```
+# input tensor
+x = torch.ones(5)
+# expected output
+y = torch.zeros(3)
+w = torch.randn(5, 3, requires_grad=True)
+b = torch.randn(3, requires_grad=True)
+z = torch.matmul(x, w) + b
+loss = torch.nn.functional.binary_cross_entropy_with_logits(z, y)
+```
+
+![Simple Computational Graph](docs/res/02/simple_compute_graph.jpg)
+
+2.4 [Activation Function](docs/activation_function.html)
+
+The activation function of a node in an artificial neural network is a function that calculates the output of the node based on its individual inputs and their weights. Without activation functions, a neural network would only be able to model linear relationships, which are often too simple for real-world data.
+
+PyTorch provides a wide variety of [non-linear activation functions](https://docs.pytorch.org/docs/stable/nn.functional.html) , such as ReLU (Rectified Linear Unit), Sigmoid, Tanh (Hyperbolic Tangent), and Leaky ReLU.
+
+![Sigmoid Function](docs/res/02/sigmoid_func.png)
+
+`demo_sigmoid.py` compares the derivative of the sigmoid function at a specific point (x=2) calculated manually and using PyTorch's automatic differentiation feature.
+
+2.5 [Loss Function](docs/loss_function.html)
+
+A loss function is a crucial component in machine learning that quantifies the difference between a model's predicted output and the actual target values.
+
+- `nn.L1Loss` - Creates a criterion that measures the mean absolute error (MAE) between each element in the input `x` and target `y` .
+- `nn.MSELoss` - Creates a criterion that measures the mean squared error (squared L2 norm) between each element in the input and target `y` .
+- `nn.CrossEntropyLoss` - This criterion computes the cross entropy loss between input logits and target.
+- `nn.BCELoss` - Creates a criterion that measures the Binary Cross Entropy between the target and the input probabilities.
+- `nn.KLDivLoss` - The Kullback-Leibler divergence loss.
+
+`demo_mse_loss.py` demonstrates the calculation of Mean Squared Error (MSE) and its gradient, first manually using NumPy and then automatically using PyTorch's `torch.nn.MSELoss` .
+
+`demo_cross_entropy_loss.py` calculates the Cross-Entropy Loss for a small batch of predictions. This loss function is a standard way to measure the performance of a classification model whose output consists of logits.
+
+Logits are the raw, unnormalized scores that a neural network or machine learning model produces as its final output, just before an activation function like softmax or sigmoid is applied.
+
+```
+# Suppose we have 3 classes
+num_classes = 3
+
+# Predicted scores (logits), not probabilities
+# Shape: (batch_size, num_classes)
+y_pred = torch.tensor([[2.0, 1.0, 0.1], [0.5, 2.5, 0.3]])
+
+# Ground truth labels (as class indices)
+# Shape: (batch_size,)
+y_true = torch.tensor([0, 1])
+
+criterion = torch.nn.CrossEntropyLoss()
+
+loss = criterion(y_pred, y_true)
+print(f"CrossEntropyLoss: {loss.item():.4f}")
+```
+
+`demo_bce_loss.py` demonstrates the usage of Binary Cross-Entropy (BCE) Loss in PyTorch. It calculates the loss for a binary classification task, where each sample belongs to one of two classes (e.g., 0 or 1).
+
+2.6 [Optimizer](docs/optimizer.html)
+
+An optimizer in machine learning, particularly in deep learning, is a function or algorithm that adjusts the model's parameters (like weights and biases) to minimize the loss function, thereby improving the model's performance.
+
+[torch.optim](https://docs.pytorch.org/docs/stable/optim.html) is a package implementing various optimization algorithms. To use `torch.optim` you have to construct an optimizer object that will hold the current state and will update the parameters based on the computed gradients.
+
+```
+optimizer = torch.optim.SGD(model.parameters(), lr=0.01, momentum=0.9)
+
+for input, target in dataset:
+    optimizer.zero_grad()
+    output = model(input)
+    loss = loss_fn(output, target)
+    loss.backward()
+    optimizer.step()
+```
+
+`demo_simple_sgd.py` contains a simple implementation of the Stochastic Gradient Descent (SGD) optimization algorithm.
+
+`demo_sgd_momentum.py` demonstrate how SGD (Stochastic Gradient Descent) with momentum can "jump over" a local minimum, where SGD without momentum might get stuck.
+
+![SGD Momentum](docs/res/02/sgd_momentum.png)
+
+`demo_simple_adam.py` demonstrates an algorithm for first-order gradient-based optimization of stochastic objective functions, based on adaptive estimates of lower-order moments. The specific calculation process can refer to the paper [Adam: A Method for Stochastic Optimization](https://arxiv.org/abs/1412.6980) .
+
+A learning rate scheduler (lr scheduler) is a component in machine learning, particularly in training neural networks, that dynamically adjusts the learning rate during the training process.
+
+`demo_lr_scheduler.py`
+
+![LR Scheduler](docs/res/02/lr_scheduler.png)
+
+The different between an optimizer's adjustments (e.g., Adam) and a scheduler's adjustments:
+
+- Optimizer (e.g., Adam): Primarily responsible for updating model parameters using gradient information to minimize loss. Its adjustments focus on how much each individual parameter should change in each training step.
+
+- LR Scheduler: Focuses on modifying the global learning rate over time. Its adjustments control the overall "intensity" of updates across all parameters, independent of the optimizer's per-parameter logic.
+
+### 03 Convolutional Network
+
+3.1 [CNN from Scratch](docs/cnn_classify_stratch.html)
+
+`demo_cnn_scratch.py` build on a basic background knowledge of neural networks and explore what CNNs are, understand how they work, and build a real one from scratch (using only NumPy) in Python.
+
+Its core consists of two operations: convolution and pooling.
+
+`demo_cnn_torch.py` is the same as `demo_cnn_scratch.py` , but using `torch.nn.Conv2d` and `torch.nn.MaxPool2d` .
+
+```
+class torch.nn.Conv2d(in_channels, out_channels, kernel_size, stride=1,
+    padding=0, dilation=1, groups=1, bias=True,
+    padding_mode='zeros', device=None, dtype=None)
+```
+
+Applies a 2D convolution over an input signal composed of several input planes.
+
+```
+class torch.nn.MaxPool2d(kernel_size, stride=None,
+    padding=0, dilation=1, return_indices=False, ceil_mode=False)
+```
+
+Applies a 2D max pooling over an input signal composed of several input planes.
+
+3.2 [AlexNet](docs/alex_net.html)
+
+We trained a large, deep convolutional neural network to classify the 1.3 million high-resolution images in the LSVRC-2010 ImageNet training set into the 1000 different classes. On the test data, we achieved top-1 and top-5 error rates of 37.5% and 17.0% which is considerably better than the previous state-of-the-art.
+
+The neural network, which has 60 million parameters and 650,000 neurons, consists of five convolutional layers, some of which are followed by max-pooling layers, and three fully-connected layers with a final 1000-way softmax.
+
+3.3 [ResNet](docs/res_net.html)
+
+Deeper neural networks are more difficult to train. We present a residual learning framework to ease the training of networks that are substantially deeper than those used previously.
+
+`demo_pretrained_resnet.py`
+
+In this paper, we present a network and training strategy that relies on the strong use of data augmentation to use the available annotated samples more efficiently. The architecture consists of a contracting path to capture context and a symmetric expanding path that enables precise localization.
+
+`demo_resnet_torch.py`
+
+3.4 [U-Net](docs/u_net.html)
+
+In this paper, we present a network and training strategy that relies on the strong use of data augmentation to use the available annotated samples more efficiently. The architecture consists of a contracting path to capture context and a symmetric expanding path that enables precise localization.
+
+`project_unet_segmentation.py`
+
+```
+class torch.nn.ConvTranspose2d(in_channels, out_channels, kernel_size, stride=1,
+    padding=0, output_padding=0, groups=1, bias=True,
+    dilation=1, padding_mode='zeros', device=None, dtype=None)
+```
+
+Applies a 2D transposed convolution operator over an input image composed of several input planes.
+
+3.5 [DenseNet](docs/dense_net.html)
+
+In this paper, we embrace this observation and introduce the Dense Convolutional Network (DenseNet), which connects each layer to every other layer in a feed-forward fashion.
+
+### 04 Recurrent Network
+
+4.1 [RNN from Scratch](docs/rnn_classify_scratch.html)
+
+A simple walkthrough of what RNNs are, how they work, and how to build one from scratch in Python.
+
+The core idea of an RNN is to apply the same operation to each element of a sequence, with the output of the current step feeding back as an additional input for the next step. An RNN cell at a single time step `t` takes two inputs:
+
+- The current element of the sequence `x_t` ;
+- The hidden state from the previous time step `h_(t-1)` .
+
+It then produces a new hidden state `h_t` and an output `y_t` . This can be expressed mathematically as:
+
+```
+h_t = f(W_hh * h_(t-1) + W_xh * x_t + b_h)
+y_t = W_hy * h_t + b_y
+```
+
+Where `W_hh` , `W_xh` and `W_hy` are weight matrices that the network learns during training.
+
+![Architecture of RNN](docs/res/04/rnn_backward.png)
+
+`demo_rnn_classify_scratch.py` builds and trains a vanilla Recurrent Neural Network (RNN) from scratch using NumPy to perform a simple text classification task.
+
+`demo_rnn_classify_torch.py` achieves the same functionality as `demo_rnn_classify_scratch.py` , but it uses the `torch.nn.RNN` module.
+
+```
+class RNNClassifier(torch.nn.Module):
+    def __init__(self, vocab_size, embedding_dim, hidden_dim, output_dim):
+        super(RNNClassifier, self).__init__()
+        self.embedding = torch.nn.Embedding(vocab_size, embedding_dim)
+        self.rnn = torch.nn.RNN(embedding_dim, hidden_dim, batch_first=True)
+        self.dense = torch.nn.Linear(hidden_dim, output_dim)
+
+    def forward(self, x):
+        embedded = self.embedding(x)
+        _, hidden = self.rnn(embedded)
+        hidden = hidden[-1]
+        out = self.dense(hidden)
+        return out
+```
+
+4.2 [Text Preprocessing](docs/word_embed.html)
+
+Text Preprocessing is the critical first step in Natural Language Processing (NLP)—the process of cleaning, transforming, and standardizing raw text data into a structured, machine-readable format. Its goal is to eliminate noise, reduce complexity, and highlight meaningful patterns, so NLP models (e.g., chatbots, sentiment analyzers, translation tools) can learn effectively from the text.
+
+4.3 [Word2Vec](docs/word2vec.html)
+
+`word2vec` is not a singular algorithm, rather, it is a family of model architectures and optimizations that can be used to learn word embeddings from large datasets.
+
+4.4 [Text Generation with RNN](docs/text_generate_rnn.html)
+
+![Text Generation](docs/res/04/simple_lang_model.jpg)
+
+4.5 [Neural Machine Translation](docs/nmt_align.html)
+
+In this paper, we conjecture that the use of a fixed-length vector is a bottleneck in improving the performance of this basic encoder-decoder architecture, and propose to extend this by allowing a model to automatically (soft-)search for parts of a source sentence that are relevant to predicting a target word, without having to form these parts as a hard segment explicitly.
+
+4.6 [Attention-based NMT](docs/attention_nmt.html)
+
+This paper examines two simple and effective classes of attentional mechanism: a global approach which always attends to all source words and a local one that only looks at a subset of source words at a time.
+
+### 05 Transformer
+
+5.1 [Attention Mechanism](docs/attention_mechanism.html)
+
+An attention mechanism is a machine learning technique that directs deep learning models to prioritize (or attend to) the most relevant parts of input data.
+
+`demo_query_key_value.py`
+
+`demo_nadaraya_regression.py`
+
+`demo_scale_dot_product_attention.py` computes scaled dot product attention on query, key and value tensors, using an optional attention mask if passed, and applying dropout if a probability greater than 0.0 is specified.
+
+```
+# Efficient implementation equivalent to the following:
+def scaled_dot_product_attention(query, key, value, attn_mask=None, dropout_p=0.0,
+        is_causal=False, scale=None, enable_gqa=False) -> torch.Tensor:
+    L, S = query.size(-2), key.size(-2)
+    scale_factor = 1 / math.sqrt(query.size(-1)) if scale is None else scale
+    attn_bias = torch.zeros(L, S, dtype=query.dtype, device=query.device)
+    if is_causal:
+        assert attn_mask is None
+        temp_mask = torch.ones(L, S, dtype=torch.bool).tril(diagonal=0)
+        attn_bias.masked_fill_(temp_mask.logical_not(), float("-inf"))
+        attn_bias.to(query.dtype)
+
+    if attn_mask is not None:
+        if attn_mask.dtype == torch.bool:
+            attn_bias.masked_fill_(attn_mask.logical_not(), float("-inf"))
+        else:
+            attn_bias = attn_mask + attn_bias
+
+    if enable_gqa:
+        key = key.repeat_interleave(query.size(-3)//key.size(-3), -3)
+        value = value.repeat_interleave(query.size(-3)//value.size(-3), -3)
+
+    attn_weight = query @ key.transpose(-2, -1) * scale_factor
+    attn_weight += attn_bias
+    attn_weight = torch.softmax(attn_weight, dim=-1)
+    attn_weight = torch.dropout(attn_weight, dropout_p, train=True)
+    return attn_weight @ value
+```
+
+5.2 [Attention Is All You Need](docs/transformer_paper.html)
+
+The original paper [Attention Is All You Need](https://arxiv.org/abs/1706.03762), and some code snippets to help understand the paper's content. The Transformer, based solely on attention mechanisms, dispensing with recurrence and convolutions entirely.
+
+![Transformer Architecture](docs/res/05/transformer_arch_600.jpg)
+
+`demo_transformers.py`
+
+5.3 [nn.Transformer](docs/nn_transformer.html)
+
+This Transformer layer implements the original Transformer architecture described in the Attention Is All You Need paper. The intent of this layer is as a reference implementation for foundational understanding and thus it contains only limited features relative to newer Transformer architectures.
+
+```
+class torch.nn.Transformer(d_model=512, nhead=8, num_encoder_layers=6,
+    num_decoder_layers=6, dim_feedforward=2048, dropout=0.1,
+    activation=<function relu>, custom_encoder=None, custom_decoder=None,
+    layer_norm_eps=1e-05, batch_first=False, norm_first=False,
+    bias=True, device=None, dtype=None)
+```
+
+- d_model (int) – the number of expected features in the encoder/decoder inputs (default=512).
+- nhead (int) – the number of heads in the multiheadattention models (default=8).
+- num_encoder_layers (int) – the number of sub-encoder-layers in the encoder (default=6).
+- num_decoder_layers (int) – the number of sub-decoder-layers in the decoder (default=6).
+- dim_feedforward (int) – the dimension of the feedforward network model (default=2048).
+- dropout (float) – the dropout value (default=0.1).
+- activation (Union[str, Callable[[Tensor], Tensor]]) – the activation function of encoder/decoder intermediate layer, can be a string ("relu" or "gelu") or a unary callable. Default: relu.
+- custom_encoder (Optional[Any]) – custom encoder (default=`None`).
+- custom_decoder (Optional[Any]) – custom decoder (default=`None`).
+- layer_norm_eps (float) – the eps value in layer normalization components (default=1e-5).
+- batch_first (bool) – If `True`, then the input and output tensors are provided as (batch, seq, feature). Default: `False` (seq, batch, feature).
+- norm_first (bool) – if `True`, encoder and decoder layers will perform LayerNorms before other attention and feedforward operations, otherwise after. Default: `False` (after).
+- bias (bool) – If set to `False`, `Linear` and `LayerNorm` layers will not learn an additive bias. Default: True.
+
+`project_en_de_translate.py` handles English-German translation.
+
+`project_world_language_model.py`
+
+```
+class GPTModel(torch.nn.Transformer):
+    def __init__(self, ntoken, ninp, nhead, nhid, nlayers, dropout=0.1):
+        super(GPTModel, self).__init__(
+            d_model=ninp, nhead=nhead, dim_feedforward=nhid, num_encoder_layers=nlayers
+        )
+        self.src_mask = None
+        self.pos_encoder = PositionalEncoding(ninp, dropout)
+
+        self.input_emb = torch.nn.Embedding(ntoken, ninp)
+        self.ninp = ninp
+        self.decoder = torch.nn.Linear(ninp, ntoken)
+
+        self.init_weights()
+
+    def init_weights(self):
+        initrange = 0.1
+        torch.nn.init.uniform_(self.input_emb.weight, -initrange, initrange)
+        torch.nn.init.zeros_(self.decoder.bias)
+        torch.nn.init.uniform_(self.decoder.weight, -initrange, initrange)
+
+    def forward(self, src, has_mask=True):
+        if has_mask:
+            device = src.device
+            if self.src_mask is None or self.src_mask.size(0) != len(src):
+                mask = torch.log(torch.tril(torch.ones(len(src), len(src)))).to(device)
+                self.src_mask = mask
+        else:
+            self.src_mask = None
+
+        src = self.input_emb(src) * math.sqrt(self.ninp)
+        src = self.pos_encoder(src)
+        output = self.encoder(src, mask=self.src_mask)
+        output = self.decoder(output)
+        return torch.nn.functional.log_softmax(output, dim=-1)
+```
+
+5.4 [Multi-Head Attention](docs/multihead_attention.html)
+
+This MultiheadAttention layer implements the original architecture described in the Attention Is All You Need paper.
+
+```
+class torch.nn.MultiheadAttention(embed_dim, num_heads, dropout=0.0, bias=True,
+    add_bias_kv=False, add_zero_attn=False, kdim=None, vdim=None,
+    batch_first=False, device=None, dtype=None)[source]
+```
+
+Allows the model to jointly attend to information from different representation subspaces.
+
+`demo_multi_head_attention.py`
+
+- embed_dim – Total dimension of the model.
+- num_heads – Number of parallel attention heads. Note that `embed_dim` will be split across `num_heads` (i.e. each head will have dimension `embed_dim // num_heads`).
+- dropout – Dropout probability on `attn_output_weights`. Default: `0.0` (no dropout).
+- bias – If specified, adds bias to input / output projection layers. Default: `True`.
+- add_bias_kv – If specified, adds bias to the key and value sequences at dim=0. Default: False.
+- add_zero_attn – If specified, adds a new batch of zeros to the key and value sequences at dim=1. Default: `False`.
+- kdim – Total number of features for keys. Default: `None` (uses `kdim=embed_dim`).
+- vdim – Total number of features for values. Default: `None` (uses vdim=`embed_dim`).
+- batch_first – If `True`, then the input and output tensors are provided as (batch, seq, feature). Default: `False` (seq, batch, feature).
+
+FlashAttention is an algorithm that reorders the attention computation and leverages tiling and recomputation to significantly speed it up and reduce memory usage from quadratic to linear in sequence length.
+
+A KV Cache implementation for a transformer-based Large Language Model stores the key (K) and value (V) tensors from the attention layers for previous tokens during autoregressive text generation.
+
+5.5 [Transformer from Stratch](docs/transformer_stratch.html)
+
+`demo_transformer.py` demonstrates building a machine translation system using PyTorch’s [torch.nn.Transformer](https://docs.pytorch.org/docs/stable/generated/torch.nn.Transformer.html) , a flexible implementation of the Transformer architecture. The API provides encoder–decoder layers with multi-head self-attention and feedforward networks, making it well-suited for sequence-to-sequence tasks such as translation.
+
+`demo_sdpa.py` implements the same functionality as `demo_transformer.py` , but it rewrites the `torch.nn.Transformer` features—including the core modules like the encoder, decoder, and multi-head attention—using PyTorch's native APIs, such as [torch.nn.functional.scaled_dot_product_attention](https://docs.pytorch.org/docs/stable/generated/torch.nn.functional.scaled_dot_product_attention.html) .
+
+`demo_scratch.py` further decompose the Transformer structure by implementing key components like residual networks and layer normalization to achieve a thorough mastery of the architecture.
+
+5.6 [GPT](docs/nano_gpt.html)
+
+![Architecture of GPT](docs/res/05/simple_gpt.jpg)
+
+`project_chinese_poetry.py` defines and trains a GPT-like model to generate Chinese poetry.
+
+`project_word_language_model.py` trains a multi-layer RNN (Elman, GRU, or LSTM) or Transformer on a language modeling task. By default, the training script uses the Wikitext-2 dataset, provided. The trained model can then be used by the script to generate new text.
+
+5.7 [BERT](docs/bert.html)
+
+The `project_bert.py` code references the [google-research/bert](https://github.com/google-research/bert) project, but is implemented using PyTorch. BERT, which stands for Bidirectional Encoder Representations from Transformers, is designed to pre-train deep bidirectional representations from unlabeled text by jointly conditioning on both left and right context in all layers.
+
+5.8 [Vision Transformer](docs/vision_transformer.html)
+
+![The Architecture of Vision Transformer](docs/res/05/vit_arch_640.png)
+
+`demo_mnist_classify.py`
+
+Implementation of Vision Transformer, a simple way to achieve SOTA in vision classification with only a single transformer encoder, in Pytorch. For more information, please refer to [lucidrains/vit-pytorch](https://github.com/lucidrains/vit-pytorch) .
+
+### 06 Diffusion Model
+
+6.1 [Probability Theory](docs/prob_theory.html)
+
+6.2 [Gaussian Processes](docs/gaussian_process.html)
+
+6.3 [Mathematical Foundation](docs/diffusion_math.html)
+
+6.4 [Diffusion from Scratch](docs/diffusion_scratch.html)
+
+Learning this section requires basic knowledge of probability theory, as well as an understanding of U-Net networks, attention mechanisms, latent spaces, and text preprocessing. We will use five examples to illustrate diffusion models incrementally, where each example builds on the previous one.
+
+`demo_diffusion_mnist_one_step.py` - Start with the most basic single-step diffusion process, using a simple dataset like MNIST to get started and understand the core principles of diffusion models.
+
+`demo_diffusion_multi_steps.py` - Expand from single-step to multi-step diffusion, understanding the complete forward diffusion and reverse sampling processes.
+
+`demo_diffusion_with_attention.py` - Introduce the attention mechanism, a key component of modern diffusion models (such as Stable Diffusion), and learn how to improve model performance.
+
+`demo_diffusion_latent.py` - Learn about latent space diffusion, an important technique for improving the efficiency of diffusion models, and understand why diffusion is performed in latent space rather than pixel space.
+
+`demo_diffusion_text_prompt.py` - Finally, learn about text-guided diffusion models to generate images based on text prompts, which is one of the most impressive applications of diffusion models.
+
+6.5 [Estimating Gradients](docs/estimate_gradients.html)
+
+6.6 [Diffusion Probability Model](docs/dd_prob_model.html)
+
+6.7 [Latent Diffusion](docs/latent_diffusion.html)
+
+### 07 Text
+
+7.1 [MIDI Prediction](docs/trans_transformer.html)
+
+`project_midi_prediction.py` uses a Transformer Decoder to predict MIDI music. It preprocesses MIDI into event sequences, trains the model on these sequences, and generates complete MIDI files autoregressively via greedy search.
+
+7.2 [Easy OCR](docs/easy_ocr.html)
+
+`project_auto_deal.py` take screenshots of the phone screen using Android ADB, and perform text recognition with the EasyOCR library.
+
+Its principle is very simple: it uses adb to captures the screen of the mobile phone, performs recognition with EasyOCR, then a text processing model is built to select the next operation, and finally simulates human behavior of using the mobile phone.
+
+7.3 [Language Modeling](docs/language_model.html)
+
+`project_gamma_finetune.py`
+
+7.4 [Chatbots](docs/chatbots.html)
+
+`project_chatbots.py`
+
+### 08 Audio
+
+8.1 [Speech Feature Extraction](docs/speech_feature.html)
+
+Sound is a mechanical wave that transmits energy through the vibration of a medium, such as air, water, or solids. Understanding its fundamental properties is crucial for converting it into a format that deep learning models can effectively process.
+
+Digital audio mainly includes the following properties: sample rate, amplitude, and storage format.
+
+8.2 [Automatic Speech Recognition](docs/speech_recognition.html)
+
+Whisper is a general-purpose speech recognition model. It is trained on a large dataset of diverse audio and is also a multitasking model that can perform multilingual speech recognition, speech translation, and language identification.
+
+`project_whisper.py` merely copies Whisper's source code without any additional operations. It mainly consists of an `AudioEncoder` and a `TextDecoder` . The audio encoder uses an attention module to process audio into input for the text decoder, and the `Whisper` structure is responsible for combining them.
+
+```
+class AudioEncoder(nn.Module):
+    def __init__(
+        self, n_mels: int, n_ctx: int, n_state: int, n_head: int, n_layer: int
+    ):
+        super().__init__()
+        self.conv1 = Conv1d(n_mels, n_state, kernel_size=3, padding=1)
+        self.conv2 = Conv1d(n_state, n_state, kernel_size=3, stride=2, padding=1)
+        self.register_buffer("positional_embedding", sinusoids(n_ctx, n_state))
+
+        self.blocks: Iterable[ResidualAttentionBlock] = nn.ModuleList(
+            [ResidualAttentionBlock(n_state, n_head) for _ in range(n_layer)]
+        )
+        self.ln_post = LayerNorm(n_state)
+
+    def forward(self, x: Tensor):
+        """
+        x : torch.Tensor, shape = (batch_size, n_mels, n_ctx)
+            the mel spectrogram of the audio
+        """
+        x = F.gelu(self.conv1(x))
+        x = F.gelu(self.conv2(x))
+        x = x.permute(0, 2, 1)
+
+        assert x.shape[1:] == self.positional_embedding.shape, "incorrect audio shape"
+        x = (x + self.positional_embedding).to(x.dtype)
+
+        for block in self.blocks:
+            x = block(x)
+
+        x = self.ln_post(x)
+        return x
+
+class TextDecoder(nn.Module):
+    def __init__(
+        self, n_vocab: int, n_ctx: int, n_state: int, n_head: int, n_layer: int
+    ):
+        super().__init__()
+
+        self.token_embedding = nn.Embedding(n_vocab, n_state)
+        self.positional_embedding = nn.Parameter(torch.empty(n_ctx, n_state))
+
+        self.blocks: Iterable[ResidualAttentionBlock] = nn.ModuleList(
+            [
+                ResidualAttentionBlock(n_state, n_head, cross_attention=True)
+                for _ in range(n_layer)
+            ]
+        )
+        self.ln = LayerNorm(n_state)
+
+        mask = torch.empty(n_ctx, n_ctx).fill_(-np.inf).triu_(1)
+        self.register_buffer("mask", mask, persistent=False)
+
+    def forward(self, x: Tensor, xa: Tensor, kv_cache: Optional[dict] = None):
+        """
+        x : torch.LongTensor, shape = (batch_size, <= n_ctx)
+            the text tokens
+        xa : torch.Tensor, shape = (batch_size, n_audio_ctx, n_audio_state)
+            the encoded audio features to be attended on
+        """
+        offset = next(iter(kv_cache.values())).shape[1] if kv_cache else 0
+        x = (
+            self.token_embedding(x)
+            + self.positional_embedding[offset : offset + x.shape[-1]]
+        )
+        x = x.to(xa.dtype)
+
+        for block in self.blocks:
+            x = block(x, xa, mask=self.mask, kv_cache=kv_cache)
+
+        x = self.ln(x)
+        logits = (
+            x @ torch.transpose(self.token_embedding.weight.to(x.dtype), 0, 1)
+        ).float()
+
+        return logits
+
+class Whisper(nn.Module):
+    def __init__(self, dims: ModelDimensions):
+        super().__init__()
+        self.dims = dims
+        self.encoder = AudioEncoder(
+            self.dims.n_mels,
+            self.dims.n_audio_ctx,
+            self.dims.n_audio_state,
+            self.dims.n_audio_head,
+            self.dims.n_audio_layer,
+        )
+        self.decoder = TextDecoder(
+            self.dims.n_vocab,
+            self.dims.n_text_ctx,
+            self.dims.n_text_state,
+            self.dims.n_text_head,
+            self.dims.n_text_layer,
+        )
+
+    def forward(
+        self, mel: torch.Tensor, tokens: torch.Tensor
+    ) -> Dict[str, torch.Tensor]:
+        return self.decoder(tokens, self.encoder(mel))
+```
+
+`project_add_subtitle.py` uses the FFmpeg command-line tool to extract audio from a video, then uses Whisper for recognition to generate an SRT file, and finally merges them with FFmpeg to produce a video with subtitles.
+
+8.3 [Text-to-Speech](docs/text_to_speech.html)
+
+8.4 [Music Transcription](docs/music_transcription.html)
+
+The content of this section is mainly derived from [magenta/mt3](https://github.com/magenta/mt3) . MT3 is a multi-instrument automatic music transcription model that uses the T5X framework. Interested readers can refer to it for further details.
+
+8.5 [Music Synthesis](docs/music_synthesis.html)
+
+### 09 Image and Video
+
+9.1 [Object Detection](docs/object_detection.html)
+
+9.2 [Transfer Learning](docs/transfer_learning.html)
+
+9.3 [FGSM Attack](docs/fgsm_attack.html)
+
+9.4 [Spatial Transformer](docs/spatial_transformer.html)
+
+9.5 [DeepFaceLab](docs/deep_face_lab.html)
+
+9.6 [DeepFaceLive](docs/deep_face_live.html)
+
+9.7 [Segment Anything](docs/segment_anything.html)
+
+9.8 [Intro to Autoencoders](docs/intro_auto_encoder.html)
+
+An autoencoder is a special type of neural network that is trained to copy its input to its output. For example, given an image of a handwritten digit, an autoencoder first encodes the image into a lower dimensional latent representation, then decodes the latent representation back to an image. An autoencoder learns to compress the data while minimizing the reconstruction error.
+
+The following three examples are from [TensorFlow's autoencoder](https://www.tensorflow.org/tutorials/generative/autoencoder) tutorial, which will be implemented using PyTorch.
+
+`demo_mnist_basic.py`
+
+`demo_image_denoising.py`
+
+`demo_anomaly_detection.py`
+
+### 10 Reinforcement Learning
+
+10.1 [Introduction RL Problems](docs/rl_introduction.html)
+
+10.2 [Markov Decision Processes](docs/markov_process.html)
+
+10.3 [Dynamic Programming](docs/dynamic_program.html)
+
+10.4 [DQN](docs/dqn.html)
+
+10.5 [PPO](docs/ppo.html)
+
+10.6 [Function Approximation](docs/function_appro.html)
+
+### 11 Extending PyTorch
+
+11.1 [Custom Operators](docs/custom_operator.html)
+
+11.2 [Custom C++ and CUDA Operators](docs/cpp_cuda_operators.html)
+
+11.3 [Double Backward](docs/double_backward.html)
+
+11.4 [Fusing Conv and Batch Norm](docs/custom_function.html)
+
+### 12 Deploying Models
+
+12.1 [ONNX](docs/onnx.html)
+
+12.2 [ExecuTorch](docs/execu_torch.html)
+
+12.3 [LiteRT](docs/tensorflow_lite.html)
+
+12.4 [TensorFlow.js](docs/tensorflow_js.html)
+
+### 13 Model Optimization
+
+13.1 [LoRA](docs/lora.html)
+
+We propose Low-Rank Adaptation, or LoRA, which freezes the pretrained model weights and injects trainable rank decomposition matrices into each layer of the Transformer architecture, greatly reducing the number of trainable parameters for downstream tasks.
+
+13.2 [Pruning](docs/pruning.html)
+
+13.3 [Quantization](docs/quantization.html)
+
+13.4 [Distillation](docs/distillation.html)
+
+### 14 Distributed Training
+
+14.1 [Distributed Data Parallel](docs/distrib_parallel.html)
+
+14.2 [Fully Sharded Data Parallel](docs/fully_parallel.html)
+
+14.3 [Tensor Parallel](docs/tensor_parallel.html)
+
+14.4 [Device Mesh](docs/device_mesh.html)
+
+14.5 [Remote Procedure Call](docs/remote_call.html)
+
+### 15 Graph Neural Network
+
+15.1 [Graph Foundation](docs/graph_foundation.html)
+
+15.2 [Core Ideas](docs/core_idea.html)
+
+15.3 [Design of GNN](docs/design_of_gnn.html)
+
+15.4 [Use-Cases & Applications](docs/use_cases.html)
+
+15.5 [Advanced Concepts](docs/advanced_concepts.html)
+
+### 16 Bayesian Statistics
+
+Gaussian naive Bayes is in [0.3 Other Models](docs/ml_models.html). Gaussian processes are in [6.2 Gaussian Processes](docs/gaussian_process.html). The contents page is [docs/index.html](docs/index.html).

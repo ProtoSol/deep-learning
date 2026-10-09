@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="laptop_coding_48.png" type="image/png">
+    <title>Easy OCR</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" rel="stylesheet">
+    <link href="article_style.css" rel="stylesheet">
+</head>
+
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <nav class="col-md-2 left-sidebar">
+
+            </nav>
+
+            <main class="col-md-8 content">
+                <h2 class="custom-title">7.2 Easy OCR</h2>
+                <p class="title-subtext">Ready-to-use OCR with 80+ supported languages and all popular writing scripts including: Latin, Chinese, Arabic, Devanagari, Cyrillic, etc.</p>
+                <p style="color: #a0a0a0;">Created Date: 2025-05-25</p>
+
+                <h3>7.2.1 Simple Usage</h3>
+
+                <p>Use Android's adb tool to take a screenshot of the phone and identify the content on the phone screen. The recognition step itself is three lines in <a href="https://github.com/artinte/deep-learning/blob/develop/07_text/2_easy_ocr/demo_easy_ocr.py">demo_easy_ocr.py</a>:</p>
+                <pre><code>import easyocr
+
+reader = easyocr.Reader(['ch_sim', 'en'])
+result = reader.readtext('docs/res/00/cover.png')
+print(result)</code></pre>
+                <p>The first call downloads the detection and recognition weights for the languages you name. Each item in <code>result</code> is a box (four corner points), the string, and a confidence. <code>ch_sim</code> is simplified Chinese; add or drop language codes to change the recognizer. The detector finds text regions, the recognizer reads each crop. You do not pass a model class in.</p>
+                <p><a href="https://github.com/artinte/deep-learning/blob/develop/07_text/2_easy_ocr/couponing/command.py">couponing/command.py</a> is the phone side of the same idea. It looks for an <code>adb</code> binary, lists device serials, and can send a key event. A screenshot grabbed with <code>adb exec-out screencap -p</code> is the image you then hand to <code>readtext</code>.</p>
+
+                <h3>7.2.2 Train/use Your Own Model</h3>
+                <p>The stock reader is enough when the glyphs are close to the training set. A private font, a receipt layout, or a domain vocabulary needs your own images and transcripts. EasyOCR's training path fine-tunes the recognition network: collect crops, write a label file of <code>filename\ttext</code> pairs, and train the recognizer while keeping the detector if the boxes are already reliable.</p>
+                <p>Point <code>Reader</code> at the new weights with the <code>recog_network</code> and model-storage arguments once training has written a checkpoint. Until that checkpoint exists, stay on the pretrained reader in the demo. Training is the slow part; inference stays the <code>readtext</code> call above.</p>
+
+                <h3>7.2.3 Implementation Roadmap</h3>
+                <p>The path through this folder is short on purpose.</p>
+                <ol class="with-bullets">
+                    <li><p>Run <code>demo_easy_ocr.py</code> on <code>docs/res/00/cover.png</code> and read the boxes it prints.</p></li>
+                    <li><p>Confirm <code>adb</code> with <code>couponing/command.py</code> if the image should come from a device rather than a file.</p></li>
+                    <li><p>Only after those two work, replace the recognizer with a fine-tune on your own crops.</p></li>
+                </ol>
+                <p>The previous chapter translates text that is already tokens. This chapter is how text gets off an image and into that pipeline.</p>
+
+                <div class="navigation">
+                    <a href="trans_transformer.html">Prev: 7.1 Translate text with Transformer</a>
+                    <a href="language_model.html">Next: 7.3 Language Modeling</a>
+                </div>
+            </main>
+
+            <aside class="col-md-2 right-sidebar">
+                <h5><a href="index.html#section7">Text</a></h5>
+                <ul id="dynamic-sidebar" class="nav flex-column">
+                </ul>
+            </aside>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script type="text/javascript" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="article_script.js"></script>
+    <script>
+        hljs.highlightAll();
+    </script>
+</body>
+
+</html>

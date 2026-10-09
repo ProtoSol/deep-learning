@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="laptop_coding_48.png" type="image/png">
+    <title>AlexNet</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" rel="stylesheet">
+    <link href="article_style.css" rel="stylesheet">
+    <style>
+        td.cifar-class-name {
+            width:100px;
+            font-weight:bold;
+        }
+        img.cifar-sample {
+            width:32px;
+            height:32px;
+            border-radius: 0;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <nav class="col-md-2 left-sidebar">
+
+            </nav>
+
+            <main class="col-md-8 content">
+                <h2 class="custom-title">3.2 AlexNet</h2>
+                <p class="title-subtext">ImageNet Classification with Deep Convolutional Neural Networks</p>
+                <p style="color: #a0a0a0;">Created Date: 2025-06-14</p>
+                <p>We trained a large, deep <a href="cnn_classify_stratch.html">convolutional neural network</a> to classify the 1.2 million high-resolution images in the ImageNet LSVRC-2010 contest into the 1000 different classes. On the test data, we achieved top-1 and top-5 error rates of 37.5% and 17.0% which is considerably better than the previous state-of-the-art.</p>
+                <p>The neural network, which has 60 million parameters and 650,000 neurons, consists of five <a href="cnn_classify_stratch.html#convolution">convolutional layers</a>, some of which are followed by <a href="cnn_classify_stratch.html#pooling">max-pooling layers</a>, and three fully-connected layers with a final 1000-way softmax. To make training faster, we used non-saturating neurons and a very efficient GPU implementation of the convolution operation.</p>
+                <p>To reduce overfitting in the fully-connected layers we employed a recently-developed regularization method called "dropout" that proved to be very effective. We also entered a variant of this model in the ILSVRC-2012 competition and achieved a winning top-5 test error rate of 15.3%, compared to 26.2% achieved by the second-best entry.</p>
+                
+                <h3>3.2.1 Introduction</h3>
+                <p>Current approaches to object recognition make essential use of machine learning methods. To improve their performance, we can collect larger datasets, learn more powerful models, and use better techniques for preventing overfitting.</p>
+                <p>Until recently, datasets of labeled images were relatively small — on the order of tens of thousands of images (e.g., <a href="https://www.cs.toronto.edu/~kriz/cifar.html">CIFAR-10/100</a>). Simple recognition tasks can be solved quite well with datasets of this size, especially if they are augmented with label-preserving transformations. For example, the current best error rate on the <a href="data_represent.html#mnist">MNIST</a> digit-recognition task (&lt;0.3%) approaches human performance.</p>
+
+                <table style="margin: 20px auto;">
+                    <tr>
+                        <td class="cifar-class-name">airplane</td>
+                        <td><img src="res/03/cifar-10-sample/airplane1.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/airplane2.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/airplane3.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/airplane4.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/airplane5.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/airplane6.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/airplane7.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/airplane8.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/airplane9.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/airplane10.png" class="cifar-sample"/></td>
+                    </tr>
+                    <tr>
+                        <td class="cifar-class-name">automobile</td>
+                        <td><img src="res/03/cifar-10-sample/automobile1.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/automobile2.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/automobile3.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/automobile4.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/automobile5.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/automobile6.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/automobile7.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/automobile8.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/automobile9.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/automobile10.png" class="cifar-sample"/></td>
+                    </tr>
+                    <tr>
+                        <td class="cifar-class-name">bird</td>
+                        <td><img src="res/03/cifar-10-sample/bird1.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/bird2.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/bird3.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/bird4.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/bird5.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/bird6.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/bird7.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/bird8.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/bird9.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/bird10.png" class="cifar-sample"/></td>
+                    </tr>
+                    <tr>
+                        <td class="cifar-class-name">cat</td>
+                        <td><img src="res/03/cifar-10-sample/cat1.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/cat2.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/cat3.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/cat4.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/cat5.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/cat6.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/cat7.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/cat8.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/cat9.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/cat10.png" class="cifar-sample"/></td>
+                    </tr>
+                    <tr>
+                        <td class="cifar-class-name">deer</td>
+                        <td><img src="res/03/cifar-10-sample/deer1.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/deer2.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/deer3.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/deer4.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/deer5.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/deer6.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/deer7.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/deer8.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/deer9.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/deer10.png" class="cifar-sample"/></td>
+                    </tr>
+                    <tr>
+                        <td class="cifar-class-name">dog</td>
+                        <td><img src="res/03/cifar-10-sample/dog1.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/dog2.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/dog3.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/dog4.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/dog5.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/dog6.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/dog7.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/dog8.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/dog9.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/dog10.png" class="cifar-sample"/></td>
+                    </tr>
+                    <tr>
+                        <td class="cifar-class-name">frog</td>
+                        <td><img src="res/03/cifar-10-sample/frog1.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/frog2.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/frog3.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/frog4.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/frog5.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/frog6.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/frog7.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/frog8.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/frog9.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/frog10.png" class="cifar-sample"/></td>
+                    </tr>
+                    <tr>
+                        <td class="cifar-class-name">horse</td>
+                        <td><img src="res/03/cifar-10-sample/horse1.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/horse2.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/horse3.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/horse4.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/horse5.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/horse6.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/horse7.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/horse8.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/horse9.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/horse10.png" class="cifar-sample"/></td>
+                    </tr>
+                    <tr>
+                        <td class="cifar-class-name">ship</td>
+                        <td><img src="res/03/cifar-10-sample/ship1.png" class="cifar-sample" /></td>
+                        <td><img src="res/03/cifar-10-sample/ship2.png" class="cifar-sample" /></td>
+                        <td><img src="res/03/cifar-10-sample/ship3.png" class="cifar-sample" /></td>
+                        <td><img src="res/03/cifar-10-sample/ship4.png" class="cifar-sample" /></td>
+                        <td><img src="res/03/cifar-10-sample/ship5.png" class="cifar-sample" /></td>
+                        <td><img src="res/03/cifar-10-sample/ship6.png" class="cifar-sample" /></td>
+                        <td><img src="res/03/cifar-10-sample/ship7.png" class="cifar-sample" /></td>
+                        <td><img src="res/03/cifar-10-sample/ship8.png" class="cifar-sample" /></td>
+                        <td><img src="res/03/cifar-10-sample/ship9.png" class="cifar-sample" /></td>
+                        <td><img src="res/03/cifar-10-sample/ship10.png" class="cifar-sample" /></td>
+                    </tr>
+                    <tr>
+                        <td class="cifar-class-name">truck</td>
+                        <td><img src="res/03/cifar-10-sample/truck1.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/truck2.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/truck3.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/truck4.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/truck5.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/truck6.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/truck7.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/truck8.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/truck9.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/truck10.png" class="cifar-sample"/></td>
+                    </tr>
+                </table>
+                <p style="text-align: center; color: #555555;">Figure 1 - The CIFAR-10 Dataset</p>
+
+                <p>But objects in realistic settings exhibit considerable variability, so to learn to recognize them it is necessary to use much larger training sets. And indeed, the shortcomings of small image datasets have been widely recognized, but it has only recently become possible to collect labeled datasets with millions of images.</p>
+                <p>The new larger datasets include LabelMe, which consists of hundreds of thousands of fully-segmented images, and <a href="https://www.image-net.org/">ImageNet</a>, which consists of over 15 million labeled high-resolution images in over 22,000 categories.</p>
+
+                <p>To learn about thousands of objects from millions of images, we need a model with a large learning capacity. However, the immense complexity of the object recognition task means that this problem cannot be specified even by a dataset as large as ImageNet, so our model should also have lots of prior knowledge to compensate for all the data we don’t have.</p>
+                <p>Convolutional neural networks (CNNs) constitute one such class of models. Their capacity can be controlled by varying their depth and breadth, and they also make strong and mostly correct assumptions about the nature of images (namely, stationarity of statistics and locality of pixel dependencies).</p>
+                <p>Thus, compared to standard feedforward neural networks with similarly-sized layers, CNNs have much fewer connections and parameters and so they are easier to train, while their theoretically-best performance is likely to be only slightly worse.</p>
+                <p>Despite the attractive qualities of CNNs, and despite the relative efficiency of their local architecture, they have still been prohibitively expensive to apply in large scale to high-resolution images. Luckily, current GPUs, paired with a highly-optimized implementation of 2D convolution, are powerful enough to facilitate the training of interestingly-large CNNs, and recent datasets such as ImageNet contain enough labeled examples to train such models without severe overfitting.</p>
+
+                <p>The specific contributions of this paper are as follows: we trained one of the largest convolutional neural networks to date on the subsets of ImageNet used in the ILSVRC-2010 and ILSVRC-2012 competitions and achieved by far the best results ever reported on these datasets. We wrote a highly-optimized GPU implementation of 2D convolution and all the other operations inherent in training convolutional neural networks, which we make available publicly.</p>
+                <p>Our network contains a number of new and unusual features which improve its performance and reduce its training time, which are detailed in <a href="#section3">Section 3</a>. The size of our network made overfitting a significant problem, even with 1.2 million labeled training examples, so we used several effective techniques for preventing overfitting, which are described in <a href="#section4">Section 4</a>.</p>
+                <p>Our final network contains five convolutional and three fully-connected layers, and this depth seems to be important: we found that removing any convolutional layer (each of which contains no more than 1% of the model’s parameters) resulted in inferior performance.</p>
+                <p>In the end, the network’s size is limited mainly by the amount of memory available on current GPUs and by the amount of training time that we are willing to tolerate. Our network takes between five and six days to train on two GTX 580 3GB GPUs. All of our experiments suggest that our results can be improved simply by waiting for faster GPUs and bigger datasets to become available.</p>
+
+                <h3 id="image-net">3.2.2 The Dataset</h3>
+                <p><a href="https://www.image-net.org/index.php">ImageNet</a> is a dataset of over 15 million labeled high-resolution images belonging to roughly 22,000 categories. The images were collected from the web and labeled by human labelers using Amazon’s Mechanical Turk crowd-sourcing tool. Starting in 2010, as part of the Pascal Visual Object Challenge, an annual competition called the <em>ImageNet Large-Scale Visual Recognition Challenge (ILSVRC)</em> has been held. ILSVRC uses a subset of ImageNet with roughly 1000 images in each of 1000 categories. In all, there are roughly 1.2 million training images, 50,000 validation images, and 150,000 testing images.</p>
+                <img src="res/03/sample_imagenet.jpg" alt="Sample Images" width="500">
+                <p style="text-align: center; color: #555555;">Figure 2 - Sample Images from ImageNet</p>
+
+                <p>ILSVRC-2010 is the only version of ILSVRC for which the test set labels are available, so this is the version on which we performed most of our experiments. Since we also entered our model in the ILSVRC-2012 competition, in <a href="#section6">Section 6</a> we report our results on this version of the dataset as well, for which test set labels are unavailable. On ImageNet, it is customary to report two error rates: top-1 and top-5, where the top-5 error rate is the fraction of test images for which the correct label is not among the five labels considered most probable by the model.</p>
+                <p>ImageNet consists of variable-resolution images, while our system requires a constant input dimensionality. Therefore, we down-sampled the images to a fixed resolution of \(256 \times 256\).  Given a rectangular image, we first rescaled the image such that the shorter side was of length 256, and then cropped out the central \(256 \times 256\) patch from the resulting image. We did not pre-process the images in any other way, except for subtracting the mean activity over the training set from each pixel. So we trained our network on the (centered) raw RGB values of the pixels.</p>
+
+                <h3 id="section3">3.2.3 The Architecture</h3>
+                <p>The architecture of our network is summarized in Figure 3. It contains eight learned layers - five convolutional and three fully-connected. Below, we describe some of the novel or unusual features of our network’s architecture. Sections 3.1 - 3.4 are sorted according to our estimation of their importance, with the most important first.</p>
+
+                <img src="res/03/arch_alexnet.png" alt="Architecture of AlexNet" width="600">
+                <p style="text-align: center; color: #555555;">Figure 3 - Architecture of AlexNet</p>
+                <p>An illustration of the architecture of our CNN, explicitly showing the delineation of responsibilities between the two GPUs. One GPU runs the layer-parts at the top of the figure while the other runs the layer-parts at the bottom. </p>
+                
+                <h4>3.2.3.1 ReLU Nonlinearity</h4>
+                <p>The standard way to model a neuron's output \(f\) as a function of its input \(x\) is with \(f(x) = tanh(x)\) or \(f(x) = \frac{1}{1 + e^{-x}}\).  In terms of training time with gradient descent, these saturating nonlinearities are much slower than the non-saturating nonlinearity \(f(x) = max(0, x)\). Following Nair and Hinton, we refer to neurons with this nonlinearity as <a href="activation_function.html#relu">Rectified Linear Units (ReLUs)</a>.</p>
+                <p>Deep convolutional neural networks with ReLUs train several times faster than their equivalents with tanh units.</p>
+                <p>We are not the first to consider alternatives to traditional neuron models in CNNs. For example, Jarrett et al. claim that the nonlinearity \(f(x) = |tanh(x)|\) works particularly well with their type of contrast normalization followed by local average pooling on the Caltech-101 dataset.</p>
+                <p>However, on this dataset the primary concern is preventing overfitting, so the effect they are observing is different from the accelerated ability to fit the training set which we report when using ReLUs. Faster learning has a great influence on the performance of large models trained on large datasets.</p>
+    
+                <h4>3.2.3.2 Training on Multiple GPUs</h4>
+                <p>A single GTX 580 GPU has only 3GB of memory, which limits the maximum size of the networks that can be trained on it. It turns out that 1.2 million training examples are enough to train networks which are too big to fit on one GPU.</p>
+                <p>Therefore we spread the net across two GPUs. Current GPUs are particularly well-suited to cross-GPU parallelization, as they are able to read from and write to one another’s memory directly, without going through host machine memory.</p>
+
+                <p class="comment">For teaching purposes, we will not implement the architecture using two GPUs. Instead, we will train it on a single GPU, with 5 convolutional layers and 3 fully connected layers, similar to the architecture shown above, using ReLU activation functions.</p>
+
+                <h4 style="color: gray;">3.2.3.3 Local Response Normalization</h4>
+                <p>ReLUs have the desirable property that they do not require input normalization to prevent them from saturating. If at least some training examples produce a positive input to a ReLU, learning will happen in that neuron.</p>
+                <p>However, we still find that the following local normalization scheme aids generalization. Denoting by \(a_{x, y}^i\) the activity of a neuron computed by applying kernel \(i\) at position \(x, y\) and then applying the ReLU nonlinearity, the response-normalized activity \(b_{x, y}^i\) is given by the expression:</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(b_{x, y}^i = a_{x, y}^i / {(k + \alpha \sum_{j=max(0, i-n/2)}^{min(N-1, i+n/2)} {(a_{x, y}^j)}^2)}^{\beta}\)
+                </div>
+                <p>where the sum runs over \(n\) "adjacent" kernel maps at the same spatial position, and \(N\) is the total number of kernels in the layer.</p>
+
+                <p class="comment">However, over time, local response normalization has been largely abandoned. Many experiments showed that removing LRN had little or no negative impact, and in some cases, it even improved performance.</p>
+
+                <h4 id="overlap_pooling">3.2.3.4 Overlapping Pooling</h4>
+                <p>Pooling layers in CNNs summarize the outputs of neighboring groups of neurons in the same kernel map. Traditionally, the neighborhoods summarized by adjacent pooling units do not overlap. To be more precise, a pooling layer can be thought of as consisting of a grid of pooling units spaced \(s\) pixels apart, each summarizing a neighborhood of size \(z \times z\) centered at the location of the pooling unit.</p>
+                <p>If we set \(s = z\), we obtain traditional local pooling as commonly employed in CNNs. If we set \(s \lt z\), we obtain <strong>overlapping pooling</strong>. This is what we use throughout our network, with \(s = 2\) and \(z = 3\). This scheme reduces the top-1 and top-5 error rates by 0.4% and 0.3%, respectively, as compared with the non-overlapping scheme \(s = 2\), \(z = 2\), which produces output of equivalent dimensions. We generally observe during training that models with overlapping pooling find it slightly more difficult to overfit.</p>
+
+                <a href="https://drive.google.com/file/d/1gY8K5W5dlr3JJv6GVE0gCZjaDahpJLD7/view?usp=sharing">
+                    <img src="res/03/overlap_pooling.png" alt="Overlapping Pooling">
+                </a>
+                <p style="text-align: center; color: #555555;">Figure 4 - Overlapping Pooling</p>
+
+                <h4>3.2.3.5 Overall Architecture</h4>
+                <p>Now we are ready to describe the overall architecture of our CNN. As depicted in Figure 3, the net contains eight layers with weights; the first five are convolutional and the remaining three are fully-connected. The output of the last fully-connected layer is fed to a 1000-way softmax which produces a distribution over the 1000 class labels.</p>
+                <p>Our network maximizes the multinomial logistic regression objective, which is equivalent to maximizing the average across training cases of the log-probability of the correct label under the prediction distribution.</p>
+                <p>The kernels of the second, fourth, and fifth convolutional layers are connected only to those kernel maps in the previous layer which reside on the same GPU (see Figure 3). The kernels of the third convolutional layer are connected to all kernel maps in the second layer.  The neurons in the fully-connected layers are connected to all neurons in the previous layer.</p>
+                <p>Response-normalization layers follow the first and second convolutional layers. Max-pooling layers, of the kind described in <a href="#overlap_pooling">Section 3.4</a>, follow both response-normalization layers as well as the fifth convolutional layer. The ReLU non-linearity is applied to the output of every convolutional and fully-connected layer.</p>
+    
+                <p>The first convolutional layer filters the \(224 \times 224 \times 3\) input image with 96 kernels of size \(11 \times 11 \times 3\) with a stride of 4 pixels (this is the distance between the receptive field centers of neighboring neurons in a kernel map).</p>
+                <p>The second convolutional layer takes as input the (response-normalized and pooled) output of the first convolutional layer and filters it with 256 kernels of size \(5 \times 5 \times 48\). The third, fourth, and fifth convolutional layers are connected to one another without any intervening pooling or normalization layers.</p>
+                <p>The third convolutional layer has 384 kernels of size \(3 \times 3 \times 256\) connected to the (normalized, pooled) outputs of the second convolutional layer. The fourth convolutional layer has 384 kernels of size \(3 \times 3 \times 192\) , and the fifth convolutional layer has 256 kernels of size \(3 \times 3 \times 192\). The fully-connected layers have 4096 neurons each.</p>
+
+                <h3 id="section4">3.2.4 Reducing Overfitting</h3>
+                <p>Our neural network architecture has 60 million parameters. Although the 1000 classes of ILSVRC make each training example impose 10 bits of constraint on the mapping from image to label, this turns out to be insufficient to learn so many parameters without considerable overfitting. Below, we describe the two primary ways in which we combat overfitting.</p>
+
+                <h4>3.2.4.1 Data Augmentation</h4>
+                <p>The easiest and most common method to reduce overfitting on image data is to artificially enlarge the dataset using label-preserving transformations. We employ two distinct forms of data augmentation, both of which allow transformed images to be produced from the original images with very little computation, so the transformed images do not need to be stored on disk.</p>
+                <p>In our implementation, the transformed images are generated in Python code on the CPU while the GPU is training on the previous batch of images. So these data augmentation schemes are, in effect, computationally free.</p>
+                <p>The first form of data augmentation consists of generating image translations and horizontal reflections. We do this by extracting random \(224 \times 224\) patches (and their horizontal reflections) from the \(256 \times 256\) images and training our network on these extracted patches.</p>
+                <p>This increases the size of our training set by a factor of 2048, though the resulting training examples are, of course, highly interdependent. Without this scheme, our network suffers from substantial overfitting, which would have forced us to use much smaller networks.</p>
+                <p>At test time, the network makes a prediction by extracting five \(224 \times 224\) patches (the four corner patches and the center patch) as well as their horizontal reflections (hence ten patches in all), and averaging the predictions made by the network’s softmax layer on the ten patches.</p>
+
+                <p>The second form of data augmentation consists of altering the intensities of the RGB channels in training images. Specifically, we perform PCA on the set of RGB pixel values throughout the ImageNet training set. To each training image, we add multiples of the found principal components, with magnitudes proportional to the corresponding eigenvalues times a random variable drawn from a Gaussian with mean zero and standard deviation 0.1. Therefore to each RGB image pixel \(I_{xy} = {[I_{xy}^R, I_{xy}^G, I_{xy}^B]}^T\) we add the following quantity:</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \({[p_1, p_2, p_3][\alpha_1 \lambda_1, \alpha_2 \lambda_2, \alpha_3 \lambda_3]}^T\)
+                </div>
+                <p>where \(p_i\) and \(\lambda_i\) are \(i\)th eigenvector and eigenvalue of the \(3 \times 3\) covariance matrix of RGB pixel values, respectively, and \(a_i\) is the aforementioned random variable. Each \(a_i\) is drawn only once for all the pixels of a particular training image until that image is used for training again, at which point it is re-drawn.</p>
+                <p>This scheme approximately captures an important property of natural images, namely, that object identity is invariant to changes in the intensity and color of the illumination. This scheme reduces the top-1 error rate by over 1%.</p>
+
+                <h4 id="dropout">3.2.4.2 Dropout</h4>
+                <p>Combining the predictions of many different models is a very successful way to reduce test errors, but it appears to be too expensive for big neural networks that already take several days to train. There is, however, a very efficient version of model combination that only costs about a factor of two during training.</p>
+                <p>The recently-introduced technique, called <em>"dropout"</em>, consists of setting to zero the output of each hidden neuron with probability 0.5. The neurons which are "dropout out" in this way do not contribute to the forward pass and do not participate in backpropagation.</p>
+                <p>So every time an input is presented, the neural network samples a different architecture, but all these architectures share weights. This technique reduces complex co-adaptations of neurons, since a neuron cannot rely on the presence of particular other neurons.</p>
+                <p>It is, therefore, forced to learn more robust features that are useful in conjunction with many different random subsets of the other neurons. At test time, we use all the neurons but multiply their outputs by 0.5, which is a reasonable approximation to taking the geometric mean of the predictive distributions produced by the exponentially-many dropout networks.</p>
+                <p>We use dropout in the first two fully-connected layers of Figure 3. Without dropout, our network exhibits substantial overfitting. Dropout roughly doubles the number of iterations required to converge.</p>
+
+                <h3>3.2.5 Details of Learning</h3>
+                <p>We trained our models using stochastic gradient descent with a batch size of 128 examples, momentum of 0.9, and weight decay of 0.0005. We found that this small amount of weight decay was important for the model to learn.</p>
+                <p>In other words, weight decay here is not merely a regularizer: it reduces the model’s training error. The update rule for weight \(w\) was:</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \[
+                    \begin{flalign*}
+                    & v_{i+1} := 0.9 \cdot v_i - 0.0005 \cdot \epsilon \cdot w_i - \epsilon \cdot {\left[ \frac{\partial L}{\partial w}|w_i \right]}_{D_i} \\
+                    & w_{i+1} := w_i + v_{i+1}
+                    \end{flalign*}
+                    \]
+                </div>
+                <p>where \(i\) is the iteration index, \(v\) is the momentum variable, \(\epsilon\) is the learning rate, and \({\left[ \frac{\partial L}{\partial w}|w_i \right]}_{D_i}\) is the average over the \(i\)th batch \(D_i\) of the derivative of the objective with respect to \(w\), evaluated at \(w_i\).</p>
+                <p>We initialized the weights in each layer from a zero-mean Gaussian distribution with standard deviation 0.01. We initialized the neuron biases in the second, fourth, and fifth convolutional layers, as well as in the fully-connected hidden layers, with the constant 1. This initialization accelerates the early stages of learning by providing the ReLUs with positive inputs. We initialized the neuron biases in the remaining layers with the constant 0.</p>
+                <p>We used an equal learning rate for all layers, which we adjusted manually throughout training. The heuristic which we followed was to divide the learning rate by 10 when the validation error rate stopped improving with the current learning rate. The learning rate was initialized at 0.01 and reduced three times prior to termination. We trained the network for roughly 90 cycles through the training set of 1.2 million images, which took five to six days on two NVIDIA GTX 580 3GB GPUs.</p>
+                
+                <h3 id="section6">3.2.6 Results</h3>
+                <p>Our network achieves top-1 and top-5 test set error rates of 37.5% and 17.0% on ILSVRC-2010. The best performance achieved during the ILSVRC-2010 competition was 47.1% and 28.2% with an approach that averages the predictions produced from six sparse-coding models trained on different features, and since then the best published results are 45.7% and 25.7% with an approach that averages the predictions of two classifiers trained on Fisher Vectors (FVs) computed from two types of densely-sampled features.</p>
+                <p>In short, the model achieved excellent performance at the time and attracted widespread attention to deep neural networks. The three authors soon founded a company, which was later acquired by Google for a high price.</p>
+                <p>File <a href="https://github.com/artinte/deep-learning/blob/develop/03_cnn/2_alexnet/alexnet_torch.py">alexnet_torch.py</a> uses PyTorch to quickly implement a similar convolutional architecture. Since the ImageNet dataset is too large, the MNIST dataset is used instead. <code>AlexNet</code> is the core class:</p>
+                <pre><code>class AlexNet(torch.nn.Module):
+    def __init__(self, num_classes=1000):
+        super(AlexNet, self).__init__()
+        self.features = torch.nn.Sequential(
+            # first conv layer
+            torch.nn.Conv2d(3, 64, kernel_size=11, stride=4, padding=2),
+            torch.nn.ReLU(inplace=True),
+            torch.nn.MaxPool2d(kernel_size=3, stride=2, padding=0),
+            # second conv layer
+            torch.nn.Conv2d(64, 192, kernel_size=5, stride=1, padding=2),
+            torch.nn.ReLU(inplace=True),
+            torch.nn.MaxPool2d(kernel_size=3, stride=2, padding=0),
+            # third conv layer
+            torch.nn.Conv2d(192, 384, kernel_size=3, padding=1),
+            torch.nn.ReLU(inplace=True),
+            # fourth conv layer
+            torch.nn.Conv2d(384, 256, kernel_size=3, padding=1),
+            torch.nn.ReLU(inplace=True),
+            # fifth conv layer
+            torch.nn.Conv2d(256, 256, kernel_size=3, padding=1),
+            torch.nn.ReLU(inplace=True),
+            torch.nn.MaxPool2d(kernel_size=3, stride=2),
+        )
+
+        self.classifier = torch.nn.Sequential(
+            torch.nn.Dropout(),
+            torch.nn.Linear(256 * 6 * 6, 4096),
+            torch.nn.ReLU(inplace=True),
+            torch.nn.Dropout(),
+            torch.nn.Linear(4096, 4096),
+            torch.nn.ReLU(inplace=True),
+            torch.nn.Linear(4096, num_classes),
+        )
+
+    def forward(self, x):
+        x = self.features(x)
+        x = torch.flatten(x, 1)
+        x = self.classifier(x)
+        return x</code></pre>
+    
+                <p>You can run <span class="highlight">alexnet_torch.py</span> script, the process are as follows:</p>
+                <pre><samp>Epoch [1/5], Loss: 0.0909
+Epoch [2/5], Loss: 0.0422
+Epoch [3/5], Loss: 0.0452
+Epoch [4/5], Loss: 0.0760
+Epoch [5/5], Loss: 0.0806
+Accuracy of the model: 99.12%
+                </samp></pre>
+                <p>In the end, we achieved an accuracy of <em>99.12%</em>.</p>
+
+                <h3>3.1.7 Discussion</h3>
+                <p>Our results show that a large, deep convolutional neural network is capable of achieving record-breaking results on a highly challenging dataset using purely supervised learning. It is notable that our network’s performance degrades if a single convolutional layer is removed. For example, removing any of the middle layers results in a loss of about 2% for the top-1 performance of the network. So the depth really is important for achieving our results.</p>
+                <p>To simplify our experiments, we did not use any unsupervised pre-training even though we expect that it will help, especially if we obtain enough computational power to significantly increase the size of the network without obtaining a corresponding increase in the amount of labeled data.</p>
+                <p>Thus far, our results have improved as we have made our network larger and trained it longer but we still have many orders of magnitude to go in order to match the infero-temporal pathway of the human visual system.</p>
+                <p>Ultimately we would like to use very large and deep convolutional nets on video sequences where the temporal structure provides very helpful information that is missing or far less obvious in static images.</p>
+                <div class="navigation">
+                    <a href="cnn_classify_stratch.html">Prev: 3.1 CNN from Stratch</a>
+                    <a href="res_net.html">Next: 3.3 ResNet</a>
+                </div>
+            </main>
+
+            <aside class="col-md-2 right-sidebar">
+                <h5><a href="index.html#section3">Convolutional Network</a></h5>
+                <ul id="dynamic-sidebar" class="nav flex-column">
+                </ul>
+            </aside>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script type="text/javascript" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="article_script.js"></script>
+    <script>
+        hljs.highlightAll();
+    </script>
+</body>
+
+</html>

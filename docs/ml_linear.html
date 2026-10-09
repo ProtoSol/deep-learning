@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="laptop_coding_48.png" type="image/png">
+    <title>Linear Models</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" rel="stylesheet">
+    <link href="article_style.css" rel="stylesheet">
+</head>
+
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <nav class="col-md-2 left-sidebar"></nav>
+
+            <main class="col-md-8 content">
+                <h2 class="custom-title">0.1 Linear Models</h2>
+                <p class="title-subtext"></p>
+                <p style="color: #a0a0a0;">Created Date: 2026-10-09</p>
+
+                <p>A linear model predicts with a weighted sum. The four versions on this page differ in the penalty and in the loss. All four live in <a href="https://github.com/artinte/deep-learning/blob/develop/00_ml/linear_models.py">linear_models.py</a>, which is NumPy and one assert per fit. Run <code>python 00_ml/linear_models.py</code>.</p>
+
+                <h3>0.1.1 Linear regression</h3>
+                <p>With a column of ones in \(X\), the weights that minimize the squared error have a closed form when \(X^\top X\) is invertible:</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(w = (X^\top X)^{-1} X^\top y\)
+                </div>
+                <p>On the points \((0,1),\ (1,3),\ (2,5),\ (3,7)\) that equation returns \(w = (1, 2)\), the intercept and the slope of \(y = 1 + 2x\). The script checks that vector.</p>
+                <p>Josh Starmer's <a href="https://www.youtube.com/watch?v=PaFPbb66DxQ">The Main Ideas of Fitting a Line to Data</a> draws the squared gaps this formula is minimizing.</p>
+
+                <h3>0.1.2 Ridge</h3>
+                <p>Ridge adds a penalty on the size of \(w\). Large \(\lambda\) pulls every weight toward zero, which is what you want when columns of \(X\) are almost copies of each other and the plain inverse gets wild.</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(w = (X^\top X + \lambda I)^{-1} X^\top y\)
+                </div>
+                <p>Same four points, \(\lambda = 10\). The script checks that this \(w\) is shorter than the unpenalized one. Watch <a href="https://www.youtube.com/watch?v=Q81RR3yKn30">Regularization Part 1: Ridge (L2) Regression</a>.</p>
+
+                <h3>0.1.3 Lasso</h3>
+                <p>Lasso swaps the squared penalty for a sum of absolute values. The absolute value has a corner at zero, so a weight can land exactly on zero and the matching column drops out. There is no closed form. On a tiny problem, coordinate descent updates one weight at a time and shrinks it with the soft threshold:</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(S(z, \lambda) = \mathrm{sign}(z)\,\max(|z| - \lambda,\ 0)\)
+                </div>
+                <p>The script builds \(y = 3 \times (\text{signal})\) plus a noise column, runs forty coordinate passes, and checks that the signal weight is larger than the noise weight. Watch <a href="https://www.youtube.com/watch?v=NGf0voTMlcs">Regularization Part 2: Lasso (L1) Regression</a>.</p>
+
+                <h3>0.1.4 Logistic regression</h3>
+                <p>A sigmoid turns the weighted sum into a probability. The loss is binary cross-entropy, and a few gradient steps are enough to see it fall:</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(\sigma(z) = \dfrac{1}{1+e^{-z}}, \quad \ell = -\dfrac{1}{N}\sum_i \big[ y_i \log \sigma_i + (1-y_i)\log(1-\sigma_i) \big]\)
+                </div>
+                <p>Two points at \(x = -1\) labeled 0, two at \(x = 1\) labeled 1. After eighty steps the loss is lower and the two sides of the line sit on opposite sides of \(0.5\). Watch <a href="https://www.youtube.com/watch?v=yIYKR4sgzI8">StatQuest: Logistic Regression</a>.</p>
+
+                <div class="navigation">
+                    <a href="index.html#section00">Prev: Contents</a>
+                    <a href="ml_trees.html">Next: 0.2 Trees and Ensembles</a>
+                </div>
+            </main>
+
+            <aside class="col-md-2 right-sidebar">
+                <h5><a href="index.html#section00">Classical Machine Learning</a></h5>
+                <ul id="dynamic-sidebar" class="nav flex-column"></ul>
+            </aside>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script type="text/javascript" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="article_script.js"></script>
+    <script>hljs.highlightAll();</script>
+</body>
+
+</html>

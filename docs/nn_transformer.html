@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="laptop_coding_48.png" type="image/png">
+    <title>nn.Transformer</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" rel="stylesheet">
+    <link href="article_style.css" rel="stylesheet">
+</head>
+
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <nav class="col-md-2 left-sidebar">
+
+            </nav>
+
+            <main class="col-md-8 content">
+                <h2 class="custom-title">5.3 nn.Transformer</h2>
+                <p class="title-subtext">Detailed explanation of the <a href="https://docs.pytorch.org/docs/stable/generated/torch.nn.Transformer.html">torch.nn.Transformer</a> interface.</p>
+                <p style="color: #a0a0a0;">Created Date: 2025-07-02</p>
+
+                <p>In this tutorial, we will provide a detailed introduction to the torch.nn.Transformer interface through two examples, helping you fully master its usage.</p>
+                <p>The first example is a generative model from the official PyTorch examples <a href="https://github.com/pytorch/examples/tree/main/word_language_model">word_language_model</a> . The second example is an English-to-German translation model, which is a very common example in text processing.</p>
+
+                <h3>5.3.1 Data Preprocess</h3>
+
+                <p>The <code>Dictionary</code> class is designed to map words to unique numerical IDs, a common practice in Natural Language Processing (NLP) to convert text into a format machine learning models can understand.</p>
+
+                <pre><code>class Dictionary(object):
+    def __init__(self):
+        self.word2idx = {}
+        self.idx2word = []
+
+    def add_word(self, word):
+        if word not in self.word2idx:
+            self.idx2word.append(word)
+            self.word2idx[word] = len(self.idx2word) - 1
+        return self.word2idx[word]
+
+    def __len__(self):
+        return len(self.idx2word)</code></pre>
+
+                <h3>5.3.2 World Language Model</h3>
+
+                <pre><code>class GPTModel(torch.nn.Transformer):
+    def __init__(self, ntoken, ninp, nhead, nhid, nlayers, dropout=0.1):
+        super(GPTModel, self).__init__(
+            d_model=ninp, nhead=nhead, dim_feedforward=nhid, num_encoder_layers=nlayers
+        )
+        self.src_mask = None
+        self.pos_encoder = PositionalEncoding(ninp, dropout)
+
+        self.input_emb = torch.nn.Embedding(ntoken, ninp)
+        self.ninp = ninp
+        self.decoder = torch.nn.Linear(ninp, ntoken)
+
+        self.init_weights()
+
+    def init_weights(self):
+        initrange = 0.1
+        torch.nn.init.uniform_(self.input_emb.weight, -initrange, initrange)
+        torch.nn.init.zeros_(self.decoder.bias)
+        torch.nn.init.uniform_(self.decoder.weight, -initrange, initrange)
+
+    def forward(self, src, has_mask=True):
+        if has_mask:
+            device = src.device
+            if self.src_mask is None or self.src_mask.size(0) != len(src):
+                mask = torch.log(torch.tril(torch.ones(len(src), len(src)))).to(device)
+                self.src_mask = mask
+        else:
+            self.src_mask = None
+
+        src = self.input_emb(src) * math.sqrt(self.ninp)
+        src = self.pos_encoder(src)
+        output = self.encoder(src, mask=self.src_mask)
+        output = self.decoder(output)
+        return torch.nn.functional.log_softmax(output, dim=-1)</code></pre>
+
+                <h3>5.3.3 torch.nn.Transformer</h3>
+                <p><code>torch.nn.Transformer</code> is the encoder-decoder block from the paper: multi-head attention, a feed-forward network, residual connections, and layer norm, stacked. The constructor sets the widths; the mask helper below keeps the decoder from reading future tokens.</p>
+
+                <h4>5.3.3.1 __init__ Function</h4>
+
+                <pre><code>class torch.nn.Transformer(d_model=512, nhead=8, num_encoder_layers=6, num_decoder_layers=6,
+    dim_feedforward=2048, dropout=0.1, activation=&lt;function relu&gt;,
+    custom_encoder=None, custom_decoder=None, layer_norm_eps=1e-05,
+    batch_first=False, norm_first=False, bias=True, device=None, dtype=None)</code></pre>
+
+                <p>This Transformer layer implements the original Transformer architecture described in the Attention Is All You Need paper. The intent of this layer is as a reference implementation for foundational understanding and thus it contains only limited features relative to newer Transformer architectures. </p>
+
+                <ul class="with-bullets">
+                    <li><p>d_model (int) – the number of expected features in the encoder/decoder inputs (default=512).</p></li>
+                    <li><p>nhead (int) – the number of heads in the multiheadattention models (default=8).</p></li>
+                    <li><p>num_encoder_layers (int) – the number of sub-encoder-layers in the encoder (default=6).</p></li>
+                    <li><p>num_decoder_layers (int) – the number of sub-decoder-layers in the decoder (default=6).</p></li>
+                    <li><p>dim_feedforward (int) – the dimension of the feedforward network model (default=2048).</p></li>
+                    <li><p>dropout (float) – the dropout value (default=0.1).</p></li>
+                    <li><p>activation (Union[str, Callable[[Tensor], Tensor]]) – the activation function of encoder/decoder intermediate layer, can be a string (“relu” or “gelu”) or a unary callable. Default: relu.</p></li>
+                    <li><p>custom_encoder (Optional[Any]) – custom encoder (default=None).</p></li>
+                    <li><p>custom_decoder (Optional[Any]) – custom decoder (default=None).</p></li>
+                    <li><p>layer_norm_eps (float) – the eps value in layer normalization components (default=1e-5).</p></li>
+                    <li><p>batch_first (bool) – If True, then the input and output tensors are provided as (batch, seq, feature). Default: False (seq, batch, feature).</p></li>
+                    <li><p>norm_first (bool) – if True, encoder and decoder layers will perform LayerNorms before other attention and feedforward operations, otherwise after. Default: False (after).</p></li>
+                    <li><p>bias (bool) – If set to False, Linear and LayerNorm layers will not learn an additive bias. Default: True.</p></li>
+                </ul>
+
+                <h4>5.3.3.2 forward Function</h4>
+                <pre><code>forward(src, tgt,
+    src_mask=None, tgt_mask=None, memory_mask=None,
+    src_key_padding_mask=None, tgt_key_padding_mask=None, memory_key_padding_mask=None,
+    src_is_causal=None, tgt_is_causal=None, memory_is_causal=False)</code></pre>
+                <p>Take in and process masked source/target sequences.</p>
+
+                <ul class="with-bullets">
+                    <li><p>src (Tensor) – the sequence to the encoder (required).</p></li>
+                    <li><p>tgt (Tensor) – the sequence to the decoder (required).</p></li>
+                    <li><p>src_mask (Optional[Tensor]) – the additive mask for the src sequence (optional).</p></li>
+                    <li><p>tgt_mask (Optional[Tensor]) – the additive mask for the tgt sequence (optional).</p></li>
+                    <li><p>memory_mask (Optional[Tensor]) – the additive mask for the encoder output (optional).</p></li>
+                    <li><p>src_key_padding_mask (Optional[Tensor]) – the Tensor mask for src keys per batch (optional).</p></li>
+                    <li><p>tgt_key_padding_mask (Optional[Tensor]) – the Tensor mask for tgt keys per batch (optional).</p></li>
+                    <li><p>memory_key_padding_mask (Optional[Tensor]) – the Tensor mask for memory keys per batch (optional).</p></li>
+                    <li><p>src_is_causal (Optional[bool]) – If specified, applies a causal mask as src_mask. Default: None; try to detect a causal mask. Warning: src_is_causal provides a hint that src_mask is the causal mask. Providing incorrect hints can result in incorrect execution, including forward and backward compatibility.</p></li>
+                    <li><p>tgt_is_causal (Optional[bool]) – If specified, applies a causal mask as tgt_mask. Default: None; try to detect a causal mask. Warning: tgt_is_causal provides a hint that tgt_mask is the causal mask. Providing incorrect hints can result in incorrect execution, including forward and backward compatibility.</p></li>
+                    <li><p>memory_is_causal (bool) – If specified, applies a causal mask as memory_mask. Default: False. Warning: memory_is_causal provides a hint that memory_mask is the causal mask. Providing incorrect hints can result in incorrect execution, including forward and backward compatibility.</p></li>
+                </ul>
+
+                <h4>5.3.3.3 generate_square_subsequent_mask Function</h4>
+                <p>Generate a square causal mask for the sequence.</p>
+                <p>The mask is a square whose side is the target length. Positions on and below the diagonal stay visible. Positions strictly above the diagonal are blocked, so token \(i\) cannot attend to any token \(j \gt i\). Decoder self-attention receives it as <code>tgt_mask</code>. Padding is a different argument. <code>src_key_padding_mask</code> and <code>tgt_key_padding_mask</code> drop entire keys, independent of order.</p>
+                <p><a href="https://github.com/artinte/deep-learning/blob/develop/05_transformer/3_transformer_api/translate/utils.py">create_mask</a> calls the helper on the target length and casts the result to bool. The source mask is left as zeros, because the encoder may look at every token that is not pad. <a href="https://github.com/artinte/deep-learning/blob/develop/05_transformer/3_transformer_api/translate/inference.py">greedy_decode</a> rebuilds the same square on every step, because the target prefix grows by one id at a time.</p>
+                <pre><code>tgt_mask = (
+    torch.nn.Transformer.generate_square_subsequent_mask(tgt_seq_len)
+    .to(device)
+    .bool()
+)</code></pre>
+
+                <h3>5.3.4 English-German Translation</h3>
+                <p><a href="https://github.com/artinte/deep-learning/blob/develop/05_transformer/3_transformer_api/translate/demo_nmt.py">demo_nmt.py</a> trains a full encoder–decoder on Multi30k. <a href="https://github.com/artinte/deep-learning/blob/develop/05_transformer/3_transformer_api/translate/transformer_model.py">TransformerModel</a> wraps <code>torch.nn.Transformer</code> with English and German embeddings, the sinusoidal encoding in <a href="https://github.com/artinte/deep-learning/blob/develop/05_transformer/3_transformer_api/translate/positional_encoding.py">positional_encoding.py</a>, and a linear generator over the German vocabulary. spaCy tokenizers in <a href="https://github.com/artinte/deep-learning/blob/develop/05_transformer/3_transformer_api/translate/preprocess.py">preprocess.py</a> build the two vocabularies, each starting with <code>&lt;unk&gt;</code>, <code>&lt;pad&gt;</code>, <code>&lt;bos&gt;</code>, and <code>&lt;eos&gt;</code>.</p>
+                <p>The run uses <code>d_model</code> 256, 8 heads, feed-forward width 512, 3 encoder layers, 3 decoder layers, dropout 0.1, and <code>batch_first=True</code>. Adam at learning rate 0.0005 minimizes cross-entropy with the pad index ignored, for 30 epochs. <a href="https://github.com/artinte/deep-learning/blob/develop/05_transformer/3_transformer_api/translate/train.py">train</a> clips the gradient norm to 1. After the loop, the first 32 test sentences are decoded with <code>greedy_decode</code> and printed next to the German reference. Corpus BLEU from <code>torchmetrics</code> is then computed on 100 training sentences, each paired with a one-item reference list. That score is a check on this small configuration.</p>
+
+                <h3>5.3.5 Detail</h3>
+                <p>A training step shifts the target by one position. <code>tgt[:, :-1]</code> is the decoder input and begins with <code>&lt;bos&gt;</code>. <code>tgt[:, 1:]</code> is the label and ends with <code>&lt;eos&gt;</code>. <code>create_mask</code> builds the causal target mask and the two padding masks. <code>TransformerModel.forward</code> embeds both sides, adds positions, and calls <code>torch.nn.Transformer</code>. The generator maps the decoder width back to the German vocabulary, and the loss compares those logits with <code>tgt_out</code>.</p>
+                <p>Free-running translation does not use that joint forward. <code>encode</code> runs the encoder once and keeps the memory. Each step appends one id to <code>ys</code>, rebuilds the square causal mask, and calls <code>decode</code>. <code>greedy_decode</code> takes the argmax at the last position. <code>topk_decode</code> draws inside the top \(k\) probabilities. <code>translate</code> drops <code>&lt;bos&gt;</code> and <code>&lt;eos&gt;</code> and joins the remaining German tokens. <a href="https://github.com/artinte/deep-learning/blob/develop/05_transformer/3_transformer_api/translate/evaluate.py">evaluate</a> is the teacher-forced validation loss, a different number from those decoded strings.</p>
+
+                <div class="navigation">
+                    <a href="transformer_paper.html">Prev: 5.2 Attention Is All You Need</a>
+                    <a href="transformer_stratch.html">Next: 5.4 Transformer from Stratch</a>
+                </div>
+            </main>
+
+            <aside class="col-md-2 right-sidebar">
+                <h5><a href="index.html#section5">Transformer</a></h5>
+                <ul id="dynamic-sidebar" class="nav flex-column">
+                </ul>
+            </aside>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script type="text/javascript" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="article_script.js"></script>
+    <script>
+        hljs.highlightAll();
+    </script>
+</body>
+
+</html>

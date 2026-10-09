@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="laptop_coding_48.png" type="image/png">
+    <title>Estimating Gradients</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" rel="stylesheet">
+    <link href="article_style.css" rel="stylesheet">
+</head>
+
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <nav class="col-md-2 left-sidebar">
+
+            </nav>
+
+            <main class="col-md-8 content">
+                <h2 class="custom-title">6.5 Estimating Gradients</h2>
+                <p class="title-subtext">Generative Modeling by Estimating Gradients of the Data Distribution</p>
+                <p style="color: #a0a0a0;">Created Date: 2025-05-24</p>
+                <p><a href="https://yang-song.net/blog/2021/score/">This blog</a> post focuses on a promising new direction for generative modeling. We can learn <strong>score functions</strong> (gradients of log probability density functions) on a large number of noise-perturbed data distributions, then generate samples with Langevin-type sampling.</p>
+                <p>The resulting generative models, often called score-based generative models, has several important advantages over existing model families: GAN-level sample quality without adversarial training, flexible model architectures, exact log-likelihood computation, and inverse problem solving without re-training models.</p>
+                <p>In this blog post, we will show you in more detail the intuition, basic concepts, and potential applications of score-based generative models.</p>
+                <h3>6.5.1 Introduction</h3>
+                <p>Existing generative modeling techniques can largely be grouped into two categories based on how they represent probability distributions.</p>
+                <ol>
+                    <li><p><strong>likelihood-based models</strong> - which directly learn the distribution’s probability density (or mass) function via (approximate) maximum likelihood. Typical likelihood-based models include autoregressive models, normalizing flow models, energy-based models (EBMs), and variational auto-encoders (VAEs).</p></li>
+                    <li><p><strong>implicit generative models</strong> - where the probability distribution is implicitly represented by a model of its sampling process. The most prominent example is generative adversarial networks (GANs), where new samples from the data distribution are synthesized by transforming a random Gaussian vector with a neural network.</p></li>
+                </ol>
+                <p>Likelihood-based models and implicit generative models, however, both have significant limitations. Likelihood-based models either require strong restrictions on the model architecture to ensure a tractable normalizing constant for likelihood computation, or must rely on surrogate objectives to approximate maximum likelihood training. Implicit generative models, on the other hand, often require adversarial training, which is notoriously unstable and can lead to mode collapse.</p>
+                <p>In this blog post, I will introduce another way to represent probability distributions that may circumvent several of these limitations. The key idea is to model the gradient of the log probability density function, a quantity often known as the (Stein) score function. Such score-based models are not required to have a tractable normalizing constant, and can be directly learned by score matching.</p>
+
+
+                <h3>6.5.2 Score-based Generative Modeling</h3>
+                <p>Suppose our dataset consists of i.i.d. samples \({\{x_i \in \mathbb{R}^D\}}_{i=1}^N\) from an unknown data distribution \(p_{data}(x)\). We define the score of a probability density \(p(x)\) to be \({\Delta}_x {log}_p(x)\). The <em>score network</em> \(s_{\theta} : \mathbb{R}^D \rightarrow \mathbb{R}^D\) is a neural network parameterized by \(\theta\), which will be trained to approximate the score of \(p_{data}(x)\).</p>
+                <p>The goal of generative modeling is to use the dataset to learn a model for generating new samples from \(p_{data}(x)\). The framework of score-based generative modeling has two ingredients: score matching and Langevin dynamics.</p>
+
+                <h3>6.5.2.1 Score Matching for Score Estimation</h3>
+                <p>Score matching is originally designed for learning non-normalized statistical models based on i.i.d. samples from an unknown data distribution. We repurpose it for score estimation. Explicit score matching would regress \(s_\theta(x)\) onto \(\nabla_x \log p_{\mathrm{data}}(x)\), which we do not have. Denoising score matching adds Gaussian noise of scale \(\sigma\) and trains the network to recover \(\nabla_x \log p_\sigma(x) = (\tilde{x} - x)/\sigma^2\) up to sign conventions: predict the noise, divide by \(\sigma\). The MNIST UNet in the previous chapter is that regression with \(\sigma\) written as the mix amount.</p>
+                <p>On a standard Gaussian \(\mathcal{N}(\mu, I)\) the score is known in closed form, \(s(x) = \mu - x\). That formula is the test in <a href="https://github.com/artinte/deep-learning/blob/develop/06_diffusion/5_score/langevin_scratch.py">langevin_scratch.py</a>: at \(x = \mu\) the score is the zero vector.</p>
+
+                <h3>6.5.2.2 Sampling with Langevin Dynamics</h3>
+                <p>Langevin dynamics can produce samples from a probability density \(p(x)\) using only the score function \(\nabla_x \log p(x)\). Given a fixed step size \(\epsilon &gt; 0\), and an initial value \(\hat{x}_0 \sim \pi(x)\) with \(\pi\) being a prior distribution, the Langevin method recursively computes the following:</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(\hat{x}_t = \hat{x}_{t-1} + \frac{\epsilon}{2} \nabla_x \log p(\hat{x}_{t-1}) + \sqrt{\epsilon}\, z_t\)
+                </div>
+                <p>where \(z_t \sim \mathcal{N}(0, I)\). The first extra term walks up the log-density. The second extra term is the noise that keeps the chain from collapsing onto a mode. After enough steps the cloud of \(\hat{x}\) has mean close to \(\mu\).</p>
+                <pre><code>def score(x):
+    return MEAN - x
+
+def langevin(steps=200, epsilon=0.05, n=64):
+    x = torch.randn(n, 2)
+    for _ in range(steps):
+        z = torch.randn_like(x)
+        x = x + 0.5 * epsilon * score(x) + epsilon ** 0.5 * z
+    return x</code></pre>
+                <p>The script starts 64 points at \(\mathcal{N}(0, I)\) and asserts that 200 steps with \(\epsilon = 0.05\) land within \(0.35\) of \(\mu = (1.5, -0.5)\). A learned score network replaces <code>score</code> in a diffusion sampler; the update is the same. The reverse process in chapter 6.4 is this walk with a schedule on \(\epsilon\) and a UNet for \(s_\theta\).</p>
+
+
+                <div class="navigation">
+                    <a href="diffusion_scratch.html">Prev: 6.4 Diffusion from Scratch</a>
+                    <a href="dd_prob_model.html">Next: 6.6 Diffusion Probability Model</a>
+                </div>
+            </main>
+
+            <aside class="col-md-2 right-sidebar">
+                <h5><a href="index.html#section6">Diffusion Model</a></h5>
+                <ul id="dynamic-sidebar" class="nav flex-column">
+                </ul>
+            </aside>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script type="text/javascript" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="article_script.js"></script>
+    <script>
+        hljs.highlightAll();
+    </script>
+</body>
+
+</html>

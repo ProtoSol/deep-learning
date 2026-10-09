@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="laptop_coding_48.png" type="image/png">
+    <title>Graph Foundation</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" rel="stylesheet">
+    <link href="article_style.css" rel="stylesheet">
+</head>
+
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <nav class="col-md-2 left-sidebar">
+
+            </nav>
+
+            <main class="col-md-8 content">
+                <h2 class="custom-title">15.1 Graph Foundation</h2>
+                <p class="title-subtext"></p>
+                <p style="color: #a0a0a0;">Created Date: 2025-05-18</p>
+
+                <h3>15.1.1 What is Graph?</h3>
+                <p>A graph is a type of nonlinear data structure, consisting of <strong>vertices</strong> and <strong>edges</strong>. A graph \(G\) can be abstractly represented as a collection of a set of vertices \(V\) and a set of edges \(E\). The following example shows a graph containing 5 vertices and 7 edges:</p>
+                <p class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(V = \{1, 2, 3, 4, 5\}\)
+                </p>
+                <p class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(E = \{(1, 2), (1, 3), (1, 5), (2, 3), (2, 4), (2, 5), (4, 5)\}\)
+                </p>
+                <p class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(G = \{V, E\}\)
+                </p>
+                <p>If vertices are viewed as nodes and edges as references (pointers) connecting the nodes, graphs can be seen as a data structure that extends from linked lists.</p>
+                <p>Compared to linear relationships (linked lists) and divide-and-conquer relationships (trees), network relationships (graphs) are more complex due to their higher degree of freedom, as show below:</p>
+
+                <h3>15.1.2 Common Types</h3>
+                <p>Graphs can be divided into undirected graphs and directed graphs depending on whether edges have direction:</p>
+                <ul class="with-bullets">
+                    <li><p>In undirected graphs, edges represent a "bidirectional" connection between two vertices, for example, the "friends" in Facebook.</p></li>
+                    <li><p>In directed graphs, edges have directionality, that is, the edges \(A \rightarrow B\) and \(A \leftarrow B\) are independent of each other. For example, the "follow" and "followed" relationship on Instagram.</p></li>
+                </ul>
+                <p>Depending on whether all vertices are connected, graphs can be divided into connected graphs and disconnected graphs:</p>
+                <ul class="with-bullets">
+                    <li><p>For connected graphs, it is possible to reach any other vertex starting from an arbitrary vertex.</p></li>
+                    <li><p>For disconnected graphs, there is at least one vertex that cannot be reached from an arbitrary starting vertex.</p></li>
+                </ul>
+                <p>We can also add a weight variable to edges, For example, in Instagram, the system sorts your follower and following list by the level of interaction between you and other users (likes, views, comments, etc.). Such an interaction network can be represented by a weighted graph.</p>
+                <p>Graph data structures include the following commonly used terms.</p>
+
+                <h3>15.1.3 Representation of Graphs</h3>
+                <p>Common representations of graphs include "adjacency matrix" and "adjacency list". The following examples use undirected graphs.</p>
+                <h5>Adjacency matrix</h5>
+                <p>Let the number of vertices in the graph be \(n\), the adjacency matrix uses an \(n \times n\), matrix to represent the graph, where each row (column) represents a vertex, and the matrix elements represent edges, with 1 or 0 indicating whether there is an edge between two vertices.</p>
+                <p>Let the adjacency matrix be \(M\), and the list of vertices be \(V\), then the matrix element \(M[i, j] = 1\)indicates there is an edge between vertex \(V[i]\) and \(V[j]\), conversely \(M[i, j] = 0\) indicates there is no edge between the two vertices.</p>
+                <p>Adjacency matrices have the following characteristics.</p>
+                <ul class="with-bullets">
+                    <li><p>A vertex cannot be connected to itself, so the elements on the main diagonal of the adjacency matrix are meaningless.</p></li>
+                    <li><p>For undirected graphs, edges in both directions are equivalent, thus the adjacency matrix is symmetric with regard to the main diagonal.</p></li>
+                    <li><p>By replacing the elements of the adjacency matrix from 1 and 0 to weights, we can represent weighted graphs.</p></li>
+                </ul>
+                <p>When representing graphs with adjacency matrices, it is possible to directly access matrix elements to obtain edges, resulting in efficient operations of addition, deletion, lookup, and modification, all with a time complexity of \(O(1)\). However, the space complexity of the matrix is \(O(n^2)\), which consumes more memory.</p>
+
+                <h3>15.1.4 Basic Graph Operations</h3>
+                <p>On an adjacency-matrix graph the edits are adding or removing a vertex, and adding or removing an edge. <a href="https://github.com/artinte/deep-learning/blob/develop/15_graph/1_foundation/graph_adjacency_matrix.py">graph_adjacency_matrix.py</a> stores a vertex list and a square 0/1 matrix. <code>add_vertex</code> appends the value and grows the matrix by one row and one column of zeros. <code>remove_vertex</code> deletes that index from the list, drops the matching row, and drops the matching column from every remaining row, so the matrix stays square.</p>
+                <p><code>add_edge(i, j)</code> writes 1 at both <code>(i, j)</code> and <code>(j, i)</code>, the undirected case from the previous section. <code>remove_edge</code> writes 0 in both positions. Either call raises <code>IndexError</code> on a self-loop, where the two indices are equal, and on an index outside the current vertex list. Reading an edge is then one matrix lookup, \(O(1)\), at the \(O(n^2)\) memory cost already noted for this representation.</p>
+
+                <h3>15.1.5 Graph Traversal</h3>
+                <p>Traversal lists every vertex a walk can reach. Breadth-first search expands layer by layer through a queue. Depth-first search follows one path to its end, then backtracks.</p>
+                <h4>15.1.5.1 Breadth-first Search</h4>
+                <p>Breadth-first search is a near-to-far traversal method, starting from a certain node, always prioritizing the visit to the nearest vertices and expanding outwards layer by layer. As shown in below figure, starting from the top left vertex, first traverse all adjacent vertices of that vertex, then traverse all adjacent vertices of the next vertex, and so on, until all vertices have been visited.</p>
+                <p>BFS is usually implemented with the help of a queue, as shown in the code below. The queue is "first in, first out", which aligns with the BFS idea of traversing "from near to far":</p>
+                <ol>
+                    <li><p>Add the starting vertex startVet to the queue and start the loop.</p></li>
+                    <li><p>In each iteration of the loop, pop the vertex at the front of the queue and record it as visited, then add all adjacent vertices of that vertex to the back of the queue.</p></li>
+                    <li><p>Repeat <span class="highlight">step 2</span> until all vertices have been visited.</p></li>
+                </ol>
+                <p>To prevent revisiting vertices, we use a hash set visited to record which nodes have been visited:</p>
+
+                <p><strong>Time complexity</strong>: All vertices will be enqueued and dequeued once, using \(O(|V|)\) time; in the process of traversing adjacent vertices, since it is an undirected graph, all edges will be visited 2 times, using \(O(2|E|)\) time; overall using \(O(|V| + |E|)\) time.</p>
+
+                <h4>15.1.5.2 Depth-first Search</h4>
+                <p>Depth-first search follows one branch as far as it can, then backs up. From the start vertex you visit a neighbor, then a neighbor of that neighbor. When a vertex has no unvisited neighbor, the walk returns to the previous vertex and tries another edge. Breadth-first search, above, finishes a whole layer before it steps farther out; depth-first search postpones the other neighbors until the current branch is exhausted.</p>
+                <p>A stack matches that order. Push the start vertex. Pop a vertex, mark it visited, and push each unvisited neighbor. The call stack of a recursive walk does the same work. On <code>GraphAdjMat</code> in <a href="https://github.com/artinte/deep-learning/blob/develop/15_graph/1_foundation/graph_adjacency_matrix.py">graph_adjacency_matrix.py</a>, the neighbors of vertex \(i\) are the columns \(j\) where <code>adj_mat[i][j]</code> equals 1. A <code>visited</code> set, as in the breadth-first walk, keeps the search from circling on undirected edges, which the matrix stores in both directions.</p>
+                <p>The time bound matches breadth-first search. Every vertex is pushed and popped once, and every undirected edge is examined from both ends, so the walk costs</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(O(|V| + |E|)\)
+                </div>
+
+                <div class="navigation">
+                    <a href="remote_call.html">Prev: 14.5 Remote Procedure Call</a>
+                    <a href="core_idea.html">Next: 15.2 Core Ideas</a>
+                </div>
+            </main>
+
+            <aside class="col-md-2 right-sidebar">
+                <h5><a href="index.html#section15">Graph Netural Network</a></h5>
+                <ul id="dynamic-sidebar" class="nav flex-column">
+                </ul>
+            </aside>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script type="text/javascript" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="article_script.js"></script>
+    <script>
+        hljs.highlightAll();
+    </script>
+</body>
+
+</html>

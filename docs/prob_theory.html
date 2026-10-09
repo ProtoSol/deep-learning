@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="laptop_coding_48.png" type="image/png">
+    <title>Probability Theory</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" rel="stylesheet">
+    <link href="article_style.css" rel="stylesheet">
+</head>
+
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <nav class="col-md-2 left-sidebar">
+
+            </nav>
+
+            <main class="col-md-8 content">
+                <h2 class="custom-title">6.1 Probability Theory</h2>
+                <p class="title-subtext">An overview of foundational probability and statistics concepts</p>
+                <p style="color: #a0a0a0;">Created Date: 2025-05-18</p>
+
+                <p>The core of this tutorial is to quickly help readers review the relevant knowledge of probability theory so as to better learn the diffusion model.</p>
+
+                <h3 id="normal_distrib">6.1.1 Normal Distribution</h3>
+                <p>In probability theory and statistics, a <strong>normal distribution</strong> or Gaussian distribution is a type of continuous probability distribution for a real-valued random variable. The general form of its probability density function is:</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(f(x) = \frac{1}{\sigma \sqrt{2\pi}} e^{-\frac{{(x - \mu)}^2}{2 {\sigma}^2}}\)
+                </div>
+                <p>The parameter \(\mu\) is the <a href="#mean_median">mean</a> or expectation of the distribution (and also its median and mode), while the parameter \({\sigma}^2\) is the <a href="deviation_variance">variance</a>. The standard deviation of the distribution is \(\sigma\) (sigma). A random variable with a Gaussian distribution is said to be normally distributed, and is called a normal deviate.</p>
+                <p>The file <a href="https://github.com/artinte/deep-learning/blob/develop/06_diffusion/1_prob_theory/normal_distribute.py">normal_distribute.py</a> sets \(\mu = 2\) and \(\sigma^2 = 10\), and uses <a href="https://numpy.org/">NumPy</a> to plot the normal distribution:</p>
+                <img src="res/06/simple_normal.png" alt="Simple Normal Distribution" width="600">
+                <p>Image below illustrates a normal distribution curve, often referred to as a bell curve, showing how data is distributed around the mean (\(\mu\)) in a general normal distribution. The curve is symmetric with its peak at the mean \(\mu\), representing the highest probability density. The horizontal axis is labeled in units of standard deviation \(\sigma\), and the percentages indicate the proportion of data falling within each range:</p>
+                <img src="res/06/normal_distribute.png" alt="Normal Distribution">
+                <p>The simplest case of a normal distribution is known as the standard normal distribution or unit normal distribution. This is a special case when \(\mu = 0\) and \({\sigma}^2 = 1\), and it is described by this probability density function (or density):</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(\varphi(z) = \frac{1}{\sqrt{2\pi}} e^{-\frac{1}{2}z^2}\)
+                </div>
+                <p>The normal distribution is often referred to as \(N(\mu, {\sigma}^2)\) or \(\mathcal{N}(\mu, \sigma^2)\). Thus when a random variable \(X\) is normally distributed with mean \(\mu\) and stanard deviation \(\sigma\), one may write:</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(X \sim \mathcal{N}(\mu, \sigma^2)\)
+                </div>
+                <h4 id="mean_median">6.1.1.1 Mean and Median</h4>
+                <p>The mean is the sum of all values divided by the number of values. For numbers \(x_1, x_2, \cdots , x_n\):</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(\bar{x} = \frac{1}{n} \sum_{i=1}^{n} x_i\)
+                </div>
+                <p>The median is the middle number when the data is sorted.</p>
+                <ol class="with-bullets">
+                    <li><p>If the number of data points is odd, the median is the middle value.</p></li>
+                    <li><p>If even, it is the average of the two middle values.</p></li>
+                </ol>
+                
+                <h4 id="deviation_variance">6.1.1.2 Standard Deviation and Variance</h4>
+                <p>Variance measures how spread out a set of numbers is. It's the average of the squared differences from the mean. You and your friends have just measured the heights of your dogs (in millimeters):</p>
+                <img src="res/06/height_dogs.jpg" alt="Statistics Dogs Graph" width="600">
+                <p>The heights (at the shoulders) are: 600 mm, 470 mm, 170 mm, 430 mm and 300 mm. Find out the Mean, the Variance, and the Standard Deviation.</p>
+                <p>Our first step is to find the Mean:</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(Mean = \frac{600 + 470 + 170 + 430 + 300}{5} = \frac{1970}{5} = 394\)
+                </div>
+                <p>so the mean (average) height is 394 mm. Now we calculate each dog's difference from the Mean, let's plot this on the chart:</p>
+                <img src="res/06/dogs_deviation.jpg" alt="Statistics Dogs Deviation" width="600">
+                <p>To calculate the Variance, take each difference, square it, and then average the result:</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(Variance = \frac{{206}^2 + {76}^2 + {(-224)}^2 + {36}^2 + {(-94)}^2}{5} = \frac{108520}{5} = 21704\)
+                </div>
+                <p>So the Variance is 21,704. And the Standard Deviation is just the square root of Variance, so:</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(Deviation = \sqrt {21704} = 147\)
+                </div>
+                <p>And the good thing about the Standard Deviation is that it is useful. Now we can show which heights are within one Standard Deviation (147 mm) of the Mean:</p>
+                <img src="res/06/dogs_normal.jpg" alt="One Standard Deviation" width="600">
+                <p>So, using the Standard Deviation we have a "standard" way of knowing what is normal, and what is extra large or extra small.</p>
+                <p>Rottweilers are tall dogs. And Dachshunds are a bit short, right?</p>
+                <p>Our example has been for a Population (the 5 dogs are the only dogs we are interested in). But if the data is a Sample (a selection taken from a bigger Population), then the calculation changes!</p>
+                <ul class="with-bullets">
+                    <li><p>The Population: divide by \(N\) when calculating Variance (like we did)</p></li>
+                    <li><p>A Sample: divide by \(N - 1\) when calculating Variance</p></li>
+                </ul>
+                <p>The Population Standard Deviation:</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(\sigma = \sqrt {\frac{1}{N} \sum_{i=1}^N {(x_i - \mu)}^2}\)
+                </div>
+                <p>The Sample Standard Deviation:</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(s = \sqrt {\frac{1}{N-1} \sum_{i=1}^N {(x_i - \bar x)}^2}\)
+                </div>
+                <p>If our 5 dogs are just a sample of a bigger population of dogs, we divide by 4 instead of 5 like this:</p>
+                <p class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(Variance = \frac{108520}{4} = 27130\)
+                </p>
+
+                <p class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(Deviation = \sqrt {27130} = 165\)
+                </p>
+
+                <h3>6.1.2 Covariance Matrix</h3>
+                <p>Covariance is a statistical measure that tells us how two variables change together. In simpler terms, it indicates the direction of the linear relationship between two variables.</p>
+                <p>Here's a breakdown:</p>
+                <ul class="with-bullets">
+                    <li><p>Positive Covariance: If the covariance is positive, it means that when one variable tends to be above its average, the other variable also tends to be above its average. Similarly, when one is below average, the other also tends to be below average. They move in the same direction.</p></li>
+                    <li><p>Negative Covariance: If the covariance is negative, it means that when one variable tends to be above its average, the other variable tends to be below its average, and vice versa. They move in opposite directions.</p></li>
+                    <li><p>Zero Covariance (or close to zero): If the covariance is zero or very close to zero, it suggests there's no linear relationship between the two variables. They tend to move independently of each other.</p></li>
+                </ul>
+                <p class="comment">Covariance only tells you the direction of the relationship, not the strength. The magnitude of the covariance depends on the units of the variables, making it hard to compare covariances across different datasets. For strength, we use the correlation coefficient, which is a normalized version of covariance.</p>
+                <h5>Simple Example: Study Hours and Test Scores</h5>
+                <p>Let's say we want to see how the number of hours a student studies (Variable X) relates to their test score (Variable Y).</p>
+                <p>Here's some hypothetical data for 5 students:</p>
+                <div class="d-flex justify-content-center align-items-center" style="overflow-x: auto; width: 100%;">
+                    <table class="table table-light text-center" style="width: 80%;">
+                        <thead>
+                            <tr>
+                                <th>Student</th>
+                                <th>Hours Studied (X)</th>
+                                <th>Test Score (Y)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>1</td>
+                                <td>2</td>
+                                <td>60</td>
+                            </tr>
+                            <tr>
+                                <td>2</td>
+                                <td>4</td>
+                                <td>75</td>
+                            </tr>
+                            <tr>
+                                <td>3</td>
+                                <td>6</td>
+                                <td>85</td>
+                            </tr>
+                            <tr>
+                                <td>4</td>
+                                <td>8</td>
+                                <td>90</td>
+                            </tr>
+                            <tr>
+                                <td>5</td>
+                                <td>5</td>
+                                <td>70</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <p>Formula for sample convariance:</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(Cov(X, Y) = \frac{\sum_{i=1}^n (X_i - \bar X) (Y_i - \bar Y)}{n-1}\)
+                </div>
+                <p>Where:</p>
+                <ul class="with-bullets">
+                    <li><p>\(X_i\) is an individual ovservation of X.</p></li>
+                    <li><p>\(Y_i\) is an individual ovservation of Y.</p></li>
+                    <li><p>\(\bar X\) is the mean of X.</p></li>
+                    <li><p>\(\bar Y\) is the mean of Y.</p></li>
+                    <li><p>\(n\) is the number of observations.</p></li>
+                </ul>
+                <p>Let's calculate step-by-step.</p>
+                <p>Step 1 - Calculate the means (\(\bar X\) and \(\bar Y\)):</p>
+                <p class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(\bar X = (2 + 4 + 6 + 8 + 5) / 5 = 5\)
+                </p>
+                <p class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(\bar Y = (60 + 75 + 85 + 90 + 70) / 5 = 76\)
+                </p>
+                <p>Step 2 - Calculate the deviations from the mean for each observation:</p>
+
+                <div class="d-flex justify-content-center align-items-center" style="overflow-x: auto; width: 100%;">
+                    <table class="table table-light text-center" style="width: 80%;">
+                        <thead>
+                            <tr>
+                                <th>Student</th>
+                                <th>\(X_i\)</th>
+                                <th>\(Y_i\)</th>
+                                <th>\(X_i - \bar X\)</th>
+                                <th>\(Y_i - \bar Y\)</th>
+                                <th>\((X_i - \bar X)(Y_i - \bar Y)\)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>1</td>
+                                <td>2</td>
+                                <td>60</td>
+                                <td>(2 - 5) = -3</td>
+                                <td>(60 - 76) = - 16</td>
+                                <td>(-3) * (-16) = 48</td>
+                            </tr>
+                            <tr>
+                                <td>2</td>
+                                <td>4</td>
+                                <td>75</td>
+                                <td>(4 - 5) = -1</td>
+                                <td>(75 - 76) = -1</td>
+                                <td>(-1) * (-1) = 1</td>
+                            </tr>
+                            <tr>
+                                <td>3</td>
+                                <td>6</td>
+                                <td>85</td>
+                                <td>(6 - 5) = 1</td>
+                                <td>(85 - 76) = 9</td>
+                                <td>1 * 9 = 9</td>
+                            </tr>
+                            <tr>
+                                <td>4</td>
+                                <td>8</td>
+                                <td>90</td>
+                                <td>(8 - 5) = 3</td>
+                                <td>(90 - 76) = 14</td>
+                                <td>3 * 14 = 42</td>
+                            </tr>
+                            <tr>
+                                <td>5</td>
+                                <td>5</td>
+                                <td>70</td>
+                                <td>(5 - 5) = 0</td>
+                                <td>(70 - 76) = -6</td>
+                                <td>0 * (-6) = 0</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <p>Step 3 - Sum the products of the deviations:</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(\sum (X_i - \bar X)(Y_i - \bar Y) = 48 + 1 + 9 + 42 + 0 = 100\)
+                </div>
+                <p>Step 4 - Divide by \(n - 1\), since we have 5 students:</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(Cov(X, Y) = \frac{100}{4} = 25\)
+                </div>
+
+                <h3 id="euler_maruyama_method">6.1.3 Euler–Maruyama Method</h3>
+                <p>The Euler–Maruyama method is a numerical method used to approximate the solution of a <strong>stochastic differential equation (SDE)</strong> . It is essentially an extension of the standard Euler method for ordinary differential equations (ODEs), modified to handle the random, noisy component of an SDE.</p>
+                <p>The method works by discretizing time into small steps and iteratively calculating the next value of the solution based on its current value. It approximates the continuous path of the SDE with a series of discrete jumps. The size of these jumps depends on both the deterministic drift and the stochastic diffusion terms of the SDE. For an SDE of the form:</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(dY_t = f(Y_t, t) dt + g(Y_t, t) dW_t\)
+                </div>
+                <ul class="with-bullets">
+                    <li><p>\(Y_t\) is the stochastic process.</p></li>
+                    <li><p>\(f(Y_t, t)\) is the drift term (deterministic part).</p></li>
+                    <li><p>\(g(Y_t, t)\) is the diffusion term (stochastic part).</p></li>
+                    <li><p>\(dW_t\) is the increment of a Wiener process (Brownian motion).</p></li>
+                </ul>
+                <p>The Euler-Maruyama approximation is given by the iterative formula:</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(Y_{i+1} = Y_i + f(Y_i, t_i) \Delta t + g(Y_i, t_i) \Delta W_i\)
+                </div>
+                <ul class="with-bullets">
+                    <li><p>\(Y_i\) is the approximation of the solution at time \(t_i\).</p></li>
+                    <li><p>\(\Delta t = t_{i+1} - t_{i}\) is the time step.</p></li>
+                    <li><p>\(\Delta W_i = W_{t_{i+1}} - W_{t_i}\) is the Wiener process increment over the time step \(\Delta t\) , This increment is a random variable drawn from a normal distribution with mean 0 and variance \(\Delta{t}\) (i.e., \(\mathcal{N}(0, \Delta{t})\)).</p></li>
+                </ul>
+
+                <p>The <code>simulate_gbm</code> function simulates a single path of a Geometric Brownian Motion (GBM) using the Euler-Maruyama method. This is a common way to model asset prices, as it incorporates both a deterministic growth trend and a stochastic (random) component.</p>
+                <pre><code>def simulate_gbm(mu=0.1, sigma=0.2, s0=1.0, T=1.0, N=1000, seed=1):
+    rng = numpy.random.default_rng(seed)
+    dt = T / N
+    sqrt_dt = numpy.sqrt(dt)
+    t = numpy.linspace(0, T, N+1)
+    S = numpy.empty(N+1)
+    S[0] = s0
+    for i in range(N):
+        dW = sqrt_dt * rng.standard_normal()
+        S[i+1] = S[i] + mu * S[i] * dt + sigma * S[i] * dW
+    return t, S
+
+t, S = simulate_gbm()</code></pre>
+                <p>The code implements the discretized version of the GBM stochastic differential equation (SDE):</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(dS_t = \mu S_t d_t + \sigma S_t dW_t\)
+                </div>
+                <p>which is approximated by the Euler-Maruyama formula:</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(S_{i+1} = S_i + \mu S_i \Delta t + \sigma S_i \Delta W_i\)
+                </div>
+                <p>The returned arrays \(t, S\) can then be plotted to visualize the simulated path of the Geometric Brownian Motion</p>
+                
+                <img src="res/06/simulate_gbm.png" width="600">
+                <p style="text-align: center; color: #555555;">Figure 6 - Geometric Brownian Motion</p>
+
+                <h3 id="heat_kernel">6.1.4 Heat Kernel</h3>
+                <p>The one-dimensional diffusion equation spreads a point mass into a widening Gaussian. Place a delta function at \(x_0\) at time 0 and the density at a later time \(t\) is the heat kernel, the Green's function of that PDE:</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(p(x, t \mid x_0, 0) = \frac{1}{\sqrt{2 \pi \sigma^2 t}} \exp\left\{ - \frac{(x - x_0)^2}{2 \sigma^2 t} \right\}\)
+                </div>
+                <p>The variance grows in proportion to \(t\). The same Gaussian is the transition density of the Brownian motion an Euler–Maruyama step is discretizing in the previous section: each step adds a normal increment whose variance is \(\sigma^2 \Delta t\), and after many steps the law of the position is this kernel.</p>
+                <p>For a general initial density \(p_0\) the solution is the kernel convolved with \(p_0\). A long forward diffusion therefore forgets the original sample and approaches a wide Gaussian. The score-based samplers in the following notes exist to undo that convolution, one small step at a time.</p>
+
+                <div class="navigation">
+                    <a href="vision_transformer.html">Prev: 5.6 Vision Transformer</a>
+                    <a href="gaussian_process.html">Next: 6.2 Gaussian Processes</a>
+                </div>
+            </main>
+
+            <aside class="col-md-2 right-sidebar">
+                <h5><a href="index.html#section6">Diffusion Model</a></h5>
+                <ul id="dynamic-sidebar" class="nav flex-column">
+                </ul>
+            </aside>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script type="text/javascript" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="article_script.js"></script>
+    <script>
+        hljs.highlightAll();
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="laptop_coding_48.png" type="image/png">
+    <title>Data Representation</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" rel="stylesheet">
+    <link href="article_style.css" rel="stylesheet">
+</head>
+
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <nav class="col-md-2 left-sidebar">
+
+            </nav>
+
+            <main class="col-md-8 content">
+                <h2 class="custom-title">1.3 Data Representation</h2>
+                <p class="title-subtext"></p>
+                <p style="color: #a0a0a0;">Created Date: 2025-05-01</p>
+                <p>The data you'll manipulate will almost always fall into one of the following categories:</p>
+                <ul class="with-bullets">
+                    <li><p>Vector data - Rank-2 tensors of shape <span class="highlight">(samples, features)</span>, where each sample is a vector of numerical attributes ("features").</p></li>
+                    <li><p>Timeseries data or sequence data - Rank-3 tensors of shape <span class="highlight">(samples, timesteps, features)</span>, where each sample is a sequence (of length timesteps) of feature vectors.</p></li>
+                    <li><p>Images - Rank-4 tensors of shape <span class="highlight">(samples, height, width, channels)</span>, where each sample is a 2D grid of pixels, and each pixel is represented by a vector of values ("channels").</p></li>
+                    <li><p>Video - Rank-5 tensors of shape <span class="highlight">(samples, frames, height, width, channels)</span>, where each sample is a sequence (of length frames) of images.</p></li>
+                </ul>
+                <h3>1.3.1 Features</h3>
+                <p>The most simplest features is point, For example a point in a 2D space is defined by two coordinates, typically \((x, y)\):</p>
+                <pre><code>point_sample = torch.tensor([0.5, 1])</code></pre>
+                <p>Here, <code>point_sample</code> represents a point with an x-coordinate of 0.5 and a y-coordinate of 1.</p>
+                
+                <p>File <a href="https://github.com/artinte/deep-learning/blob/develop/01_basic/3_represent/features_1d.py">features_1d.py</a> uses the NumPy library to generate a dataset that simulate a linear relationship with added random noise.</p>
+
+                <pre><code>rng = numpy.random.default_rng(seed=0)
+random_numbers = rng.standard_normal(size=100)
+x_input_array = numpy.linspace(0, 4, 100)
+y_true_array = 3 * x_input_array + 4 + random_numbers</code></pre>
+
+                <img src="res/01/points_data.png" alt="Points Data" width="600">
+                <p style="text-align: center; color: #555555;">Figure 1 - Points Data</p>
+
+                <p>We can combines two separate lists of data (<code>x_input_array</code> and <code>y_true_array</code>) into a single, structure dataset called <code>point_dataset</code>.  The key takeaway is that the resulting <code>point_dataset</code> is organized into a <span class="highlight">(samples, features)</span> shape, which is a fundamental format for data in machine learning and data science.</p>
+                <pre><code>point_dataset = numpy.stack((x_input_array, y_true_array), axis=-1)
+assert point_dataset.shape == (100, 2)</code></pre>
+                
+
+                <h3 id="text">1.3.2 Text</h3>
+                <p><a href="https://ai.stanford.edu/%7Eamaas/data/sentiment/">Large Movie Review Dataset</a> is a dataset for binary sentiment classification containing substantially more data than previous benchmark datasets. We provide a set of 25,000 highly polar movie reviews for training, and 25,000 for testing.</p>
+                <p>File <a href="https://github.com/artinte/deep-learning/blob/develop/01_basic/3_represent/text_data.py">text_data.py</a> downloads the Large Movie Review Dataset (aclImdb), a sentiment analysis benchmark, from a Stanford server. The script uses a sha1_hash to ensure the downloaded file's integrity. It then extracts the compressed data, organizing it into a folder structure with separate subdirectories for positive and negative reviews:</p>
+                <pre><code>import sys
+import pathlib
+import os
+import tarfile
+
+project_root = pathlib.Path(__file__).resolve().parents[2]
+sys.path.append(str(project_root))
+
+from common import download
+
+url = 'https://ai.stanford.edu/~amaas/data/sentiment/aclImdb_v1.tar.gz'
+
+file_path = download.download(url, sha1_hash='01ada507287d82875905620988597833ad4e0903')
+
+extract_dir = os.path.dirname(file_path)
+os.makedirs(extract_dir, exist_ok=True)
+
+with tarfile.open(file_path, 'r:gz') as tar:
+    tar.extractall(path=extract_dir)
+
+extract_file_dir = os.path.join(extract_dir, 'aclImdb')
+print('Successfully extracted to:', extract_file_dir)
+
+train_dir = os.path.join(extract_file_dir, 'train')
+print(os.listdir(train_dir))
+
+train_pos_dir = os.path.join(extract_file_dir, 'train/pos')
+train_neg_dir = os.path.join(extract_file_dir, 'train/neg')
+print('Train positive dir:', train_pos_dir)
+print('Train negative dir:', train_neg_dir)
+
+train_pos_files = os.listdir(train_pos_dir)
+train_neg_files = os.listdir(train_neg_dir)
+
+examples_files = train_pos_files[:3]
+for index, fname in enumerate(examples_files):
+    fpath = os.path.join(train_pos_dir, fname)
+    with open(fpath, 'r', encoding='utf-8') as f:
+        content = f.read()
+        print(str(index + 1) + ':', content)</code></pre>
+
+                <pre><samp>1: For a movie that gets no respect there sure are a lot of memorable quotes listed for this gem. Imagine a movie where Joe Piscopo is actually funny! Maureen Stapleton is a scene stealer. The Moroni character is an absolute scream. Watch for Alan "The Skipper" Hale jr. as a police Sgt.
+2: Bizarre horror movie filled with famous faces but stolen by Cristina Raines (later of TV's "Flamingo Road") as a pretty but somewhat unstable model with a gummy smile who is slated to pay for her attempted suicides by guarding the Gateway to Hell! The scenes with Raines modeling are very well captured, the mood music is perfect, Deborah Raffin is charming as Cristina's pal, but when Raines moves into a creepy Brooklyn Heights brownstone (inhabited by a blind priest on the top floor), things really start cooking. The neighbors, including a fantastically wicked Burgess Meredith and kinky couple Sylvia Miles & Beverly D'Angelo, are a diabolical lot, and Eli Wallach is great fun as a wily police detective. The movie is nearly a cross-pollination of "Rosemary's Baby" and "The Exorcist"--but what a combination! Based on the best-seller by Jeffrey Konvitz, "The Sentinel" is entertainingly spooky, full of shocks brought off well by director Michael Winner, who mounts a thoughtfully downbeat ending with skill. ***1/2 from ****
+3: A solid, if unremarkable film. Matthau, as Einstein, was wonderful. My favorite part, and the only thing that would make me go out of my way to see this again, was the wonderful scene with the physicists playing badmitton, I loved the sweaters and the conversation while they waited for Robbins to retrieve the birdie.</samp></pre>
+                
+                <h3>1.3.3 Audio</h3>
+                <p><a href="https://github.com/Jakobovski/free-spoken-digit-dataset">free-spoken-digit-dataset</a> is a simple audio/speech dataset consisting of recordings of spoken digits in wav files at 8kHz. The recordings are trimmed so that they have near minimal silence at the beginnings and ends.</p>
+
+                <p>Files are named in the following format: <span class="highlight">{digitLabel}_{speakerName}_{index}.wav</span>, Example: 7_jackson_32.wav.</p>
+ 
+                <p>Command <span class="highlight">python3 script/git_sync_deps.py</span> will download the <em>free-spoken-digit-dataset</em> to <span class="highlight">data</span> dir. File <a href="https://github.com/artinte/deep-learning/blob/develop/01_basic/3_represent/audio_data.py">audio_data.py</a> load these data, and use Matplotlib draw some of them:</p>
+                <pre><code>import glob
+import os
+from matplotlib import pyplot
+import soundfile
+
+data_dir = 'data/free-spoken-digit-dataset/recordings'
+
+wav_files = glob.glob(os.path.join(data_dir, '*.wav'))
+
+samples = wav_files[:4]
+
+fig, axs = pyplot.subplots(2, 2, figsize=(10, 6))
+axs = axs.flatten()
+
+for idx, f in enumerate(samples):
+    audio, sr = soundfile.read(f, dtype='float32')
+    axs[idx].plot(audio)
+    axs[idx].set_title(f"{os.path.basename(f)}")
+
+pyplot.tight_layout()
+pyplot.show()</code></pre>
+
+                <img src="res/01/audio_samples.png" alt="Audio Samples" width="600">
+                <p style="text-align: center; color: #555555;">Figure 2 - Audio Samples</p>
+
+                <h3 id="mnist">1.3.4 Image</h3>
+                <p>The MNIST database contains 60,000 training samples and 10,000 test samples of size-normalized handwritten digits. This database was derived from the original NIST databases.</p>
+                <p>MNIST is widely used by researchers as a benchmark for testing pattern recognition methods, and by students for class projects in pattern recognition, machine learning, and statistics.</p>
+                
+                <img src="res/01/samples_mnist.png" alt="Samples MNIST" width="600">
+
+                <h3>1.3.5 Video</h3>
+                <p>A video clip is a sequence of images. One clip is a rank-4 array <span class="highlight">(frames, height, width, channels)</span>. A batch of clips adds a leading axis and matches the rank-5 layout from the introduction, <span class="highlight">(samples, frames, height, width, channels)</span>. Time is just another axis you can slice, the same way a text sequence has a timestep axis.</p>
+                <p>No file under <code>01_basic/3_represent</code> opens a video. <a href="https://github.com/artinte/deep-learning/blob/develop/01_basic/3_represent/demo_image_data.py">demo_image_data.py</a> draws still MNIST digits, <a href="https://github.com/artinte/deep-learning/blob/develop/01_basic/3_represent/demo_audio_data.py">demo_audio_data.py</a> plots spoken-digit waveforms, and <a href="https://github.com/artinte/deep-learning/blob/develop/01_basic/3_represent/demo_text_data.py">demo_text_data.py</a> reads movie-review strings. A frame stack would reuse the image path: decode each frame to height, width, and channels, then stack along a new time axis.</p>
+                <div class="navigation">
+                    <a href="tensor_intro.html">Prev: 1.2 Introduction to Tensors</a>
+                    <a href="principle_learn.html">Next: 1.4 Principles of Deep Learning</a>
+                </div>
+            </main>
+
+            <aside class="col-md-2 right-sidebar">
+                <h5><a href="index.html#section1">Tensor and Gradient Basics</a></h5>
+                <ul id="dynamic-sidebar" class="nav flex-column">
+                </ul>
+            </aside>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script type="text/javascript" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="article_script.js"></script>
+    <script>
+        hljs.highlightAll();
+    </script>
+</body>
+
+</html>

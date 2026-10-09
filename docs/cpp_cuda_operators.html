@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="laptop_coding_48.png" type="image/png">
+    <title>Extending TorchScript</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" rel="stylesheet">
+    <link href="article_style.css" rel="stylesheet">
+</head>
+
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <nav class="col-md-2 left-sidebar">
+
+            </nav>
+
+            <main class="col-md-8 content">
+                <h2 class="custom-title">11.3 Custom C++ and CUDA Operators</h2>
+                <p class="title-subtext"></p>
+                <p style="color: #a0a0a0;">Created Date: 2025-07-30</p>
+
+                <p>PyTorch offers a large library of operators that work on Tensors (e.g. torch.add, torch.sum, etc). However, you may wish to bring a new custom operator to PyTorch. This tutorial demonstrates the blessed path to authoring a custom operator written in C++/CUDA.</p>
+                <p>For our tutorial, we’ll demonstrate how to author a fused multiply-add C++ and CUDA operator that composes with PyTorch subsystems. The semantics of the operation are as follows:</p>
+
+                <pre><code>def mymuladd(a: Tensor, b: Tensor, c: float):
+    return a * b + c</code></pre>
+
+                <p>The Python body is the specification. A custom C++ or CUDA operator is that specification registered so the dispatcher, autograd, and <code>torch.compile</code> can see it. The previous chapter wrapped a Python function. This one moves the same kind of operation into a native library. There is no <code>mymuladd</code> extension checked into this repository; the steps below are the path, and the reference implementation of the math stays the three-line function.</p>
+
+                <h3>11.3.1 Register the schema</h3>
+                <p>A schema names the operator and its arguments, for example <code>mylib::mymuladd(Tensor a, Tensor b, float c) -> Tensor</code>. The dispatcher uses that string. A <code>Meta</code> implementation returns an empty tensor of the right size so shape inference and <code>torch.compile</code> do not have to run the kernel. For <code>mymuladd</code> the output shape is the broadcast of <code>a</code> and <code>b</code>.</p>
+
+                <h3>11.3.2 CPU and CUDA kernels</h3>
+                <p>The CPU kernel walks the broadcast and writes <code>out[i] = a[i] * b[i] + c</code>. The CUDA kernel assigns one thread per output element and does the same arithmetic. Both register under the same schema, tagged with the device. A call on a CUDA tensor must hit the CUDA kernel; a silent copy back to CPU is the usual performance bug.</p>
+
+                <h3>11.3.3 Autograd</h3>
+                <p>The backward of <code>a * b + c</code> is ordinary calculus. The gradient with respect to <code>a</code> is <code>grad_out * b</code>, the gradient with respect to <code>b</code> is <code>grad_out * a</code>, and <code>c</code> is a float with no gradient. Register that formula or the operator will run in inference and fail as soon as a loss calls <code>backward</code>. After the native library loads, <code>torch.ops.mylib.mymuladd</code> is the call, and it should match <code>a * b + c</code> on a few random tensors before you trust it inside a model.</p>
+
+
+                <div class="navigation">
+                    <a href="custom_function.html">Prev: 11.2 Custom Functions</a>
+                    <a href="dispatcher.html">Next: 11.5 Dispatcher</a>
+                </div>
+            </main>
+
+            <aside class="col-md-2 right-sidebar">
+                <h5><a href="index.html#section11">Reinforcement Learning</a></h5>
+                <ul id="dynamic-sidebar" class="nav flex-column">
+                </ul>
+            </aside>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script type="text/javascript" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="article_script.js"></script>
+    <script>
+        hljs.highlightAll();
+    </script>
+</body>
+
+</html>

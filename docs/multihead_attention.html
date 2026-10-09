@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="laptop_coding_48.png" type="image/png">
+    <title>Multi-Head Attention</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" rel="stylesheet">
+    <link href="article_style.css" rel="stylesheet">
+</head>
+
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <nav class="col-md-2 left-sidebar">
+
+            </nav>
+
+            <main class="col-md-8 content">
+                <h2 class="custom-title">5.4 Multi-Head Attention</h2>
+                <p class="title-subtext"></p>
+                <p style="color: #a0a0a0;">Created Date: 2025-09-12</p>
+
+                <p>One attention head scores every query against every key and returns a weighted sum of values. Multi-head attention runs several of those heads side by side, each in its own slice of the embedding, then mixes the slices back together. Different heads can follow different relations — one tracks position, another tracks a copied word — because each head has its own projection.</p>
+
+                <h3>5.4.1 One head, then several</h3>
+                <p>Start from a token matrix \(X\) of shape <code>(batch, sequence, embed_dim)</code>. A single head computes</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(\mathrm{Attention}(Q, K, V) = \mathrm{softmax}\!\left(\frac{QK^{\mathsf T}}{\sqrt{d_k}}\right) V\)
+                </div>
+                <p>with \(Q = XW_Q\), \(K = XW_K\), \(V = XW_V\). Multi-head attention repeats this \(h\) times on slices of width \(d_k = \mathrm{embed\_dim} / h\), concatenates the head outputs, and applies one more matrix \(W_O\):</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(\mathrm{MultiHead}(X) = \mathrm{Concat}(\mathrm{head}_1, \ldots, \mathrm{head}_h)\, W_O\)
+                </div>
+                <p><code>embed_dim</code> has to be divisible by <code>num_heads</code>. The class in <a href="https://github.com/artinte/deep-learning/blob/develop/05_transformer/4_stratch/multihead_attention.py">multihead_attention.py</a> asserts that before it allocates the projection.</p>
+
+                <h3>5.4.2 The shapes in the demo</h3>
+                <p><a href="https://github.com/artinte/deep-learning/blob/develop/05_transformer/1_attention/demo_multi_head_attention.py">demo_multi_head_attention.py</a> embeds four padded sentences, each of length 6, into 64 dimensions and uses 8 heads, so each head is 8-dimensional. An embedding lookup produces <code>(4, 6, 64)</code>. One linear map expands that to <code>(4, 6, 192)</code>, which splits into query, key, and value. Each of those is viewed as <code>(4, 8, 6, 8)</code>: batch, heads, sequence, head dimension.</p>
+                <pre><code>q = q.view(batch_size, seq_len, num_heads, head_dim).transpose(1, 2)
+k = k.view(batch_size, seq_len, num_heads, head_dim).transpose(1, 2)
+v = v.view(batch_size, seq_len, num_heads, head_dim).transpose(1, 2)
+attn_output = torch.nn.functional.scaled_dot_product_attention(q, k, v, attn_mask=pad_mask)</code></pre>
+                <p>The pad mask marks positions whose token id is 0, the <code>&lt;pad&gt;</code> entry. After attention, the heads are transposed back and reshaped to <code>(4, 6, 64)</code>, then the output projection mixes them. The demo checks that this shape matches <code>torch.nn.MultiheadAttention</code> on the same input. The weights differ — the two modules are initialized separately — so the check is the shape, not the numbers.</p>
+                <img src="res/05/multi_head_att.png" alt="Multi-head attention" width="560">
+                <p style="text-align: center; color: #555555;">Figure 1 - Several heads read the same sequence</p>
+
+                <h3>5.4.3 Self, causal, and cross attention</h3>
+                <p>The same kernel, \(QK^{\mathsf T}/\sqrt{d}\) then softmax then \(V\), covers the three maps a transformer uses. What changes is where \(K\) and \(V\) come from, and whether a mask hides the future. <a href="https://github.com/artinte/deep-learning/blob/develop/05_transformer/4_stratch/attention_kinds.py">attention_kinds.py</a> runs all three on random tensors.</p>
+                <p><strong>Self-attention</strong> sets \(Q = K = V = X\). Every token reads every token. That is the encoder, and it is the ViT visual encoder in the next-but-one chapter.</p>
+                <p><strong>Causal attention</strong> is self-attention with the upper triangle of the score matrix set to \(-\infty\) before the softmax. Position \(t\) can only see \(0, \ldots, t\). The first row of the weight matrix is then a one-hot at column 0, which the script asserts. Language models and the transformer decoder's first attention block use this mask.</p>
+                <pre><code>def causal_mask(length):
+    return torch.triu(torch.ones(length, length, dtype=torch.bool), diagonal=1)
+
+causal_out, causal_w = scaled_dot_product(x, x, x, mask=mask)
+assert torch.allclose(causal_w[:, :, 0, 0], torch.ones(batch, heads), atol=1e-5)</code></pre>
+                <p><strong>Cross-attention</strong> keeps \(Q\) from the decoder (or the UNet) and takes \(K, V\) from another sequence: encoder memory, a text embedding, or a prompt. The output has the query length; the weight matrix is query-length by memory-length. <a href="https://github.com/artinte/deep-learning/blob/develop/05_transformer/4_stratch/custom_decoder.py">custom_decoder.py</a> stacks causal self-attention, then this cross-attention, then the feed-forward block.</p>
+
+                <h3>5.4.4 What the next chapter implements</h3>
+                <p>Section 5.5 builds a transformer from scratch, and its attention block is this same split: project, reshape into heads, scaled dot-product, concatenate, project. Causal masking, used in the decoder, is an extra mask on top of the pad mask so position \(t\) cannot read positions after \(t\). The library module and the hand-written function are two views of one calculation.</p>
+
+                <div class="navigation">
+                    <a href="nn_transformer.html">Prev: 5.3 nn.Transformer</a>
+                    <a href="transformer_stratch.html">Next: 5.5 Transformer from Stratch</a>
+                </div>
+            </main>
+
+            <aside class="col-md-2 right-sidebar">
+                <h5><a href="index.html#section5">Transformer</a></h5>
+                <ul id="dynamic-sidebar" class="nav flex-column">
+                </ul>
+            </aside>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script type="text/javascript" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="article_script.js"></script>
+    <script>
+        hljs.highlightAll();
+    </script>
+</body>
+
+</html>

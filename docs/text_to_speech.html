@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="laptop_coding_48.png" type="image/png">
+    <title>Text-to-Speech</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" rel="stylesheet">
+    <link href="article_style.css" rel="stylesheet">
+</head>
+
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <nav class="col-md-2 left-sidebar">
+
+            </nav>
+
+            <main class="col-md-8 content">
+                <h2 class="custom-title">8.3 Text-to-Speech</h2>
+                <p class="title-subtext"><a href="https://github.com/WhisperSpeech/WhisperSpeech">WhisperSpeech</a> : An Open Source text-to-speech system built by inverting Whisper.</p>
+                <p style="color: #a0a0a0;">Created Date: 2025-08-14</p>
+
+                <p>WhisperSpeech is an open-source, text-to-speech (TTS) system created by “inverting” OpenAI Whisper. Our goal is to be for speech what Stable Diffusion is for images—powerful, hackable, and commercially safe.</p>
+
+                <p>Speech recognition in the previous section maps audio to text. This section runs the arrow the other way. WhisperSpeech trains a text-to-semantic model and a semantic-to-audio model so that a sentence becomes a waveform. The checkpoint names in the quick start are the pretrained pair; you do not train them to hear the first sample.</p>
+
+                <h3>8.3.1 Quick Start</h3>
+                <p><a href="https://github.com/artinte/deep-learning/blob/develop/08_audio/3_whisper_speech/quick_start.py">quick_start.py</a> builds a pipeline from two checkpoints and writes a 24 kHz file:</p>
+                <pre><code>pipe = Pipeline(
+    t2s_ref="whisperspeech/whisperspeech:t2s-v1.95-small-8lang.model",
+    s2a_ref="whisperspeech/whisperspeech:s2a-v1.95-medium-7lang.model",
+)
+audio_tensor = pipe.generate("This is the first demo of Whisper Speech, ...")
+torchaudio.save("temp/temp.mp3", audio_tensor.cpu(), 24000)</code></pre>
+                <p><code>t2s</code> predicts semantic tokens from text, the same kind of token Whisper's encoder would have produced for real speech. <code>s2a</code> turns those tokens into samples. The languages in the checkpoint name are the ones the pair was trained to speak. A first run downloads the weights; later runs reuse them. Listen to <code>temp/temp.mp3</code> before changing either name.</p>
+
+                <h3>8.3.2 Finetuning</h3>
+                <p>A new voice or a new language means more paired data: waveforms and their transcripts, at a sample rate the vocoder expects. Finetuning updates the text-to-semantic model, the semantic-to-audio model, or both. Keep the pretrained pair as the initialization. Training from scratch needs the scale of the original JUWELS run, which this folder does not repeat.</p>
+                <p>Hold out a few sentences and generate them after each checkpoint, the same <code>pipe.generate</code> call as the quick start with the new weights substituted. If the audio collapses to noise, the semantic tokens and the vocoder have drifted apart; finetune one stage at a time and leave the other frozen. The next page, speech separation, is a different problem — pulling two voices apart — and does not share these checkpoints.</p>
+
+                <div class="navigation">
+                    <a href="speech_recognition.html">Prev: 8.2 Automatic Speech Recognition</a>
+                    <a href="speech_separation.html">Next: 8.4 Speech Separation</a>
+                </div>
+            </main>
+
+            <aside class="col-md-2 right-sidebar">
+                <h5><a href="index.html#section8">Audio</a></h5>
+                <ul id="dynamic-sidebar" class="nav flex-column">
+                </ul>
+            </aside>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script type="text/javascript" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="article_script.js"></script>
+    <script>
+        hljs.highlightAll();
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="laptop_coding_48.png" type="image/png">
+    <title>DeepFaceLive</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" rel="stylesheet">
+    <link href="article_style.css" rel="stylesheet">
+</head>
+
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <nav class="col-md-2 left-sidebar">
+
+            </nav>
+
+            <main class="col-md-8 content">
+                <h2 class="custom-title">9.6 DeepFaceLive</h2>
+                <p class="title-subtext"></p>
+                <p style="color: #a0a0a0;">Created Date: 2025-06-03</p>
+
+                <p>DeepFaceLab, the previous page, trains a face swap offline: extract faces, train an autoencoder, merge the result back onto frames. DeepFaceLive is that trained swap running on a camera, one frame at a time. This repository does not ship the live application. The loop below is how the trained model gets used once DeepFaceLab has written it.</p>
+
+                <h3>9.6.1 The live loop</h3>
+                <p>Each frame goes through the same stages as the offline merge, with a budget of one frame interval. A detector finds the face. An aligner places the landmarks on the crop the model was trained with. The swap network, loaded from the DeepFaceLab checkpoint, writes a new face. A mask composites it onto the original frame so the background and the hairline stay put. Then the frame is shown or sent on.</p>
+                <p>The quality ceiling is the checkpoint. Live playback does not train. If the swap flickers, the usual causes are a detector that loses the face for a frame, an aligner whose crop does not match training, or a mask that is a frame late. Fix those before touching the network. The next chapter, Segment Anything, is a different segmentation model; it is not the mask inside this loop.</p>
+
+                <div class="navigation">
+                    <a href="deep_face_lab.html">Prev: 9.5 DeepFaceLab</a>
+                    <a href="segment_anything.html">Next: 9.7 Segment Anything</a>
+                </div>
+            </main>
+
+            <aside class="col-md-2 right-sidebar">
+                <h5><a href="index.html#section9">Image and Video</a></h5>
+                <ul id="dynamic-sidebar" class="nav flex-column">
+                </ul>
+            </aside>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script type="text/javascript" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="article_script.js"></script>
+    <script>
+        hljs.highlightAll();
+    </script>
+</body>
+
+</html>

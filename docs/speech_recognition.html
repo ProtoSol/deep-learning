@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="laptop_coding_48.png" type="image/png">
+    <title>Automatic Speech Recognition</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" rel="stylesheet">
+    <link href="article_style.css" rel="stylesheet">
+</head>
+
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <nav class="col-md-2 left-sidebar">
+
+            </nav>
+
+            <main class="col-md-8 content">
+                <h2 class="custom-title">8.2 Automatic Speech Recognition</h2>
+                <p class="title-subtext">Robust Speech Recognition via Large-Scale Weak Supervision</p>
+                <p style="color: #a0a0a0;">Created Date: 2025-05-31</p>
+
+                <p>We’ve trained and are open-sourcing a neural net called <a href="https://arxiv.org/abs/2212.04356">Whisper</a> that approaches human level robustness and accuracy on English speech recognition.</p>
+
+                <p>Whisper is an automatic speech recognition (ASR) system trained on 680,000 hours of multilingual and multitask supervised data collected from the web. We show that the use of such a large and diverse dataset leads to improved robustness to accents, background noise and technical language. Moreover, it enables transcription in multiple languages, as well as translation from those languages into English. We are open-sourcing models and inference code to serve as a foundation for building useful applications and for further research on robust speech processing.</p>
+
+                <img src="res/08/whisper_arch.jpg" alt="Whisper Architecture" width="600">
+                <p style="text-align: center; color: #555555;">Figure 1 - Whisper Architecture</p>
+
+                <p>The Whisper architecture is a simple end-to-end approach, implemented as an encoder-decoder Transformer. Input audio is split into 30-second chunks, converted into a log-Mel spectrogram, and then passed into an encoder. A decoder is trained to predict the corresponding text caption, intermixed with special tokens that direct the single model to perform tasks such as language identification, phrase-level timestamps, multilingual speech transcription, and to-English speech translation.</p>
+
+                <h3>8.2.1 Quick Start</h3>
+
+                <pre><samp>pip install -U openai-whisper</samp></pre>
+
+
+                <pre><code>import whisper
+
+model = whisper.load_model("small")
+result = model.transcribe('res/audio/voice_sample.mp3')
+print(result['text'])</code></pre>
+
+                <pre><samp> Being able to communicate positions within a room is critical to our ability to focus light in a certain area or place objects in their proper location on stage, but it goes even deeper than that. This proficiency provides the basic vocabulary in a common language that is spoken by production and staging professionals around the world.</samp></pre>
+
+
+                <h3>8.3.2 Source Code</h3>
+
+                <p>The local copy of the inference stack lives in <span class="highlight">08_audio/2_whisper</span>. <span class="highlight">pytest</span> runs the tests next to it. Each file below is one piece of the path from a waveform to text.</p>
+
+                <h4>8.3.2.1 audio.py</h4>
+                <p><a href="https://github.com/artinte/deep-learning/blob/develop/08_audio/2_whisper/core/audio.py">audio.py</a> turns a file into the log-Mel spectrogram the encoder expects. Audio is loaded as mono at 16 kHz. A 30-second chunk is 480,000 samples. The spectrogram uses an FFT of 400, a hop of 160 (10 ms), and 80 or 128 Mel bins. <code>pad_or_trim</code> forces every chunk to that length, and <code>log_mel_spectrogram</code> is the tensor the model actually sees. The constants at the top of the file are the contract: change the hop and the encoder's positional grid no longer lines up.</p>
+
+                <h4>8.3.2.2 decoding.py</h4>
+                <p><a href="https://github.com/artinte/deep-learning/blob/develop/08_audio/2_whisper/core/decoding.py">decoding.py</a> runs the decoder autoregressively. <code>detect_language</code> reads the distribution over language tokens at the first step, before any transcript tokens are chosen. The rest of the file holds the decoding options — temperature, beam size, and the prompts that request transcription versus translation into English. Sampling with a higher temperature is the fallback when a greedy decode looks stuck.</p>
+
+                <h4>8.3.2.3 model.py</h4>
+                <p><a href="https://github.com/artinte/deep-learning/blob/develop/08_audio/2_whisper/core/model.py">model.py</a> is the encoder-decoder drawn above. <code>ModelDimensions</code> records width, heads, and depth for both stacks. The audio encoder is convolutions over the Mel spectrogram, then residual attention blocks. The text decoder is a transformer decoder with causal attention. <code>Whisper.forward</code> ties them: encoder states are the keys and values the decoder cross-attends to. When scaled dot-product attention is available the blocks use it; <code>disable_sdpa</code> forces the explicit matmul path.</p>
+
+                <h4>8.3.2.4 timing.py</h4>
+                <p><a href="https://github.com/artinte/deep-learning/blob/develop/08_audio/2_whisper/core/timing.py">timing.py</a> aligns tokens with the audio. A median filter smooths the cross-attention weights between decoder steps and encoder frames, and a dynamic-time-warping path through those weights assigns each token a start time. That is where phrase-level timestamps come from. The filter width is the only knob; a wider filter is smoother and less willing to mark a short word.</p>
+
+                <h4>8.3.2.5 tokenizer.py</h4>
+                <p><a href="https://github.com/artinte/deep-learning/blob/develop/08_audio/2_whisper/core/tokenizer.py">tokenizer.py</a> wraps a byte-level BPE vocabulary plus the special tokens Whisper inserts: language, task (transcribe or translate), and timestamp tokens. <code>get_tokenizer</code> picks the multilingual or English-only encoding. The model never sees raw characters. Everything in the decoder, including the task switch, is an id from this file.</p>
+
+                <h4>8.3.2.6 transcribe.py</h4>
+                <p><a href="https://github.com/artinte/deep-learning/blob/develop/08_audio/2_whisper/core/transcribe.py">transcribe.py</a> is the function the quick start calls. It loads audio, slices it into 30-second windows, runs the model, and stitches the text. Word timestamps and the verbose segment list are optional outputs of the same loop. The one-liner in section 8.2.1 is this function with the defaults.</p>
+
+                <h4>8.3.2.7 triton_ops.py</h4>
+                <p><a href="https://github.com/artinte/deep-learning/blob/develop/08_audio/2_whisper/core/triton_ops.py">triton_ops.py</a> replaces two hot kernels with Triton implementations on CUDA: a dynamic-time-warping step used by the timestamp alignment, and the median filter from <code>timing.py</code>. On CPU, or when Triton is missing, the pure PyTorch versions in <code>timing.py</code> still run. The numerical job does not change.</p>
+
+                <h4>8.3.2.8 utils.py</h4>
+                <p><a href="https://github.com/artinte/deep-learning/blob/develop/08_audio/2_whisper/core/utils.py">utils.py</a> is the small shared helpers: <code>exact_div</code> for the sample-rate arithmetic in <code>audio.py</code>, and argument parsers (<code>str2bool</code>, <code>optional_int</code>, <code>optional_float</code>) for the command-line entry. <code>exact_div</code> raises if the division does not come out even, which is how a bad hop length fails immediately instead of as a shape error inside the encoder.</p>
+
+
+                <div class="navigation">
+                    <a href="speech_feature.html">Prev: 8.1 Speech Feature Extraction</a>
+                    <a href="text_to_speech.html">Next: 8.3 Text-to-Speech</a>
+                </div>
+            </main>
+
+            <aside class="col-md-2 right-sidebar">
+                <h5><a href="index.html#section8">Audio</a></h5>
+                <ul id="dynamic-sidebar" class="nav flex-column">
+                </ul>
+            </aside>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script type="text/javascript" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="article_script.js"></script>
+    <script>
+        hljs.highlightAll();
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="laptop_coding_48.png" type="image/png">
+    <title>Quantization</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" rel="stylesheet">
+    <link href="article_style.css" rel="stylesheet">
+</head>
+
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <nav class="col-md-2 left-sidebar">
+
+            </nav>
+
+            <main class="col-md-8 content">
+                <h2 class="custom-title">13.3 Quantization</h2>
+                <p class="title-subtext">Quantization and Training of Neural Networks for Efficient Integer-Arithmetic-Only Inference</p>
+                <p style="color: #a0a0a0;">Created Date: 2025-07-21</p>
+
+                <p>The rising popularity of intelligent mobile devices and the daunting computational cost of deep learning-based models call for efficient and accurate on-device inference schemes.</p>
+
+                <p>We propose a <a href="https://arxiv.org/abs/1712.05877">quantization scheme</a> that allows inference to be carried out using integer-only arithmetic, which can be implemented more efficiently than floating point inference on commonly available integer-only hardware.</p>
+
+                <p>We also co-design a training procedure to preserve end-to-end model accuracy post quantization. As a result, the proposed quantization scheme improves the tradeoff between accuracy and on-device latency. The improvements are significant even on MobileNets, a model family known for run-time efficiency, and are demonstrated in ImageNet classification and COCO detection on popular CPUs.</p>
+
+                <h3>13.3.1 Introduction</h3>
+
+                <p>Current state-of-the-art Convolutional Neural Networks (CNNs) are not well suited for use on mobile devices. Since the advent of <a href="alex_net.html">AlexNet</a>, modern CNNs have primarily </p>
+
+                <h3>13.3.2 Quantized Inference</h3>
+                <p>Quantized inference is the forward pass once weights and activations are integers plus the scale and zero-point from the scheme below. No script under <code>13_optimize</code> runs that pass. The written part of this page fixes the affine map \(r = S(q - z)\), and the following headings unpack the matrix product that map implies.</p>
+
+                <h4>13.3.2.1 Quantization Scheme</h4>
+                <p>In this section, we describe our general quantization scheme, that is, the correspondence between the bit-representation of values (denoted q below, for "quantized value") and their interpretation as mathematical real numbers (denoted r below, for "real value").</p>
+                <p>Our quantization scheme is implemented using integer-only arithmetic during inference and floating-point arithmetic during training, with both implementations maintaining a high degree of correspondence with each other. We achieve this by first providing a mathematically rigorous definition of our quantization scheme, and separately adopting this scheme for both integer-arithmetic inference and floating-point training.</p>
+
+                <p>A basic requirement of our quantization scheme is that it permits efficient implementation of all arithmetic using only integer arithmetic operations on the quantized values (we eschew implementations requiring lookup tables because these tend to perform poorly compared to pure arithmetic on SIMD hardware). This is equivalent to requiring that the quantization scheme be an affine mapping of integers \(q\) to real numbers \(r\) , i.e. of the form:</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(r = S(q - z)\)
+                </div>
+
+                <p>for some constants \(S\) and \(Z\) . Equation is our quantization scheme and the constants \(S\) and \(Z\) are our quantization parameters. Our quantization scheme uses a single set of quantization parameters for all values within each activations array and within each weights array; separate arrays use separate quantization parameters.</p>
+
+                <p>For 8-bit quantization, q is quantized as an 8-bit integer (for B-bit quantization, q is quantized as an B-bit integer). Some arrays, typically bias vectors, are quantized as 32-bit integers.</p>
+                
+                <h4>13.3.2.2 Integer-arithmetic-only Matrix Multiplication</h4>
+                <p>Substitute \(r = S(q - z)\) into a dot product. The product of two real vectors becomes the product of their scales times an integer dot product of the centered codes.</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(r = S_a S_w \sum_i (q_a^{(i)} - z_a)(q_w^{(i)} - z_w)\)
+                </div>
+                <p>The sum is what has to stay in an integer accumulator, usually int32, because many int8 products overflow int8. Multiplying by \(S_a S_w\) is the rescale back to a real value. On an integer-only device that rescale is a fixed-point multiply rather than a float multiply. This page stops at the formula; it does not code the accumulator.</p>
+
+                <h4>13.3.2.3 Efficient Handling of Zero-points</h4>
+                <p>Expand the product and four sums appear: the main \(q_a q_w\) term, two terms that each carry one zero-point, and a constant that depends only on the zero-points and the inner dimension. That constant can be folded into the bias once, offline, so the inner loop never recomputes it.</p>
+                <p>A weight zero-point of zero, a common choice, drops one of the cross terms. The inner loop is then a plain integer matrix multiply plus a bias. The only formula this page has written down so far is \(r = S(q - z)\) in the quantization scheme above.</p>
+
+                <h4>13.3.2.4 Implementation of a Typical Fused Layer</h4>
+                <p>On device, a convolution or a fully connected block is one fused step. An int8 matrix multiply accumulates in int32, the int32 bias is added, the activation clamps the result (ReLU is a lower clamp at the zero-point), and a requantize step writes the accumulator back to int8 with a new scale and zero-point.</p>
+                <p>Fusing keeps that int32 tensor in registers instead of writing it out for a separate rescale kernel. Nothing in this repo builds that kernel. The nearest exported graph is the float ONNX file from <a href="https://github.com/artinte/deep-learning/blob/develop/12_deploy/1_onnx/flower_conv_mlp.py">flower_conv_mlp.py</a>, and that graph is still floating point.</p>
+                
+                <h3>13.3.3 Training with Simulated Quantization</h3>
+                <p>Simulated quantization, often called fake quantization, leaves the training graph in floating point and rounds each tensor onto the integer grid only in the forward pass.</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(q = \mathrm{clip}\left(\mathrm{round}\left(\frac{r}{S} + z\right), q_{\min}, q_{\max}\right), \quad r' = S(q - z)\)
+                </div>
+                <p>Rounding has no useful derivative, so the backward pass uses a straight-through estimate: inside the clipping range the gradient of \(r'\) is copied onto \(r\) as if the round were the identity. Weights then move toward values that survive that rounding. This page never inserts a fake-quant module into a training loop.</p>
+
+                <h3>13.3.4 Experiments</h3>
+                <p>A check of this scheme trains with the simulated rounding, exports the integer model, and compares accuracy and latency with the float model on the same images. The introduction points at ImageNet classification and COCO detection as the setting where that comparison was reported.</p>
+                <p>This repository has no quantization training script to launch, and <code>13_optimize</code> contains no integer-conv experiment. The concrete training loops nearby are the prune demo, the LoRA layer stub, and the CIFAR-10 distillation script, all in floating point.</p>
+                
+                
+                <div class="navigation">
+                    <a href="pruning.html">Prev: 13.2 Pruning</a>
+                    <a href="quantization.html">Next: 13.4 Distillation</a>
+                </div>
+            </main>
+
+            <aside class="col-md-2 right-sidebar">
+                <h5><a href="index.html#section13">Model Optimization</a></h5>
+                <ul id="dynamic-sidebar" class="nav flex-column">
+                </ul>
+            </aside>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script type="text/javascript" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="article_script.js"></script>
+    <script>
+        hljs.highlightAll();
+    </script>
+</body>
+
+</html>

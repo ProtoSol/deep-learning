@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="laptop_coding_48.png" type="image/png">
+    <title>Neural Network from Scratch</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" rel="stylesheet">
+    <link href="article_style.css" rel="stylesheet">
+    <style>
+        .inline-square {
+            margin-left: 5px;
+            width: 12px;
+            height: 12px;
+            display: inline-block;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <nav class="col-md-2 left-sidebar">
+
+            </nav>
+
+            <main class="col-md-8 content">
+                <h2 class="custom-title">1.7 Neural Network from Scratch</h2>
+                <p class="title-subtext">A simple explanation of how neural networks work and how to <a href="https://victorzhou.com/blog/intro-to-neural-networks/">implement one from scratch</a> in Python.</p>
+                <p style="color: #a0a0a0;">Created Date: 2025-05-10</p>
+                <p>Here’s something that might surprise you: neural networks aren’t that complicated! The term “neural network” gets used as a buzzword a lot, but in reality they’re often much simpler than people imagine.</p>
+                <p>This post is intended for complete beginners and assumes ZERO prior knowledge of machine learning. You can read section 1.4 <a href="principle_learn.html">Principles of Deep Learning</a> to get a sense of what deep learning is. We’ll understand how neural networks work while implementing one from scratch in Python.</p>
+                <p>Let’s get started!</p>
+                <h3>1.7.1 Building Blocks: Neurons</h3>
+                <p>First, we have to talk about neurons, the basic unit of a neural network. A neuron takes inputs, does some math with them, and produces one output. Here’s what a 2-input neuron looks like:</p>
+                <img src="res/01/perceptron.svg" alt="Perceptron" width="600">
+                <p>3 things are happening here. First, each input is multiplied by a weight: <span class="inline-square" style="background-color:rgb(200, 0, 0)"></span></p>
+                <p class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(x_1 \rightarrow x_1 * w_1\)
+                </p>
+                <p class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(x_2 \rightarrow x_2 * w_2\)
+                </p>
+                <p>Next, all the weighted inputs are added together with a bias b: <span class="inline-square" style="background-color:#0f9640"></span></p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \((x_1 * w_1) + (x_2 * w_2) + b\)
+                </div>
+                <p>Finally, the sum is passed through an activation function: <span class="inline-square" style="background-color:rgb(255, 150, 0)"></span></p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(y = f(x_1 * w_1 + x_2 * w_2 + b)\)
+                </div>
+                <p>The activation function is used to turn an unbounded input into an output that has a nice, predictable form. A commonly used activation function is the sigmoid function:</p>
+                <img src="res/02/sigmoid_func.png" alt="Sigmoid Function" width="600">
+                <p>The sigmoid function only outputs numbers in the range \((0, 1)\). You can think of it as compressing \((-\infty, +\infty)\) to \((0, 1)\) - big negative numbers become \(~0\), and big positive numbers become \(~1\).</p>
+                <p>For more information, you can read section 2.4 <a href="activation_function.html">Activation Function</a>.</p>
+                <h4>1.7.1.1 A Simple Example</h4>
+                <p>Assume we have a 2-input neuron that uses the sigmoid activation function and has the following parameters:</p>
+                <p class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(w = [0, 1]\)
+                </p>
+                <p class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(b = 4\)
+                </p>
+                <p>\(w = [0, 1]\) is just a way of writing \(w_1 = 0, w_2 = 1\) in vector form. Now, let’s give the neuron an input of \(x = [2, 3]\). We'll use the <a href="tensor_intro.html#tensor_product">dot product</a> to write things more concisely:</p>
+                <p class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \((w \cdot x) + b = ((w_1 * x_1) + (w_2 * x_2)) + b = 0 * 2 + 1 * 3 + 4 = 7\)
+                </p>
+                <p class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(y = f(w \cdot x + b) = f(7) = 0.999\)
+                </p>
+                <p>The neuron outputs 0.999 given the inputs \(x = [2, 3]\). That’s it! This process of passing inputs forward to get an output is known as <strong>feedforward</strong>.</p>
+                <h4>1.7.1.2 Coding a Neuron</h4>
+                <p>Time to implement a neuron! We’ll use <a href="https://numpy.org/">NumPy</a>, a popular and powerful computing library for Python, to help us do math, File <a href="https://github.com/artinte/deep-learning/blob/develop/01_basic/7_nn_stratch/neuron.py">neuron.py</a> show a neuron how to work:</p>
+                <pre><code>import numpy
+
+
+def sigmoid(x):
+    # Our activation function: f(x) = 1 / (1 + e^(-x))
+    return 1 / (1 + numpy.exp(-x))
+
+
+class Neuron:
+    def __init__(self, weights, bias):
+        self.weights = weights
+        self.bias = bias
+
+    def feedforward(self, inputs):
+        # Weight inputs, add bias, then use the activation function
+        total = numpy.matmul(self.weights, inputs) + self.bias
+        return sigmoid(total)
+
+
+# w1 = 0, w2 = 1
+weights = numpy.array([0, 1])
+# b = 4
+bias = 4
+# x1 = 2, x2 = 3
+x = numpy.array([2, 3])
+
+neuron = Neuron(weights, bias)
+# 0.999
+print('Neuron output is', round(neuron.feedforward(x), 3))</code></pre>
+                <p>Recognize those numbers? That’s the example we just did! We get the same answer of 0.999.</p>
+                <h3>1.7.2 Combining Neurons into a Neural Network</h3>
+                <p>A neural network is nothing more than a bunch of neurons connected together. Here’s what a simple neural network might look like:</p>
+                <img src="res/01/simple_network.svg" alt="Simple Network">
+                <p>This network has 2 inputs, a hidden layer with 2 neurons (\(h_1\) and \(h_2\)), and an output layer with 1 neuron (\(o_1\)). Notice that the inputs for \(o_1\) are the outputs from \(h_1\) and \(h_2\) - that's what makes this a network.</p>
+                <p class="comment">A hidden layer is any layer between the input (first) layer and output (last) layer. There can be multiple hidden layers!</p>
+                <h4>1.7.2.1 An Example: Feedforward</h4>
+                <p>Let’s use the network pictured above and assume all neurons have the same weights \(w = [0, 1]\), the same bias \(b = 0\), and the same sigmoid activation function. Let \(h_1, h_2, o_1\) denote the outputs of the neurons they represent.</p>
+                <p>What happens if we pass in the input \(x = [2, 3]?\)</p>
+                <p class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(h_1 = h_2 = f(w \cdot x + b) = f((0 * 2) + (1 * 3) + 0) = f(3) = 0.9526\)
+                </p>
+                <p class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(o_1 = f(w \cdot [h1, h2] + b) = f((0 * h_1) + (1 * h_2) + 0) = f(0.9526) = 0.7216\)
+                </p>
+                <p>The output of the neural network for input \(x = [2, 3]\) is 0.7216. Pretty simple, right?</p>
+                <p>A neural network can have any number of layers with any number of neurons in those layers. The basic idea stays the same: feed the input(s) forward through the neurons in the network to get the output(s) at the end. For simplicity, we’ll keep using the network pictured above for the rest of this post.</p>
+                <h4>1.7.2.2 Coding a Neural Network: Feedforward</h4>
+                <p>Let’s implement feedforward for our neural network. File <a href="https://github.com/artinte/deep-learning/blob/develop/01_basic/7_nn_stratch/feed_forward.py">feed_forward.py</a> implements the above process:</p>
+                <pre><code># ... code from previous section here
+
+class OurNeuralNetwork:
+    '''
+    A neural network with:
+        - 2 inputs
+        - a hidden layer with 2 neurons (h1, h2)
+        - an output layer with 1 neuron (o1)
+    Each neuron has the same weights and bias:
+        - w = [0, 1]
+        - b = 0
+    '''
+    def __init__(self):
+        weights = numpy.array([0, 1])
+        bias = 0
+
+        # The Neuron class here is from the previous section.
+        self.h1 = Neuron(weights, bias)
+        self.h2 = Neuron(weights, bias)
+        self.o1 = Neuron(weights, bias)
+
+    def feedforward(self, x):
+        out_h1 = self.h1.feedforward(x)
+        out_h2 = self.h2.feedforward(x)
+        
+        # The inputs for o1 are the outputs from h1 and h2.
+        out_o1 = self.o1.feedforward(numpy.array([out_h1, out_h2]))
+        return out_o1
+
+
+network = OurNeuralNetwork()
+x = numpy.array([2, 3])
+# 0.7216
+print(round(network.feedforward(x), 4))</code></pre>
+                <p>We got 0.7216 again! Looks like it works.</p>
+                <p><a href="https://github.com/artinte/deep-learning/blob/develop/01_basic/7_nn_stratch/feed_forward.py">feed_forward.py</a> puts that arithmetic in a <code>Neuron</code> class: a dot product of the weights with the inputs, plus the bias, then the sigmoid. <code>OurNeuralNetwork</code> owns three of those neurons, all with <code>w = [0, 1]</code> and bias 0. <code>feedforward</code> runs <code>h1</code> and <code>h2</code> on <code>[2, 3]</code> and feeds both outputs into <code>o1</code>, which is the same 0.7216 the hand calculation produced.</p>
+                <h3>1.7.3 Training a Neural Network</h3>
+                <p>File <a href="https://github.com/artinte/deep-learning/blob/develop/01_basic/7_nn_stratch/simple_network_numpy.py">simple_network_numpy.py</a> documents a complete neural network that takes as input a person's height and weight and predicts the person's gender.</p>
+
+                <h4>1.7.3.1 Height-Weight Dataset</h4>
+                <p>Say we have the following measurements:</p>
+                <div class="d-flex justify-content-center align-items-center" style="overflow-x: auto; width: 100%;">
+                    <table class="table table-light text-center" style="width: 80%;">
+                        <thead>
+                            <tr>
+                                <th>Weight(lb)</th>
+                                <th>height(in)</th>
+                                <th>Gender</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>133</td>
+                                <td>65</td>
+                                <td>0</td>
+                            </tr>
+                            <tr>
+                                <td>160</td>
+                                <td>72</td>
+                                <td>1</td>
+                            </tr>
+                            <tr>
+                                <td>150</td>
+                                <td>70</td>
+                                <td>1</td>
+                            </tr>
+                            <tr>
+                                <td>145</td>
+                                <td>66</td>
+                                <td>0</td>
+                            </tr>
+                            <tr>
+                                <td>152</td>
+                                <td>70</td>
+                                <td>1</td>
+                            </tr>
+                            <tr>
+                                <td>145</td>
+                                <td>65</td>
+                                <td>0</td>
+                            </tr>
+                            <tr>
+                                <td>150</td>
+                                <td>64</td>
+                                <td>0</td>
+                            </tr>
+                            <tr>
+                                <td>...</td>
+                                <td>...</td>
+                                <td>...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <p>Only the first seven data are displayed, 0 for famale, and 1 for male. All the data is shown in the figure below, points of blue represents males and points of red represents females:</p>
+                <img src="res/01/simple_dataset.png" alt="Simple Dataset" width="600">
+                <p>Let’s train our network to predict someone’s gender given their weight and height:</p>
+                <img src="res/01/network_gender.svg" alt="Network Gender">
+                <p>The data needs to be preprocessed by finding the average of height and weight and subtracting the average from all values:</p>
+                <pre><code>average_weight = int(round(x.sum() / len(x)))
+average_height = int(round(y.sum() / len(y)))
+print('Average weight:', average_weight)
+print('Average height:', average_height)
+
+x = x - average_weight
+y = y - average_height
+print('Processed weight:', x)
+print('Processed height:', y)</code></pre>
+                <pre><samp>Average weight: 148
+Average height: 68
+Processed weight: [-15  12   2  -3   4  -3   2   7  -8 -18   2  -8 -13  12   7  -3  14   7   10  -4]
+Processed height: [-3  4  2 -2  2 -3 -4 -2 -4 -6  0  0 -2  0  0 -4  6  4  2  4]</samp></pre>
+
+                <h4>1.7.3.2 MSE Loss</h4>
+                <p>Before we train our network, we first need a way to quantify how "good" it's doing so that it can try to do "better". That's what the loss is.</p>
+                <p>We’ll use the <strong>mean squared error (MSE)</strong> loss:</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(MSE = \frac{1}{n} \sum_{i=1}^{n}{(y_{true} - y_{pred})}^2\)
+                </div>
+                <p>Let’s break this down:</p>
+                <ul class="with-bullets">
+                    <li><p>\(n\) is the number of samples, which is 20 (10 with males, and 10 with females).</p></li>
+                    <li><p>\(y\) represents the variable being predicted, which is Gender.</p></li>
+                    <li><p>\(y_{true}\) is the true value of the variable (the "correct answer"). </p></li>
+                    <li><p>\(y_{pred}\) is the predicted value of the variable. It’s whatever our network outputs.</p></li>
+                </ul>
+                <p>\({(y_{true} - y_{pred})}^2\) is known as the squared error. Our loss function is simply taking the average over all squared errors (hence the name mean squared error). The better our predictions are, the lower our loss will be!</p>
+                <p>Better predictions = Lower loss.</p>
+                <p><strong>Training a network = trying to minimize its loss.</strong></p>
+                <p>Let’s say our network always outputs 0 - in other words, it’s confident all humans are Female. What would our loss be?</p>
+                <div class="d-flex justify-content-center align-items-center" style="overflow-x: auto; width: 100%;">
+                    <table class="table table-light text-center" style="width: 80%;">
+                        <thead>
+                            <tr>
+                                <th>\(y_{true}\)</th>
+                                <th>\(y_{pred}\)</th>
+                                <th>\({(y_{true} - y_{pred})}^2\)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>0</td>
+                                <td>0</td>
+                                <td>0</td>
+                            </tr>
+                            <tr>
+                                <td>1</td>
+                                <td>0</td>
+                                <td>1</td>
+                            </tr>
+                            <tr>
+                                <td>1</td>
+                                <td>0</td>
+                                <td>1</td>
+                            </tr>
+                            <tr>
+                                <td>0</td>
+                                <td>0</td>
+                                <td>0</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(MSE = \frac{1}{4}(0 + 1 + 1 + 0) = 0.5\)
+                </div>
+                <p>Here’s some code to calculate loss for us:</p>
+                <pre><code>def mse_loss(y_pred, y_true):
+    # y_true and y_pred are numpy arrays of the same length.
+    return ((y_pred - y_true)**2).mean()
+
+y_pred = numpy.array([0, 0, 0, 0])
+y_true = numpy.array([0, 1, 1, 0])
+# 0.5
+print(mse_loss(y_pred, y_true))</code></pre>
+                <p>Nice. Onwards!</p>
+                <p>For more information, you can read section 2.5 <a href="loss_function.html">Loss Function</a>.</p>
+
+                <h4>1.7.3.3 Calculating Derivative</h4>
+                <p>We now have a clear goal: minimize the loss of the neural network. We know we can change the network’s weights and biases to influence its predictions, but how do we do so in a way that decreases loss?</p>
+                <p class="comment">This section uses a bit of multivariable calculus. If you’re not comfortable with calculus, you can read section 1.5 <a href="calculus.html">Calculus</a>.</p>
+                <p>For simplicity, let’s pretend we only have one sample in our dataset:</p>
+                <div class="d-flex justify-content-center align-items-center" style="overflow-x: auto; width: 100%;">
+                    <table class="table table-light text-center" style="width: 80%;">
+                        <thead>
+                            <tr>
+                                <th>Weight (minus 148)</th>
+                                <th>height (minus 68)</th>
+                                <th>Gender</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>-15</td>
+                                <td>-3</td>
+                                <td>0</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <p>Then the mean squared error loss is just squared error:</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(MSE = {(y_{true} - y_{pred})}^2 = {(0 - y_{pred})^2}\)
+                </div>
+                <p>Another way to think about loss is as a function of weights and biases. Let’s label each weight and bias in our network:</p>
+                <img src="res/01/network_param.png" alt="Network with Parameters" width="600">
+                <p>Then, we can write loss as a multivariable function:</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(L(w_1, w_2, w_3, w_4, w_5, w_6, b_1, b_2, b_3)\)
+                </div>
+                <p>Imagine we wanted to tweak \(w_1\), How would loss \(L\) change if we changed \(w_1\)?</p>
+                <p>That’s a question the partial derivative \(\frac{\partial{L}}{\partial{w_1}}\) can answer. How do we calculate it?</p>
+                <p class="comment">Here’s where the math starts to get more complex. Don’t be discouraged! I recommend getting a pen and paper to follow along - it’ll help you understand.</p>
+
+                <p>To start, let’s rewrite the partial derivative \(\frac{\partial{L}}{\partial{w_1}}\) in terms of \(\frac{\partial{y_{pred}}}{\partial{w_1}}\) instead:</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(\frac{\partial{L}}{\partial{w_1}} = \frac{\partial{L}}{\partial{y_{pred}}} = \frac{\partial{y_{pred}}}{\partial{w_1}}\)
+                </div>
+                <p>This works because of the Chain Rule. We can calculate \(\frac{\partial{L}}{\partial{y_{pred}}}\) because we computed \(L = {(y_{true} - y_{pred})}^2\) above:</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(\frac{\partial{L}}{\partial{y_{pred}}} = \frac{\partial{(y_{true} - y_{pred})}^2}{\partial{y_{pred}}} = -2(y_{true} - y_{pred})\)
+                </div>
+                <p>Now, let’s figure out what to do with \(\frac{\partial{y_{pred}}}{\partial{w_1}}\). Just like before, let \(h_1, h_2, o_1\) be the outputs of the neurons they represent. Then:</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(y_{pred} = o_1 = f(w_5 h_1 + w_6 h_2 + b_3)\)
+                </div>
+                <p>\(f\) is the sigmoid activation function, remember? Since \(w_1\) only effects \(h_1\) (not \(h_2\)), we can write:</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(\frac{\partial{y_{pred}}}{\partial{w_1}} = \frac{\partial{y_{pred}}}{\partial{h_1}} * \frac{\partial{h_1}}{\partial{w_1}}\)
+                </div>
+                <p>Now we need calculate \(\frac{\partial{y_{pred}}}{\partial{h_1}}\) and \(\frac{\partial{h_1}}{\partial{w_1}}\):</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(\frac{\partial{y_{pred}}}{\partial{h_1}} = w_5 * f'(w_5 h_1 + w_6 h_2 + b_3)\)
+                </div>
+                <p>Because of \(h_1 = f(w_1 x_1 + w_2 x_2 +b_1)\), We do the same thing for \(\frac{\partial{h_1}}{\partial{w_1}}\):</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(\frac{\partial{h_1}}{\partial{w_1}} = x_1 * f'(w_1 x_1 + w_2 x_2 + b_1)\)
+                </div>
+                <p>\(x_1\) here is weight, and \(x_2\) is height. This is the second time we’ve seen \(f'(x)\) (the derivate of the sigmoid function) now! Let’s derive it:</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(f'(x) = \frac{e^{-x}}{{(1 + e^{-x})}^2} = f(x) * (1 - f(x))\)
+                </div>
+                <p>We’ll use this nice form for \(f'(x)\) later.</p>
+                <p>We’re done! We’ve managed to break down \(\frac{\partial{L}}{\partial{w_1}}\) into several parts we can calculate:</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(\frac{\partial{L}}{\partial{w_1}} = \frac{\partial{L}}{\partial{y_{pred}}} * \frac{\partial{y_{pred}}}{\partial{h_1}} * \frac{\partial{h_1}}{\partial{w_1}}\)
+                </div>
+                <p>This system of calculating partial derivatives by working backwards is known as <strong>backpropagation</strong>, or “backprop”.</p>
+                <p>Phew. That was a lot of symbols - it’s alright if you’re still a bit confused. Let’s do an example to see this in action!</p>
+
+                <h4>1.7.3.4 Calculating Example</h4>
+                <p>We’re going to continue pretending only first sample [-15, -3, 0] is in our dataset. Let’s initialize all the weights to 1 and all the biases to 0. If we do a feedforward pass through the network, we get:</p>
+                <p class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(h_1 = f(w_1 x_1 + w_2 x_2 + b_1) = f(-15 - 3 + 0) = 0\)
+                </p>
+                <p class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(h_2 = f(w_3 x_1 + w_4 x_2 + b_2) = f(-15 - 3 + 0) = 0\)
+                </p>
+                <p class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(o_1 = f(w_5 h_1 + w_6 h_2 + b_3) = f(0 + 0 + 0) = 0.5\)
+                </p>
+                <p>The network outputs \(y_{pred} = \), which doesn’t strongly favor Male (1) or Female (0). Let's calculate \(\frac{\partial L}{\partial w_1}\):</p>
+                <p class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(\frac{\partial{L}}{\partial{w_1}} = \frac{\partial{L}}{\partial{y_{pred}}} * \frac{\partial{y_{pred}}}{\partial{h_1}} * \frac{\partial{h_1}}{\partial{w_1}}\)
+                </p>
+                <p class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(\frac{\partial L}{\partial y_{pred}} = -2 \times (1 - y_{pred}) = -1\)
+                </p>
+                <p class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(\frac{\partial y_{pred}}{\partial h_1} = w_5 \times f'(w_5 h_1 + w_5 h_2 + b_3) = f(0) * (1 - f(0)) = 0.25\)
+                </p>
+                <p class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(\frac{\partial h_1}{\partial w_1} = x_1 \times f'(w_1 x_1 + w_2 x_2 + b_1) = -15 * f(-18) * (1 - f(-18)) = -2.2845e-07\)
+                </p>
+                <p class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(\frac{\partial L}{\partial w_1} = -1 * 0.25 * -2.2845e-07 = 5.71125e-8\)
+                </p>
+                <p class="comment">Reminder: we derived \(f'(x) = f(x) \times (1 - f(x))\) for our sigmoid activation function earlier.</p>
+                <p>We did it! This tells us that if we were to increase \(w_1\), \(L\) would increase a tiny bit as a result.</p>
+
+                <h4>1.7.3.4 Stochastic Gradient Descent</h4>
+                <p>We have all the tools we need to train a neural network now! We’ll use an optimization algorithm called <a href="">stochastic gradient descent (SGD)</a> that tells us how to change our weights and biases to minimize loss. It’s basically just this update equation:</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(w_1 \leftarrow w_1 - η \frac{\partial L}{\partial w_1}\)
+                </div>
+                <p>\(η\) is a constant called the learning rate that controls how fast we train. All we’re doing is subtracting \( η \frac{\partial L}{\partial w_1}\) from \(w_1\):</p>
+                <ul class="with-bullets">
+                    <li><p>If \(\frac{\partial L}{\partial w_1}\) is positive, \(w_1\) will decrease, which makes \(L\) decrease.</p></li>
+                    <li><p>If \(\frac{\partial L}{\partial w_1}\) is negative, \(w_1\) will increase, which makes \(L\) decrease.</p></li>
+                </ul>
+                <p>If we do this for every weight and bias in the network, the loss will slowly decrease and our network will improve.</p>
+                <p>Our training process will look like this:</p>
+                <ol>
+                    <li><p>Choose one sample from our dataset. This is what makes it stochastic gradient descent - we only operate on one sample at a time.</p></li>
+                    <li><p>Calculate all the partial derivatives of loss with respect to weights or biases (e.g. \(\frac{\partial L}{\partial w_1}, \frac{\partial L}{\partial w_2}\), etc).</p></li>
+                    <li><p>Use the update equation to update each weight and bias.</p></li>
+                    <li><p>Go back to step 1.</p></li>
+                </ol>
+                <p>Let’s see it in action!</p>
+                
+                <h4>1.7.3.5 Code: A Complete Network</h4>
+                <p>It’s finally time to implement a complete neural network:</p>
+                <pre><code>class OurNeuralNetwork:
+    '''
+    A neural network with:
+        - 2 inputs
+        - a hidden layer with 2 neurons (h1, h2)
+        - an output layer with 1 neuron (o1)
+    '''
+    def __init__(self):
+        rng = numpy.random.default_rng(0)
+        # weights
+        self.w1 = rng.random()
+        self.w2 = rng.random()
+        self.w3 = rng.random()
+        self.w4 = rng.random()
+        self.w5 = rng.random()
+        self.w6 = rng.random()
+        # biases
+        self.b1 = rng.random()
+        self.b2 = rng.random()
+        self.b3 = rng.random()
+    
+    def feedforward(self, x):
+        # x is a numpy array with 2 elements.
+        h1 = sigmoid(self.w1 * x[0] + self.w2 * x[1] + self.b1)
+        h2 = sigmoid(self.w3 * x[0] + self.w4 * x[1] + self.b2)
+        o1 = sigmoid(self.w5 * h1 + self.w6 * h2 + self.b3)
+        return o1
+
+    def train(self, data, y_trues):
+        learn_rate = 0.1
+        epochs = 1000
+        loss_list = []
+        for epoch in range(epochs):
+            for x, y_true in zip(data, y_trues):
+                sum_h1 = self.w1 * x[0] + self.w2 * x[1] + self.b1
+                h1 = sigmoid(sum_h1)
+                sum_h2 = self.w3 * x[0] + self.w4 * x[1] + self.b2
+                h2 = sigmoid(sum_h2)
+                sum_o1 = self.w5 * h1 + self.w6 * h2 + self.b3
+                o1 = sigmoid(sum_o1)
+                y_pred = o1
+                
+                # Calculate partial derivatives.
+                d_l_d_ypred = -2 * (y_true - y_pred)
+                # neuron o1
+                d_ypred_d_w5 = h1 * deriv_sigmoid(sum_o1)
+                d_ypred_d_w6 = h2 * deriv_sigmoid(sum_o1)
+                d_ypred_d_b3 = deriv_sigmoid(sum_o1)
+                d_ypred_d_h1 = self.w5 * deriv_sigmoid(sum_o1)
+                d_ypred_d_h2 = self.w6 * deriv_sigmoid(sum_o1)
+                # neuron h1
+                d_h1_d_w1 = x[0] * deriv_sigmoid(sum_h1)
+                d_h1_d_w2 = x[1] * deriv_sigmoid(sum_h1)
+                d_h1_d_b1 = deriv_sigmoid(sum_h1)
+                # neuron h2
+                d_h2_d_w3 = x[0] * deriv_sigmoid(sum_h2)
+                d_h2_d_w4 = x[1] * deriv_sigmoid(sum_h2)
+                d_h2_d_b2 = deriv_sigmoid(sum_h2)
+                
+                # Update weights and biaes.
+                # neuron h1
+                self.w1 -= learn_rate * d_l_d_ypred * d_ypred_d_h1 * d_h1_d_w1
+                self.w2 -= learn_rate * d_l_d_ypred * d_ypred_d_h1 * d_h1_d_w2
+                self.b1 -= learn_rate * d_l_d_ypred * d_ypred_d_h1 * d_h1_d_b1
+                # neuron h2
+                self.w3 -= learn_rate * d_l_d_ypred * d_ypred_d_h2 * d_h2_d_w3
+                self.w4 -= learn_rate * d_l_d_ypred * d_ypred_d_h2 * d_h2_d_w4
+                self.b2 -= learn_rate * d_l_d_ypred * d_ypred_d_h2 * d_h2_d_b2
+                # neuron o1
+                self.w5 -= learn_rate * d_l_d_ypred * d_ypred_d_w5
+                self.w6 -= learn_rate * d_l_d_ypred * d_ypred_d_w6
+                self.b3 -= learn_rate * d_l_d_ypred * d_ypred_d_b3
+                
+            if epoch % 10 == 0:
+                y_preds = numpy.apply_along_axis(self.feedforward, 1, data)
+                loss = mse_loss(y_trues, y_preds)
+                loss_list.append(loss)
+        
+        return loss_list</code></pre>
+                <p>Our loss steadily decreases as the network learns:</p>
+                <img src="res/01/simple_network_loss.png" alt="Simple Network Loss" width="600">
+                <p>We can now use the network to predict genders:</p>
+                <pre><code>for i in range(0, 3):
+    temp = numpy.array([x[i], y[i]])
+    print((data[i][0], data[i][1]), 'is',
+          'female' if network.feedforward(temp) &lt; 0.5 else 'male')</code></pre>
+                <pre><samp>(np.int64(133), np.int64(65)) is female
+(np.int64(160), np.int64(72)) is male
+(np.int64(150), np.int64(70)) is male</samp></pre>
+
+                <img src="res/01/simple_nn_boundary.png" alt="Simple Network Boundary" width="600">
+
+                <h3>1.7.4 Torch implement</h3>
+                <p>File <a href="https://github.com/artinte/deep-learning/blob/develop/01_basic/7_nn_stratch/simple_network_torch.py">simple_network_torch.py</a></p>
+                <p><a href="https://github.com/artinte/deep-learning/blob/develop/01_basic/7_nn_stratch/demo_simple_network_torch.py">demo_simple_network_torch.py</a> first centers the height-weight table: it subtracts the mean weight from column 0 and the mean height from column 1, then stacks those two columns into <code>features</code>. Labels become a column vector <code>targets</code>. The module class in the file is <code>OurNeuralNetwork</code>, the same two-layer picture as the NumPy net: a linear map from 2 units to 2 with a sigmoid, then a linear map to 1 unit with a sigmoid.</p>
+                <p>MSE and SGD at learning rate 0.1 replace the hand-written partial derivatives. The loop runs 1000 epochs and appends the loss every 10 steps. The figure under the listing is that history.</p>
+                <pre><code>class NeuralNet(torch.nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.hidden = torch.nn.Sequential(torch.nn.Linear(2, 2), torch.nn.Sigmoid())
+        self.output = torch.nn.Sequential(torch.nn.Linear(2, 1), torch.nn.Sigmoid())
+
+    def forward(self, x):
+        x = self.hidden(x)
+        x = self.output(x)
+        return x
+
+
+model = NeuralNet()
+criterion = torch.nn.MSELoss()
+optimizer = torch.optim.SGD(model.parameters(), lr=0.1)
+
+history = []
+epochs = 1000
+for epoch in range(epochs):
+    preds = model(features)
+    loss = criterion(preds, targets)
+
+    optimizer.zero_grad()
+    loss.backward()
+    optimizer.step()
+
+    if epoch % 10 == 0:
+        history.append(loss.item())</code></pre>
+                
+                <img src="res/01/simple_net_torch.png" alt="Simple Network Torch" width="600">
+                
+                <h3>1.7.5 Now What?</h3>
+                <p>You made it! A quick recap of what we did:</p>
+                <ul class="with-bullets">
+                    <li><p>Introduced neurons, the building blocks of neural networks.</p></li>
+                    <li><p>Used the sigmoid activation function in our neurons.</p></li>
+                    <li><p>Saw that neural networks are just neurons connected together.</p></li>
+                    <li><p>Created a dataset with Weight and Height as inputs (or features) and Gender as the output (or label).</p></li>
+                    <li><p>Learned about loss functions and the mean squared error (MSE) loss.</p></li>
+                    <li><p>Realized that training a network is just minimizing its loss.</p></li>
+                    <li><p>Used backpropagation to calculate partial derivatives.</p></li>
+                    <li><p>Used stochastic gradient descent (SGD) to train our network.</p></li>
+                </ul>
+                <p>There’s still much more to do:</p>
+                <ul class="with-bullets">
+                    <li><p>Experiment with bigger / better neural networks using proper machine learning libraries like Tensorflow, Keras, and PyTorch.</p>
+                    <li><p>Build your first neural network with Keras.</p></li>
+                    <li><p>Discover other activation functions besides sigmoid, like Softmax.</p></li>
+                    <li><p>Discover other optimizers besides SGD.</p></li>
+                </ul>
+                <p>Thanks for reading!</p>
+                <div class="navigation">
+                    <a href="gradient_descent.html">Prev: 1.6 Gradient Descent</a>
+                    <a href="linear_algebra.html">Next: 2.1 Linear Algebra</a>
+                </div>
+            </main>
+
+            <aside class="col-md-2 right-sidebar">
+                <h5><a href="index.html#section1">Tensor and Gradient Basics</a></h5>
+                <ul id="dynamic-sidebar" class="nav flex-column">
+                </ul>
+            </aside>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script type="text/javascript" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="article_script.js"></script>
+    <script>
+        hljs.highlightAll();
+    </script>
+</body>
+
+</html>

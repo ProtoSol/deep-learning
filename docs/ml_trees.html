@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="laptop_coding_48.png" type="image/png">
+    <title>Trees and Ensembles</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" rel="stylesheet">
+    <link href="article_style.css" rel="stylesheet">
+</head>
+
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <nav class="col-md-2 left-sidebar"></nav>
+
+            <main class="col-md-8 content">
+                <h2 class="custom-title">0.2 Trees and Ensembles</h2>
+                <p class="title-subtext"></p>
+                <p style="color: #a0a0a0;">Created Date: 2026-10-09</p>
+
+                <p>A tree asks one yes-or-no question at a time. An ensemble asks many trees and votes. The code is <a href="https://github.com/artinte/deep-learning/blob/develop/00_ml/tree_models.py">tree_models.py</a>. Run <code>python 00_ml/tree_models.py</code>. Gradient boosting is explained below and is not a second program: the runnable ensemble is AdaBoost.</p>
+
+                <h3>0.2.1 Decision tree</h3>
+                <p>Each split picks a feature and a cut that make the two sides purer. For a binary label the impurity is the Gini index. \(p\) is the fraction of ones in the node:</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(G = 2p(1-p)\)
+                </div>
+                <p>XOR on the four corners needs both features, so a depth-1 tree misses at least one corner and a depth-2 tree fits all four. The script asserts both. Watch <a href="https://www.youtube.com/watch?v=7VeUPuFGJHk">StatQuest: Decision Trees</a>.</p>
+
+                <h3>0.2.2 Bagging</h3>
+                <p>Bagging draws bootstrap samples (rows sampled with replacement) and fits one tree on each. The prediction is the majority vote. A single tree copies the training set, including its accidents. Averaging trees that saw different accidents cancels some of those accidents.</p>
+                <p>The toy set is twenty-four points. The label is the sign of the first column, and the second column is noise. Twenty bootstrap trees of depth 2 vote back the true labels. StatQuest builds bagging in the first half of <a href="https://www.youtube.com/watch?v=J4Wdy0Wc_xQ">Random Forests Part 1</a>.</p>
+
+                <h3>0.2.3 Random forest</h3>
+                <p>A random forest is bagging plus one extra coin flip: each split, or in this small script each tree, may look at only a subset of the columns. That keeps every tree from locking onto the same feature. Here each tree sees one of the two columns. Eighty of those trees still vote the toy labels correctly, because enough of them were allowed to see the real column. The same StatQuest video finishes the construction: <a href="https://www.youtube.com/watch?v=J4Wdy0Wc_xQ">Random Forests Part 1 - Building, Using and Evaluating</a>.</p>
+
+                <h3>0.2.4 AdaBoost</h3>
+                <p>AdaBoost fits a stump, then raises the weight of the rows it got wrong, then fits the next stump on those heavier rows. A stump that is only a little better than a coin flip gets a small voice. The voices add up:</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(\alpha_t = \tfrac{1}{2}\log\dfrac{1-\epsilon_t}{\epsilon_t}, \quad H(x) = \mathrm{sign}\sum_t \alpha_t h_t(x)\)
+                </div>
+                <p>Eight stumps on the same toy set recover the labels. Watch <a href="https://www.youtube.com/watch?v=LsK-xG1cLYA">AdaBoost, Clearly Explained</a>.</p>
+
+                <h3>0.2.5 Gradient boosting</h3>
+                <p>Gradient boosting fits the residual. After a tree predicts \(\hat y\), the next tree is trained on \(y - \hat y\), and its prediction is added with a small step size. Repeat. That is the whole idea. XGBoost is this loop with a smarter split score and a penalty on the leaves. The script in this section is AdaBoost. Watch <a href="https://www.youtube.com/watch?v=3CC4N4z3GJc">Gradient Boost Part 1: Regression Main Ideas</a>.</p>
+
+                <div class="navigation">
+                    <a href="ml_linear.html">Prev: 0.1 Linear Models</a>
+                    <a href="ml_models.html">Next: 0.3 Other Models</a>
+                </div>
+            </main>
+
+            <aside class="col-md-2 right-sidebar">
+                <h5><a href="index.html#section00">Classical Machine Learning</a></h5>
+                <ul id="dynamic-sidebar" class="nav flex-column"></ul>
+            </aside>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script type="text/javascript" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="article_script.js"></script>
+    <script>hljs.highlightAll();</script>
+</body>
+
+</html>

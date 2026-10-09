@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="laptop_coding_48.png" type="image/png">
+    <title>Function Approximation</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" rel="stylesheet">
+    <link href="article_style.css" rel="stylesheet">
+</head>
+
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <nav class="col-md-2 left-sidebar">
+
+            </nav>
+
+            <main class="col-md-8 content">
+                <h2 class="custom-title">10.6 Function Approximation</h2>
+                <p class="title-subtext"></p>
+                <p style="color: #a0a0a0;">Created Date: 2025-06-05</p>
+
+                <p>A table is the honest way to store an action value: one number for each state and action. CartPole's observation is four continuous numbers, and the inverted pendulum in the PPO chapter is continuous as well. The table does not fit. Function approximation replaces the table with a parameterized function, and in this book that function is a neural network.</p>
+
+                <h3>10.6.1 From a table to a network</h3>
+                <p>Write \(Q(s, a; \theta)\) for the network that stands in for the action-value table, and \(\pi(a|s; \theta)\) for a policy network. Learning is no longer "write down the new number." It is a gradient step on \(\theta\), the same step as every earlier chapter, with a reinforcement-learning loss in place of cross-entropy.</p>
+                <p>Two failures show up as soon as the table is gone. Nearby states share parameters, so an update that fixes one state moves the prediction at other states. And the training target itself moves, because it is built from the same network (DQN) or from the same policy (PPO). A frozen target network, a replay buffer, or a clipped probability ratio are three different ways of slowing that moving target down.</p>
+
+                <h3>10.6.2 Where you already used it</h3>
+                <p>DQN on CartPole is value-function approximation. The network maps an observation to two action values, and the loss is squared error against \(r + \gamma \max_{a'} Q(s', a'; \theta^-)\), with \(\theta^-\) a lagged copy of the weights. PPO on the double pendulum is policy approximation plus a second network for the state value. The clipped surrogate is what keeps the policy network from taking a step that the latest batch cannot justify.</p>
+                <p>There is no new script in this section. The approximators are the networks in <a href="https://github.com/artinte/deep-learning/blob/develop/10_rl/4_dqn/simple_dqn.py">simple_dqn.py</a> and <a href="https://github.com/artinte/deep-learning/blob/develop/10_rl/5_ppo/simple_ppo.py">simple_ppo.py</a>. What changes from supervised learning is the target, not the optimizer. The next chapter leaves reinforcement learning and extends PyTorch itself, starting with a custom operator around an ordinary Python function.</p>
+
+                <div class="navigation">
+                    <a href="ppo.html">Prev: 10.5 PPO</a>
+                    <a href="custom_operator.html">Next: 11.1 Custom Operators</a>
+                </div>
+            </main>
+
+            <aside class="col-md-2 right-sidebar">
+                <h5><a href="index.html#section11">Extending PyTorch</a></h5>
+                <ul id="dynamic-sidebar" class="nav flex-column">
+                </ul>
+            </aside>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script type="text/javascript" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="article_script.js"></script>
+    <script>
+        hljs.highlightAll();
+    </script>
+</body>
+
+</html>

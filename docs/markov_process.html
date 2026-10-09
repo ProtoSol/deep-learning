@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="laptop_coding_48.png" type="image/png">
+    <title>Markov Decision Processes</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" rel="stylesheet">
+    <link href="article_style.css" rel="stylesheet">
+</head>
+
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <nav class="col-md-2 left-sidebar">
+
+            </nav>
+
+            <main class="col-md-8 content">
+                <h2 class="custom-title">10.2 Markov Decision Processes</h2>
+                <p class="title-subtext">Finite Markov Decision Processe</p>
+                <p style="color: #a0a0a0;">Created Date: 2025-07-10</p>
+
+                <p>In this section we introduce the formal problem of finite Markov decision processes, or finite MDPs. This problem involves evaluative feedback, as in bandits, but also an associative aspect—choosing different actions in di↵erent situations. MDPs are a classical formalization of sequential decision making, where actions influence not just immediate rewards, but also subsequent situations, or states, and through those future rewards.</p>
+
+                <p>Thus MDPs involve delayed reward and the need to tradeoff immediate and delayed reward. Whereas in bandit problems we estimated the value \(q_*(a)\) of each action \(a\), in MDPs we estimate the value \(q_*(s, a)\) of each action \(a\) in each state \(s\), or we estimate the value \(v_*(s)\) of each state given optimal action selections. These state-dependent quantities are essential to accurately assigning credit for long-term consequences to individual action selections.</p>
+                
+                <p>MDPs are a mathematically idealized form of the reinforcement learning problem for which precise theoretical statements can be made. We introduce key elements of the problem’s mathematical structure, such as returns, value functions, and Bellman equations.</p>
+                <p>We try to convey the wide range of applications that can be formulated as finite MDPs. As in all of artificial intelligence, there is a tension between breadth of applicability and mathematical tractability.</p>
+
+                <h3>10.2.1 The Agent–Environment Interface</h3>
+                <p>MDPs are meant to be a straightforward framing of the problem of learning from interaction to achieve a goal. The learner and decision maker is called the agent. The thing it interacts with, comprising everything outside the agent, is called the environment. These interact continually, the agent selecting actions and the environment responding to these actions and presenting new situations to the agent.</p>
+                <p> The environment also gives rise to rewards, special numerical values that the agent seeks to maximize over time through its choice of actions.</p>
+
+
+                <p>More specifically, the agent and environment interact at each of a sequence of discrete time steps, \(t = 1, 2, 3, \cdots\) . At each time step \(t\) the agent receives some representation of the environment’s state, \(S_t \in S\), and on that basis selects an action, \(A_t \in \mathcal{A}(s)\) . One </p>
+
+
+                <h3>10.2.2 Goals and Rewards</h3>
+                <p>In reinforcement learning, the purpose or goal of the agent is formalized in terms of a special signal, called the <strong>reward</strong> , passing from the environment to the agent. At each time step, the reward is a simple number, \(R_t \in \mathbf{R}\) . Informally, the agent's goal is to maximize the total amount of reward it receives. This means maximizing not immediate reward, but cumulative reward in the long run. We can clearly state this informal idea as the reward hypothesis:</p>
+                <p class="comment">That all of what we mean by goals and purposes can be well thought of as the maximization of the expected value of the cumulative sum of a received scalar signal (called reward).</p>
+
+                <p>The use of a reward signal to formalize the idea of a goal is one of the most distinctive features of reinforcement learning.</p>
+
+                <h3>10.2.3 Returns and Episodes</h3>
+                <p>So far we have discussed the objective of learning informally. We have said that the agent's goal is to maximize the cumulative reward it receives in the long run. How might this be defined formally? If the sequence of rewards received after time step \(t\) is denoted \(R_{t+1}, R_{t+2}, R_{t+3}, \cdots\) , then what precise aspect of this sequence do we wish to maximize?</p>
+
+                <p>In general, we seek to maximize the <strong>expected return</strong> , where the return, denoted \(G_t\) , is defined as some specific function of the reward sequence. In the simplest case the return is the sum of the rewards:</p>
+                
+                
+                <div class="navigation">
+                    <a href="rl_introduction.html">Prev: 10.1 Introduction RL Problems</a>
+                    <a href="dqn.html">Next: 10.3 DQN</a>
+                </div>
+            </main>
+
+            <aside class="col-md-2 right-sidebar">
+                <h5><a href="index.html#section10">Reinforcement Learning</a></h5>
+                <ul id="dynamic-sidebar" class="nav flex-column">
+                </ul>
+            </aside>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script type="text/javascript" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="article_script.js"></script>
+    <script>
+        hljs.highlightAll();
+    </script>
+</body>
+
+</html>

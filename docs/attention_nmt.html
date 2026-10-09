@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="laptop_coding_48.png" type="image/png">
+    <title>Attention-based NMT</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" rel="stylesheet">
+    <link href="article_style.css" rel="stylesheet">
+</head>
+
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <nav class="col-md-2 left-sidebar">
+
+            </nav>
+
+            <main class="col-md-8 content">
+                <h2 class="custom-title">4.6 Attention-based NMT</h2>
+                <p class="title-subtext">Effective Approaches to Attention-based Neural Machine Translation</p>
+                <p style="color: #a0a0a0;">Created Date: 2025-05-19</p>
+                <p>An attentional mechanism has lately been used to improve neural machine translation (NMT) by selectively focusing on parts of the source sentence during translation.  However, there has been little work exploring useful architectures for attention-based NMT.</p>
+                <p><a href="https://arxiv.org/abs/1508.04025">This</a> paper examines two simple and effective classes of attentional mechanism: a global approach which always attends to all source words and a local one that only looks at a subset of source words at a time.</p>
+                <p>We demonstrate the effectiveness of both approaches on the WMT translation tasks between English and German in both directions. With local attention, we achieve a significant gain of 5.0 BLEU points over non-attentional systems that already incorporate known techniques such as dropout. Our ensemble model using different attention architectures yields a new state-of-the-art result inthe WMT'15 English to German translation task with 25.9 BLEU points, an improvement of 1.0 BLEU points over the existing best system backed by NMT and an n-gram reranker.</p>
+
+                <h3>4.6.1 Introduction</h3>
+                <p>Neural Machine Translation (NMT) achieved state-of-the-art performances in large-scale translation tasks such as from English to French (Luong et al., 2015) and English to German(Jean et al., 2015). NMT is appealing since it requires minimal domain knowledge and is conceptually simple. The model by Luong et al. (2015) reads through all the source words until the end-of sentence symbol &lt;eos&gt; is reached. It then starts emitting one target word at a time, as illustrated in Figure 1.</p>
+
+                <p>NMT is often a large neural network that is trained in an end-to-end fashion and has the ability to generalize well to very long word sequences. This means the model does not have to explicitly store gigantic phrase tables and language models as in the case of standard MT; hence, NMT has a small memory footprint. Lastly, implementing NMT decoders is easy unlike the highly intricate decoders in standard MT (Koehn et al., 2003).</p>
+                <p>In parallel, the concept of "attention" has gained popularity recently in training neural networks, allowing models to learn alignments between different modalities, e.g., between image objects and agent actions in the dynamic control problem (Mnih et al., 2014), between speech frames and text in the speech recognition task (?), or between visual features of a picture and its text description in the image caption generation task (Xu et al., 2015).</p>
+                <p>In the context of NMT, Bahdanau et al. (2015) has successfully applied such attentional mechanism to jointly translate and align words. To the best of our knowledge, there has not been any other work exploring the use of attention-based architectures for NMT.</p>
+                <p>In this work, we design, with simplicity and effectiveness in mind, two novel types of attention based models: a global approach in which all source words are attended and a local one whereby only a subset of source words are considered at a time.</p>
+                <p>The former approach resembles the model of (Bahdanau et al., 2015) but is simpler architecturally. The latter can be viewed as an interesting blend between the hard and soft attention models proposed in (Xu et al., 2015): it is computationally less expensive than the global model or the soft attention; at the same time, unlike the hard attention, the local attention is differentiable almost everywhere, making it easier to implement and train. Besides, we also examine various alignment functions for our attention-based models.</p>
+                <p>Experimentally, we demonstrate that both of our approaches are effective in the WMT translation tasks between English and German in both directions. Our attentional models yield a boost of up to 5.0 BLEU over non-attentional systems which already incorporate known techniques such as dropout.</p>
+                <p>For English to German translation, we achieve new state-of-the-art (SOTA) results for both WMT'14 and WMT'15, outperforming previous SOTA systems, backed by NMT models and n-gram LM rerankers, by more than 1.0 BLEU.</p>
+                <p>We conduct extensive analysis to evaluate our models in terms of learning, the ability to handle long sentences, choices of attentional architectures, alignment quality, and translation outputs.</p>
+
+                <h3>4.6.2 Neural Machine Translation</h3>
+                <p>A neural machine translation system is a neural network that directly models the conditional probability \(p(y|x)\) of translating a source sentence, \(x_1, \cdots, x_n\) to a target sentence \(y_1, \cdots, y_m\). A basic form of NMT consists of two components: (a) an encoder which computes a representation s for each source sentence and (b) a decoder which generates one target word at a time and hence decomposes the conditional probability as:</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(log p(y|x) = \sum_{j=1}^m log p(y_i|y \lt j, s)\)
+                </div>
+                <p>A natural choice to model such a decomposition in the decoder is to use a recurrent neural network (RNN) architecture, which most of the recent NMT work such as Kalchbrenner and Blunsom, 2013. They, however, differ in terms of which RNN architectures are used for the decoder and how the encoder computes the source sentence representation s.</p>
+                <p>In this work, following Sutskever et al., 2014, we use the stacking LSTM architecture for our NMT systems, as illustrated with \(\mathbb{D}\) being our parallel training corpus.</p>
+
+                <h3>4.6.3 Attention-based Models</h3>
+                <p>Our various attention-based models are classifed into two broad categories, global and local. These classes differ in terms of whether the "attention" is placed on all source positions or on only a few source positions. We illustrate these two model types in Figure 2 and 3 respectively.</p>
+                <p>Common to these two types of models is the fact that at each time step t in the decoding phase, both approaches first take as input the hidden state \(h_t\) at the top layer of a stacking LSTM.</p>
+                <p>The goal is then to derive a context vector \(c_t\) that captures relevant source-side information to help predict the current target word \(y_t\). While these models differ in how the context vector \(c_t\) is derived, they share the same subsequent steps.</p>
+                <p>Specifically, given the target hidden state \(h_t\) and the source-side context vector \(c_t\), we employ a simple concatenation layer to combine the information from both vectors to produce an attentional hidden state as follows:</p>
+
+                <h4>4.6.3.1 Global Attention</h4>
+                <p>The idea of a global attentional model is to consider all the hidden states of the encoder when deriving the context vector \(c_t\) . In this model type, a variable-length alignment vector \(a_t\) , whose size equals the number of time steps on the source side, is derived by comparing the current target hidden state \(h_t\) with each source hidden state \(\hat{h}_s\):</p>
+
+                <p>Here, score is referred as a content-based function for which we consider three different alternative:</p>
+
+                <p>Besides, in our early attempts to build attention-based models, we use a location-based function in which the alignment scores are computed from solely the target hidden state \(h_t\) as follow:</p>
+
+                <h4>4.6.3.2 Local Attention</h4>
+
+                <p>The global attention has a drawback that it has to attend to all words on the source side for each target word, which is expensive and can potentially render it impractical to translate longer sequences, e.g., paragraphs or documents. To address this deficiency, we propose a local attentional mechanism that chooses to focus only on a small subset of the source positions per target word.</p>
+
+                <p>This model takes inspiration from the tradeoff between the soft and hard attentional models proposed by Xu et al. (2015) to tackle the image caption generation task.</p>
+
+                <h4>4.6.3.3 Input-feeding Approach</h4>
+
+                <p>In our proposed global and local approaches, the attentional decisions are made independently, which is suboptimal. Whereas, in standard MT, a coverage set is often maintained during the translation process to keep track of which source words have been translated.</p>
+
+                <p>Likewise, in attentional NMTs, alignment decisions should be made jointly taking into account past alignment information. To address that, we propose an input-feeding approach in which attentional vectors </p>
+
+                <h3>4.6.4 Experiments</h3>
+                <p>The systems are compared on WMT English–German translation in both directions. The baseline is a stacked LSTM that already uses dropout. Further BLEU movement after that baseline comes from the attention layout. Two attention layouts replace that fixed source vector. Global attention scores every encoder state at every decoder step. Local attention first chooses a window on the source and scores only the positions inside it. The alignment function is varied as well: a dot product of the decoder state with a source state, a bilinear map with a learned matrix, and a concat scorer that feeds the pair through a tanh layer. Input-feeding is a separate switch. The attentional vector from the previous step is concatenated onto the next decoder input, so the model can remember which source positions it has already used.</p>
+                <p>The training loop that matches this design is <a href="https://github.com/artinte/deep-learning/blob/develop/04_rnn/6_nmt/attention_nmt.py">04_rnn/6_nmt/attention_nmt.py</a>. <code>Encoder</code> is a bidirectional LSTM. <code>Attention</code> is the concat energy: the decoder state is repeated across the source length, joined with the encoder outputs, and projected to a scalar score. <code>Seq2Seq.forward</code> mixes the reference token with the model's own argmax under a teacher-forcing ratio. <code>train</code> drops the first target step, ignores the padding index in the cross-entropy, clips the gradient, and steps Adam. <code>main</code> keeps the <code>state_dict</code> with the lowest validation loss.</p>
+
+                <h3>4.6.5 Analysis</h3>
+                <p>The useful checks are about learning speed, sentence length, and whether the weights look like alignments. Attentional models pull ahead of the plain LSTM early in training, which means the alignment term is supplying a gradient the decoder can use, rather than a gain that appears only after a long schedule. Length is the failure mode the fixed vector was suspected of. As the source grows, a single summary state has to hold every token, and translation quality of the non-attentional system falls off. Global and local attention fall off more slowly, because each target word can still read the encoder states that remain relevant.</p>
+                <p>The alignment plots are the qualitative half of that claim. A row of \(a_t\) against source positions should put mass on the words that license the current target word. Global attention is free to spread that mass. Local attention keeps it inside a moving window. Input-feeding is what makes successive rows depend on each other, in the same way a coverage vector stops a classical decoder from translating the same source word twice. Read those weights from <code>evaluate</code>, which calls the model with teacher forcing turned off, so the decoder is conditioned on its own previous outputs.</p>
+
+                <h3>4.6.6 Conclusion</h3>
+                <p>Global attention is the smaller change and already accounts for most of the improvement over a stacked LSTM. Local attention is the version to use when scoring every source position on every target step is too expensive: a window keeps the cost from growing with the full source length, and the weights stay differentiable. A content-based score, whether dot, general, or concat, is the one that should be kept. A location-only score that ignores the encoder states is a weaker alignment. Input-feeding is a one-vector change to the decoder input and is worth leaving on, because each alignment decision can see the decisions that came before it.</p>
+                <p>The unit you would actually train is the one <code>init_model</code> builds: a bidirectional encoder, a content-based attention module, dropout, and a decode path that does not read the reference. Ensembles of those variants are how the paper pushes the WMT English-to-German number further. One saved <code>Seq2Seq</code> is the model those ensembles average.</p>
+            
+                <div class="navigation">
+                    <a href="nmt_align.html">Prev: 4.5 Neural Machine Translation</a>
+                    <a href="attention_mechanism.html">Next: 5.1 Attention Mechanism</a>
+                </div>
+            </main>
+
+            <aside class="col-md-2 right-sidebar">
+                <h5><a href="index.html#section4">Recurrent Network</a></h5>
+                <ul id="dynamic-sidebar" class="nav flex-column">
+                </ul>
+            </aside>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script type="text/javascript" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="article_script.js"></script>
+    <script>
+        hljs.highlightAll();
+    </script>
+</body>
+
+</html>

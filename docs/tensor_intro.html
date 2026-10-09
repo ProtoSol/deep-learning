@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="laptop_coding_48.png" type="image/png">
+    <title>Introduction to Tensors</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" rel="stylesheet">
+    <link href="article_style.css" rel="stylesheet">
+</head>
+
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <nav class="col-md-2 left-sidebar">
+
+            </nav>
+
+            <main class="col-md-8 content">
+                <h2 class="custom-title">1.2 Introduction to Tensors</h2>
+                <p class="title-subtext">Introduced the creation, indexing, and common operations of tensors.</p>
+                <p style="color: #a0a0a0;">Created Date: 2025-04-28</p>
+                <p>In PyTorch, <strong>Tensor</strong> is a basic data structure, which is similar to <a href="https://numpy.org/doc/stable/user/index.html">NumPy</a> array and can be efficiently operated on GPU. </p>
+                <img src="res/01/ndarray_struct.jpg" alt="ndarray">
+                <p>Figure Conceptual diagram showing the relationship between the three fundamental objects used to describe the data in an array:</p>
+                <ul style="list-style-type: disc;">
+                    <li><p>The ndarray itself;</p></li>
+                    <li><p>The data-type object that describes the layout of a single fixed-size element of the array;</p></li>
+                    <li><p>The array-scalar Python object that is returned when a single element of the array is accessed.</p></li>
+                </ul>
+                <p>The most important property of a tensor is its shape, the shape of a PyTorch tensor tells we how many elements are along each dimension (also called axis). Here is a tensor with three axes:</p>
+                <a href="https://drive.google.com/file/d/1tFzVzTixWz6K8JXuQOD2Su1qFWv8VWPC/view?usp=sharing">
+                    <img src="res/01/tensor_three_axes.jpg" alt="Three Axis" width="600">
+                </a>
+                <p>So how do we create a tensor of shape <code>(3, 2, 5)</code>?</p>
+                <h3>1.2.1 Tensor Creating</h3>
+                <p>File <a href="https://github.com/artinte/deep-learning/blob/develop/01_basic/2_tensor/create.py">create.py</a> introduces some common methods for creating tensors.</p>
+                <p>A tensor can be constructed from a Python <a href="https://docs.python.org/3/library/stdtypes.html#list">list</a> or sequence using the <a href="https://pytorch.org/docs/stable/generated/torch.tensor.html#torch.tensor">torch.tensor()</a> constructor:</p>
+                <pre><code>python_list = [[1, 2], [3, 4]]
+tensor_from_list = torch.tensor(python_list)
+print('Tensor from list:', tensor_from_list)
+
+numpy_array = numpy.array([[1, 2], [3, 4]])
+tensor_from_array = torch.tensor(numpy_array)
+print('Tensor from array:', tensor_from_array)</code></pre>
+                <pre><samp>Tensor from list: tensor([[1, 2],
+        [3, 4]])
+Tensor from array: tensor([[1, 2],
+        [3, 4]])</samp></pre>
+                <p><code>torch.tensor()</code> always copies data. If we have a Tensor data and just want to change its <code>requires_grad</code> flag, use <code>requires_grad_()</code> or <code>detach()</code> to avoid a copy. If We have a numpy array and want to avoid a copy, use <code>torch.as_tensor()</code>.</p>
+
+                <p>A tensor of specific data type can be constructed by passing a <code>torch.dtype</code> and/or a <code>torch.device</code> to a constructor or tensor creation op:</p>
+                <pre><code>device = 'cuda' if torch.cuda.is_available() else 'mps' \
+    if torch.mps.is_available() else 'cpu'
+print(device)
+
+tensor_custom = torch.tensor([1, 2, 3],
+                             dtype=torch.int64,
+                             device=device)
+print(tensor_custom)</code></pre>
+                <pre><samp>mps
+tensor([1, 2, 3])</samp></pre>
+                <p>More often than not, you'll want to initialize your tensor with some value. Common cases are all zeros, all ones, or random values, and the torch module provides factory methods for all of these:</p>
+                <pre><code>tensor_zeros = torch.zeros(size=(3, 3))
+tensor_ones = torch.ones((2, 2))
+tensor_empty = torch.empty((2, 2))
+print(tensor_zeros)
+print(tensor_ones)
+print(tensor_empty)
+
+torch.manual_seed(47)
+tensor_rand = torch.rand(2, 2)
+tensor_randn = torch.randn(2, 3)
+print(tensor_rand)
+print(tensor_randn)</code></pre>
+                <pre><samp>tensor([[0., 0., 0.],
+        [0., 0., 0.],
+        [0., 0., 0.]])
+tensor([[1., 1.],
+        [1., 1.]])
+tensor([[0., 0.],
+        [0., 0.]])
+tensor([[0.0530, 0.0499],
+        [0.4677, 0.8757]])
+tensor([[-1.7173,  0.5757,  0.6040],
+        [ 1.1914,  0.3525,  0.2941]])</samp></pre>
+                <p><a href="https://pytorch.org/docs/stable/generated/torch.arange.html#torch.arange">arange</a> return a 1-D tensor of size \(⌈\frac{end - start}{step}⌉\) with values from the interval <code>[start, end)</code> taken with common difference <code>step</code> beginning from <code>start</code>.</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(out_{i+1} = out_i + step\)
+                </div>
+                <p><a href="https://pytorch.org/docs/stable/generated/torch.linspace.html#torch.linspace">linspace</a> create a one-dimensional tensor of size steps whose values are evenly spaced from <code>start</code> to <code>end</code>, inclusize.</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \((start, start + \frac{end - start}{steps - 1}, ... , start + (steps - 2) * \frac{end - start}{steps - 1}, end)\)
+                </div>
+                <pre><code>tensor_arange = torch.arange(0, 5)
+assert (tensor_arange.numpy() == [0, 1, 2, 3, 4]).all()
+tensor_linspace = torch.linspace(0, 1, steps=5)
+assert torch.allclose(tensor_linspace,
+    torch.Tensor([0.0000, 0.2500, 0.5000, 0.7500, 1.0000]))</code></pre>
+                <p>For more information about building Tensors, see <a href="https://pytorch.org/docs/stable/torch.html#tensor-creation-ops">Creation Ops</a> and <a href="https://pytorch.org/docs/stable/torch.html#random-sampling">Random sampling</a>.</p>
+                
+                <h3>1.2.2 Tensor Indexing</h3>
+                <p>Tensor can be indexed using the stanardard Python <code>x[obj]</code> syntax, where <code>x</code> is the array and <code>obj</code> the selection. File <a href="https://github.com/artinte/deep-learning/blob/develop/01_basic/2_tensor/indexing.py">indexing.py</a> shows some common cases.</p>
+                <h4>1.2.2.1 Single Element</h4>
+                <p>Single element indexing works exactly like that for other standard Python sequences. It is 0-based, and accepts negative indices for indexing from the end of the array.</p>
+                <a href="https://drive.google.com/file/d/1Vgy9IFONUixEfLS5fl8cVqAUSaJvYN76/view?usp=sharing">
+                    <img src="res/01/python_index.jpg" alt="Python Index">
+                </a>
+                <pre><code>tensor2d = torch.tensor([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+assert tensor2d[1][2] == 6
+assert tensor2d[0, 0] == 1
+assert tensor2d[1, 2] == 6
+assert tensor2d[-1, -1] == 9</code></pre>
+                <p>Use <code>torch.Tensor.item()</code> to get a Python number from a tensor containing a single value:</p>
+                <pre><code>scalar = torch.tensor([[1]])
+assert scalar.item() == 1</code></pre>
+
+                <h4>1.2.2.2 Basic Slicing</h4>
+                <p>Basic slicing extends Python’s basic concept of slicing to N dimensions. Basic slicing occurs when obj is a <a href="https://docs.python.org/3/library/functions.html#slice">slice</a> object (constructed by <code>start:stop:step</code> notation inside of brackets), an integer, or a tuple of slice objects and integers.</p>
+                <pre><code>tensor1d = torch.tensor([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
+assert (tensor1d[1:7:2] == torch.tensor([1, 3, 5])).all()</code></pre>
+                <p>Assume <code>n</code> is the number of elements in the dimension being sliced. Then, if <code>start</code> is not given it defaults to <code>0</code> for <code>step > 0</code>. If <code>end</code> is not given it defaults to <code>n</code> for <code>step > 0</code>. If <code>step</code> is not given it defaults to <code>1</code>. Note that <code>::</code> is the same as <code>:</code> and means select all indices along this axis:</p>
+                <pre><code>tensor2d = torch.tensor([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+assert (tensor2d[0] == torch.tensor([1, 2, 3])).all()
+assert (tensor2d[:, 1] == torch.tensor([2, 5, 8])).all()
+assert (tensor2d[1:, 1:] == torch.tensor([[5, 6], [8, 9]])).all()</code></pre>
+                <h4>1.2.2.3 Boolean Array</h4>
+                <p>This advanced indexing occurs when obj is an array object of Boolean type, such as may be returned from comparison operators:</p>
+                <pre><code>tensor1d = torch.tensor([10, 20, 30, 40, 50])
+tensor_mask = tensor1d > 25
+assert (tensor_mask == torch.tensor([False, False, True, True, True])).all()
+assert (tensor1d[tensor_mask] == torch.tensor([30, 40, 50])).all()</code></pre>
+                <h4>1.2.2.4 Integer Array</h4>
+                <p>Integer array indexing allows selection of arbitrary items in the array based on their N-dimensional index. Each integer array represents a number of indices into that dimension.</p>
+                <pre><code>tensor2d = torch.tensor([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+row_indices = torch.tensor([0, 1, 1, 2])
+col_indices = torch.tensor([2, 1, 1, 0])
+assert (tensor2d[row_indices, col_indices] == torch.tensor([3, 5, 5, 7])).all()</code></pre>
+                <h4>1.2.2.5 Indexing Tool</h4>
+                <p><code>Ellipsis</code> expands to the number of <code>:</code> objects needed for the selection tuple to index all dimensions:</p>
+                <pre><code>tensor3d = torch.tensor([[[1], [2], [3]], [[4], [5], [6]]])
+assert (tensor3d[..., 0] == torch.tensor([[1, 2, 3], [4, 5, 6]])).all()
+assert (tensor3d[..., 0] == tensor3d[:, :, 0]).all()</code></pre>
+                <p>Each <code>newaxis</code> object in the selection tuple serves to expand the dimensions of the resulting selection by one unit-length dimension. The added dimension is the position of the <code>newaxis</code> object in the selection tuple. <code>newaxis</code> is an alias for <code>None</code>, and <code>None</code> can be used in place of this with the same result:</p>
+                <pre><code>tensor1d = torch.tensor([1, 2, 3])
+assert tensor1d.shape == (3,)
+assert tensor1d[:, torch.newaxis].shape == (3, 1)
+assert (tensor1d[:, torch.newaxis] == tensor1d[:, None]).all()</code></pre>
+                <p>For more information about indexing, see <a href="https://pytorch.org/docs/stable/torch.html#indexing-slicing-joining">Indexing, Slicing, Joining, Mutating Ops</a>.</p>
+
+                <h3>1.2.3 Tensor Operating</h3>
+                <p>Now that we know some of the ways to create/indexing a tensor... what can we do with them? PyTorch tensors have hundreds of operations that can ben performed on them. <a href="https://github.com/artinte/deep-learning/blob/develop/01_basic/2_tensor/operate.py">operate.py</a> gives some basic use cases.</p>
+
+                <h4>1.2.3.2 Math</h4>
+                <p>Let’s look at basic arithmetic first, and how tensors interact with simple scalars:</p>
+                <pre><code>ones = torch.zeros(2, 2) + 1
+twos = torch.ones(2, 2) * 2
+threes = (torch.ones(2, 2) * 7 - 1) / 2
+fours = twos ** 2
+sqrt2s = twos ** 0.5
+assert torch.isclose(ones, torch.tensor([[1.0, 1.0], [1.0, 1.0]])).all()
+assert torch.isclose(twos, torch.tensor([[2.0, 2.0], [2.0, 2.0]])).all()
+assert torch.isclose(threes, torch.tensor([[3.0, 3.0], [3.0, 3.0]])).all()
+assert torch.isclose(fours, torch.tensor([[4.0, 4.0], [4.0, 4.0]])).all()
+print(sqrt2s)</code></pre>
+                <pre><samp>tensor([[1.4142, 1.4142],
+        [1.4142, 1.4142]])</samp></pre>
+                <p>As you can see above, arithmetic operations between tensors and scalars, such as addition, subtraction, multiplication, division, and exponentiation are distributed over every element of the tensor. Because the output of such an operation will be a tensor, you can chain them together with the usual operator precedence rules, as in the line where we create <code>threes</code>.</p>
+                <p>Similar operations between two tensors also behave like you’d intuitively expect:</p>
+                <pre><code>fives = ones + fours
+assert torch.isclose(fives, torch.tensor([[5.0, 5.0], [5.0, 5.0]])).all()</code></pre>
+                <a href="https://drive.google.com/file/d/1k8EaNwpQlusYrRtmGz3p2FrHDdeXjjSV/view?usp=sharing">
+                    <img src="res/01/tensor_add.jpg" alt="Tensor Add">
+                </a>
+                <p>Here is a small sample from some of the major categories of operations:</p>
+                <pre><code>a = torch.tensor([1, 2, 3, 4])
+assert a.sum() == 10
+
+a = torch.tensor([[1, 2], [3, 4]])
+assert (a.sum(dim=0) == torch.tensor([4, 6])).all()
+
+a = torch.tensor([1.0, 2.0, 3.0, 4.0])
+assert torch.isclose(a.mean(), torch.tensor(2.5))
+assert torch.isclose(a.max(), torch.tensor(4.0))
+assert torch.isclose(a.min(), torch.tensor(1.0))</code></pre>
+                <h4 id="broadcasting">1.2.3.3 Broadcasting</h4>
+                <p>It’s important to note here that all of the tensors in the previous code cell were of identical shape. What happens when we try to perform a binary operation on tensors if dissimilar shape? The following cell throws a run-time error:</p>
+                <pre><code>torch.rand(2, 3) * torch.rand(3, 2)</code></pre>
+                <p>In the general case, you cannot operate on tensors of different shape this way, even in a case like the cell above, where the tensors have an identical number of elements. The exception to the same-shapes rule is <strong>Tensor Broadcasting</strong>. Here’s an example:</p>
+                <pre><code>tensor1 = torch.tensor([[2, 3, 4, 5], [6, 7, 8, 9]])
+tensor2 = torch.tensor([[2, 2, 2, 2]])
+doubled = tensor1 * tensor2
+assert tensor1.shape == (2, 4)
+assert tensor2.shape == (1, 4)
+assert (doubled == torch.tensor([[4, 6, 8, 10], [12, 14, 16, 18]])).all()</code></pre>
+                <p>Broadcasting is a way to perform an operation between tensors that have similarities in their shapes. The rules for broadcasting are:</p>
+                <ul style="list-style-type: disc;">
+                    <li><p>Each tensor must have at least one dimension - no empty tensors.</p></li>
+                    <div>
+                        <li><p>Comparing the dimension sizes of the two tensors, going from last to first:</p></li>
+                        <ul style="list-style-type: circle;">
+                            <li><p>Each dimension must be equal, or</p></li>
+                            <li><p>One of the dimensions must be of size 1, or</p></li>
+                            <li><p>The dimension does not exist in one of the tensors.</p></li>
+                        </ul>
+                    </div>
+                </ul>
+                <p>Tensors of identical shape, of course, are trivially “broadcastable”, as we saw earlier. Here are some examples of situations that honor the above rules and allow broadcasting:</p>
+                <pre><code>a = torch.ones(4, 3, 2)
+b = a * torch.rand(3, 2)
+c = a * torch.rand(3, 1)
+d = a * torch.rand(1, 2)
+assert b.shape == (4, 3, 2) # 3rd & 2nd dims identical to a, dim 1 absent
+assert c.shape == (4, 3, 2) # 3rd dim = 1, 2nd dim identical to a
+assert d.shape == (4, 3, 2) # 3rd dim identical to a, 2nd dim = 1</code></pre>
+
+                <h4>1.2.3.1 Copy and View</h4>
+                <p><a href="https://pytorch.org/docs/stable/generated/torch.Tensor.view.html">torch.Tensor.view(*shape)</a> returns a new tensor with the same data as the <code>self</code> tensor but of a different shape.</p>
+                <p>The returned tensor shares the same data and must have the same number of elements, but may have a different size. For a tensor to be viewed, the new view size must be compatible with its original size and stride, i.e., each new view dimension must either be a subspace of an original dimension, or only span across original dimensions \(d, d + 1, ... , d + k\) that satisfy the following contiguity-like condition that \(∀i = d, ... , d + k - 1\) :</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(stride[i] = stride[i + 1] \times size[i + 1]\)
+                </div>
+                <p>Otherwise, it will not be possible to view self tensor as shape without copying it (e.g., via <code>contiguous()</code>). When it is unclear whether a <code>view()</code> can be performed, it is advisable to use <code>reshape()</code>, which returns a view if the shapes are compatible, and copies (equivalent to calling <code>contiguous()</code>) otherwise.</p>
+                <pre><code>a = torch.randn((2, 3, 4))
+b = a.view((6, 4))
+c = a.view((-1, 4)) # the size -1 is inferred from other dimensions
+d = a.reshape((6, 4))
+assert a.shape == (2, 3, 4)
+assert b.shape == (6, 4)
+assert c.shape == (6, 4)</code></pre>
+
+                <h4>1.2.3.4 Change Dimensions</h4>
+                <p><a href="https://pytorch.org/docs/stable/generated/torch.transpose.html">torch.transpose(input, dim0, dim1)</a> returns a tensor that is a transposed version of <code>input</code>. The given dimensions <code>dim0</code> and <code>dim1</code> are swapped.</p>
+                <pre><code>a = torch.randn((2, 3))
+b = a.transpose(0, 1)
+assert (b == torch.transpose(a, 0, 1)).all()
+c = torch.randn((2, 3, 4))
+d = c.transpose(1, 2)
+assert (d == torch.transpose(c, 1, 2)).all()
+assert b.shape == (3, 2)
+assert d.shape == (2, 4, 3)</code></pre>
+                <p><a href="https://pytorch.org/docs/stable/generated/torch.squeeze.html">torch.squeeze(input, dim)</a> returns a tensor with all specified dimensions of input of size 1 removed.</p>
+                <p>For example, if input is of shape: \((A \times 1 \times B \times C \times 1 \times D)\) then the <code>input.squeeze()</code> will be of shape: \((A \times B \times C \times D)\).</p>
+                <p>When <code>dim</code> is given, a squeeze operation is done only in the given dimension(s). If input is of shape: \((A \times 1 \times B)\), <code>squeeze(input, 0)</code> leaves the tensor unchanged, but <code>squeeze(input, 1)</code> will squeeze the tensor to the shape \((A \times B)\).</p>
+                <pre><code>a = torch.randn((1, 3, 1, 4))
+b = a.squeeze()
+c = torch.randn((1, 3, 1, 4))
+d = c.squeeze(0)
+assert b.shape == (3, 4)
+assert d.shape == (3, 1, 4)</code></pre>
+                <p><a href="https://pytorch.org/docs/stable/generated/torch.unsqueeze.html">torch.unsqueeze(input, dim)</a> returns a new tensor with a dimension of size one inserted at the specified position.</p>
+                <pre><code>a = torch.randn((3, 4))
+b = a.unsqueeze(0)
+assert b.shape == (1, 3, 4)</code></pre>
+                <p><a href="https://pytorch.org/docs/stable/generated/torch.permute.html">torch.permute(input, dims)</a> returns a view of the original tensor <code>input</code> with its dimensions permuted.</p>
+                <pre><code>a = torch.randn((2, 3, 4))
+b = a.permute(2, 0, 1)
+assert b.shape == (4, 2, 3)
+assert b.shape == torch.permute(a, (2, 0, 1)).shape</code></pre>
+                <p><a href="https://pytorch.org/docs/stable/generated/torch.flatten.html">torch.flatten(input, start_dim=0, end_dim=-1)</a> flattens <code>input</code> by reshaping it into a one-dimensional tensor. If <code>start_dim</code> or <code>end_dim</code> are passed, only dimensions starting with <code>start_dim</code> and ending with <code>end_dim</code> are flattened. The order of elements in <code>input</code> is unchanged.</p>
+                <pre><code>a = torch.randn((2, 3, 4))
+b = a.flatten()
+c = a.flatten(start_dim=1)
+assert b.shape == (24,)
+assert c.shape == (2, 12)</code></pre>
+
+                <h4 id="tensor_product">1.2.3.5 Tensor Product</h4>
+                <p>The <strong>Tensor Product</strong>, or <strong>Dot Product</strong> (not to be confused with an element-wise product, the * operator), is one of the most common, most useful tensor operations. In mathematical notation, note the operation with a dot (\(\cdot\)):</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(z = x \cdot y\)
+                </div>
+
+                <p>Mathematically, what does the dot operation do? Let's start with the dot product of two vectors. It's computed as follows:</p>
+                <pre><code>def naive_vector_dot(vector_a, vector_b):
+    assert len(vector_a.shape) == 1
+    assert len(vector_b.shape) == 1
+    assert vector_a.shape[0] == vector_b.shape[0]
+    z = 0.0
+    for i in range(vector_a.shape[0]):
+        z += vector_a[i] * vector_b[i]
+    return z
+
+a = torch.tensor([1, 2, 3, 4, 5])
+b = torch.tensor([1, 2, 3, 4, 5])
+assert naive_vector_dot(a, b) == 55
+assert naive_vector_dot(a, b) == torch.matmul(a, b)</code></pre>
+                <p>Given two vectors \(x, y \in R^d\), their dot product \(x^T y\) (also known as <em>inner product</em>) is a sum over the products of the elements at the same position: \(x^T y = \sum_{i=1}^{d}x_i y_i\).</p>
+                <p>We have noticed that the dot product between two vectors is a scalar and that only vectors with the same numver of elements are compatible for a dot product.</p>
+                <p>We also take the dot product between a matrix \(x\) and a vector \(y\), which returns a vector where the cofficients are the dot products between \(y\) and the rows of \(x\), Implement it as follows:</p>
+                <pre><code>def naive_matrix_vector_dot(matrix_a, vector_b):
+    assert len(matrix_a.shape) == 2
+    assert len(vector_b.shape) == 1
+    assert matrix_a.shape[1] == vector_b.shape[0]
+    result = torch.zeros(matrix_a.shape[0])
+    for i in range(matrix_a.shape[0]):
+        for j in range(matrix_a.shape[1]):
+            result[i] += matrix_a[i, j] * vector_b[j]
+    return result
+
+
+c = torch.tensor([[1, 2, 3, 4, 5], [6, 7, 8, 9, 10]])
+d = torch.tensor([1, 2, 3, 4, 5])
+assert (naive_matrix_vector_dot(c, d) == torch.tensor([55, 130])).all()
+assert (naive_matrix_vector_dot(c, d) == torch.matmul(c, d)).all()</code></pre>
+                <p>Of course, a dot product generalizes to tensors with an arbitrary number of axes. The most common applications may be the dot product between two matrices. We can take the dot product of two matrices \(x\) and \(y\) <code>(dot(x, y))</code> if and only if <code>x.shape[1] == y.shape[0]</code>. The result is a matrix with shape <code>(x.shape[0], y.shape[1])</code>, where the coefficients are the vector products between the rows of \(x\) and the columns of \(y\). Here's the naive implementations:</p>
+                <pre><code>def naive_matrix_dot(matrix_a, matrix_b):
+    assert len(matrix_a.shape) == 2
+    assert len(matrix_b.shape) == 2
+    assert matrix_a.shape[1] == matrix_b.shape[0]
+    result = torch.zeros((matrix_a.shape[0], matrix_b.shape[1]))
+    for i in range(matrix_a.shape[0]):
+        for j in range(matrix_b.shape[1]):
+            row_x = matrix_a[i, :]
+            column_y = matrix_b[:, j]
+            result[i, j] = naive_vector_dot(row_x, column_y)
+    return result
+
+
+e = torch.tensor([[1, 2, 3, 4, 5], [6, 7, 8, 9, 10]])
+f = torch.tensor([[1, 2], [3, 4], [5, 6], [7, 8], [9, 10]])
+assert (naive_matrix_dot(e, f) == torch.tensor([[95, 110], [220, 260]])).all()
+assert (naive_matrix_dot(e, f) == torch.matmul(e, f)).all()</code></pre>
+                <p>To understand dot-product shape compatibility, it helps to visualize the input and output tensors by aligning them as shwon below:</p>
+                <a href="https://drive.google.com/file/d/1bBPPALMAYG0eXiKjd-scHHftQqqEgVj4/view?usp=sharing">
+                    <img src="res/01/matrix_dot_product.jpg" alt="Matrix Dot Product">
+                </a>
+                <p>In the figure, \(x\), \(y\) and \(z\) are pictured as rectangles (literal boxes of coefficients). Because the rows of \(x\) and the columns of \(y\) must have the same size, it follows that the width of \(x\) must match the height of \(y\).</p>
+                <p>More generally, we can take the dot product between higher-dimensional tensors, following the same rules for shape compatibility as outlined earlier for the 2D case:</p>
+                <p class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \((a, b, c, d) \cdot (d,) \rightarrow (a, b, c)\)
+                </p>
+                <p class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \((a, b, c, d) \cdot (d, e) \rightarrow (a, b, c, e)\)
+                </p>
+
+                <div class="navigation">
+                    <a href="pytorch_install.html">Prev: 1.1 Install PyTorch</a>
+                    <a href="data_represent.html">Next: 1.3 Data Representation</a>
+                </div>
+            </main>
+
+            <aside class="col-md-2 right-sidebar">
+                <h5><a href="index.html#section1">Tensor and Gradient Basics</a></h5>
+                <ul id="dynamic-sidebar" class="nav flex-column">
+                </ul>
+            </aside>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script type="text/javascript" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="article_script.js"></script>
+    <script>
+        hljs.highlightAll();
+    </script>
+</body>
+
+</html>

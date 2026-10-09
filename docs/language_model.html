@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="laptop_coding_48.png" type="image/png">
+    <title>Language Modeling</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" rel="stylesheet">
+    <link href="article_style.css" rel="stylesheet">
+</head>
+
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <nav class="col-md-2 left-sidebar">
+
+            </nav>
+
+            <main class="col-md-8 content">
+                <h2 class="custom-title">7.3 Language Modeling</h2>
+                <p class="title-subtext"></p>
+                <p style="color: #a0a0a0;">Created Date: 2025-06-19</p>
+
+                <h3>7.3.1 Llama Quick Start</h3>
+                <p><a href="https://github.com/artinte/deep-learning/blob/develop/07_text/3_lang_model/simple_llama.py">simple_llama.py</a> is a one-shot generation script. The commented lines name a 7B Llama-2 chat checkpoint. The lines that run load a smaller chat model, tokenize one instruction, and print a single decoded answer.</p>
+
+                <h4>7.3.1.1 Install Required Libraries</h4>
+                <pre><samp>pip3 install transformers accelerate sentencepiece</samp></pre>
+                <p><code>transformers</code> supplies the model classes, <code>accelerate</code> is what <code>device_map</code> uses to place weights, and <code>sentencepiece</code> is the tokenizer backend the Llama-2 checkpoint expects. <a href="https://github.com/artinte/deep-learning/blob/develop/07_text/3_lang_model/simple_llama.py">simple_llama.py</a> imports <code>LlamaForCausalLM</code>, <code>LlamaTokenizer</code>, <code>AutoModelForCausalLM</code>, and <code>AutoTokenizer</code>. The path that executes uses the <code>Auto*</code> pair.</p>
+
+                <h4>7.3.1.2 Choose a Model</h4>
+                <pre><code>model_name = 'NousResearch/Llama-2-7b-chat-hf'</code></pre>
+                <p>That id is the 7B chat checkpoint, and it is commented out in <a href="https://github.com/artinte/deep-learning/blob/develop/07_text/3_lang_model/simple_llama.py">simple_llama.py</a>. The assignment that runs is <code>TinyLlama/TinyLlama-1.1B-Chat-v1.0</code>, small enough to download and evaluate on CPU.</p>
+
+
+                <h4>7.3.1.3 Load the Tokenizer and Model</h4>
+                <p>How to estimate the model size:</p>
+                <ul class="with-bullets">
+                    <li><p>The model has about 7 billion (7B) parameters.</p></li>
+                    <li><p>Using 16-bit floating point precision means each parameter takes 2 bytes.</p></li>
+                    <li><p>Calculate total size: 7,000,000,000 parameters × 2 bytes = 14,000,000,000 bytes ≈ 13 GB</p></li>
+                </ul>
+                <p>If we use this model, we need to have a good network environment so that we don't spend too much time on downloading.</p>
+                <pre><samp>model.safetensors.index.json: 100%|███████████████████████████████████| 26.8k/26.8k
+model-00002-of-00002.safetensors: 100%|███████████████████████████████████| 3.50G/3.50G
+model-00001-of-00002.safetensors: 100%|███████████████████████████████████| 10.0G/10.0G
+                </samp></pre>
+
+                <h4>7.3.1.4 Build a Prompt</h4>
+                <p>The LLaMA Chat models expect prompts wrapped in [INST] ... [/INST] tags:</p>
+                <pre><code>prompt = "&lt;s&gt;[INST] Explain what a black hole is in one sentence. [/INST]"</code></pre>
+                <p>You can also include a system prompt for better alignment:</p>
+                <pre><samp>prompt = (
+                    "&lt;s&gt;[INST] &lt;&lt;SYS&gt;&gt;\n"
+                    "You are a helpful, intelligent assistant.\n"
+                    "&lt;&lt;/SYS&gt;&gt;\n"
+                    "Explain what a black hole is in one sentence.\n[/INST]"
+                )</samp></pre>
+                <p><a href="https://github.com/artinte/deep-learning/blob/develop/07_text/3_lang_model/simple_llama.py">simple_llama.py</a> uses the short form, with no system block: a leading <code>&lt;s&gt;</code>, then <code>[INST]</code>, the question, and <code>[/INST]</code>. The tokenizer turns that string into <code>input_ids</code> on <code>model.device</code> before generation.</p>
+                <h4>7.3.1.5 Generate Text</h4>
+                <p>Generation calls <code>model.generate</code> on those ids. The script asks for 100 new tokens, samples with <code>do_sample=True</code>, <code>top_p=0.95</code>, and <code>temperature=0.8</code>, and sets <code>repetition_penalty=1.1</code> so the same phrase is less likely to loop.</p>
+                <p>The checkpoint is loaded in float32 with <code>device_map={"": "cpu"}</code>. The script's comment records that this CPU path stays off bfloat16. <code>tokenizer.decode</code> on <code>output[0]</code> with <code>skip_special_tokens=True</code> is the string that gets printed.</p>
+
+                <h3 id="deepseek">7.3.2 DeepSeek-V3</h3>
+                <p>We present <a href="https://arxiv.org/abs/2412.19437">DeepSeek-V3</a>, a strong Mixture-of-Experts (MoE) language model with 671B total parameters with 37B activated for each token. To achieve efficient inference and cost-effective training, DeepSeek-V3 adopts <strong>Multi-head Latent Attention (MLA)</strong> and DeepSeekMoE architectures, which were thoroughly validated in DeepSeek-V2. Furthermore, DeepSeek-V3 pioneers an auxiliary-loss-free strategy for load balancing and sets a multi-token prediction training objective for stronger performance.</p>
+                <p>We pre-train DeepSeek-V3 on 14.8 trillion diverse and high-quality tokens, followed by Supervised Fine-Tuning and Reinforcement Learning stages to fully harness its capabilities. Comprehensive evaluations reveal that DeepSeek-V3 outperforms other open-source models and achieves performance comparable to leading closed-source models.</p>
+                <p>Despite its excellent performance, DeepSeek-V3 requires only 2.788M H800 GPU hours for its full training. In addition, its training process is remarkably stable. Throughout the entire training process, we did not experience any irrecoverable loss spikes or perform any rollbacks.</p>
+
+                <h4>7.3.2.1 Architecture</h4>
+                <p>We first introduce the basic architecture of DeepSeek-V3, featured by Multi-head Latent Attention (MLA) (DeepSeek-AI, 2024c) for efficient inference and DeepSeekMoE (Dai et al., 2024) for economical training. Then, we present a Multi-Token Prediction (MTP) training objective, which we have observed to enhance the overall performance on evaluation benchmarks. For other minor details not explicitly mentioned, DeepSeek-V3 adheres to the settings of DeepSeek-V2 (DeepSeek-AI, 2024c).</p>
+                
+
+                <h5>Basic Architecture</h5>
+                <p>The basic architecture of DeepSeek-V3 is still within the <a href="transformer_paper.html">Transformer (Vaswani et al., 2017)</a> framework. For efficient inference and economical training, DeepSeek-V3 also adopts MLA and DeepSeekMoE, which have been thoroughly validated by DeepSeek-V2.</p>
+                <p>Compared with DeepSeek-V2, an exception is that we additionally introduce an auxiliary-loss-free load balancing strategy (Wang et al., 2024a) for DeepSeekMoE to mitigate the performance degradation induced by the effort to ensure load balance. Figure 2 illustrates the basic architecture of DeepSeek-V3, and we will briefly review the details of MLA and DeepSeekMoE in this section.</p>
+                <img src="res/07/deepseek_v3_arch.png" alt="DeepSeek-V3 Architecture" width="600">
+                <p style="text-align: center; color: #555555;">Figure 2 - Basic Architecture of DeepSeek-V3</p>
+
+                <h5>Multi-Head Latent Attention</h5>
+                <p>For attention, DeepSeek-V3 adopts the MLA architecture. Let \(d\) denote the embedding dimension, \(n_h\) denote the number of attention heads, \(d_h\) denote the dimension per head, and \(h_t \in \mathbb{R}^d\) denote the attention input for the 𝑡-th token at a given attention layer. The core of MLA is the low-rank joint compression for attention keys and values to reduce Key-Value (KV) cache during inference:</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \[
+                    \begin{flalign*}
+                    & c_t^{KV} = W^{DKV} h_t \\
+                    & [k_{t,1}^C , k_{t,2}^C , \cdots , k_{t, n_h}^C] = k_t^C = W^{UK} c_t^{KV} \\
+                    & k_t^R = R_O PE(W^{KR} h_t) \\
+                    & k_{t, i} = [k_{t,i}^C , k_{t}^R] \\
+                    & [v_{t,1}^C , v_{t,2}^C , \cdots , v_{t, n_h}^C] = v_t^C = W^{UV} c_t^{KV}
+                    \end{flalign*}
+                    \]
+                </div>
+
+                <div class="navigation">
+                    <a href="easy_ocr.html">Prev: 7.2 Easy OCR</a>
+                    <a href="chatbots.html">Next: 7.4 Chatbots</a>
+                </div>
+            </main>
+
+            <aside class="col-md-2 right-sidebar">
+                <h5><a href="index.html#section7">Text</a></h5>
+                <ul id="dynamic-sidebar" class="nav flex-column">
+                </ul>
+            </aside>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script type="text/javascript" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="article_script.js"></script>
+    <script>
+        hljs.highlightAll();
+    </script>
+</body>
+
+</html>

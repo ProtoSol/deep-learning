@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="laptop_coding_48.png" type="image/png">
+    <title>Loss Function</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" rel="stylesheet">
+    <link href="article_style.css" rel="stylesheet">
+</head>
+
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <nav class="col-md-2 left-sidebar">
+
+            </nav>
+
+            <main class="col-md-8 content">
+                <h2 class="custom-title">2.5 Loss Function</h2>
+                <p class="title-subtext">A loss function in machine learning is used to measure how well a model performs by calculating how much its predictions deviate from the correct, or "ground truth," predictions.</p>
+                <p style="color: #a0a0a0;">Created Date: 2025-05-10</p>
+
+                <p>In machine learning (ML), a <a href="https://docs.pytorch.org/docs/stable/nn.html#loss-functions">loss function</a> is used to measure model performance by calculating the deviation of a model’s predictions from the correct, “ground truth” predictions. Optimizing a model entails adjusting model parameters to minimize the output of some loss function.</p>
+                <p>Suppose we have the following data points for a simple linear model:</p>
+                <ul class="with-bullets">
+                    <li><p>Actual values: [3, 4, 5]</p></li>
+                    <li><p>Predicted values: [2.5, 4.5, 5.2]</p></li>
+                </ul>
+                <p>We can calculate the loss using a simple <a href="#mse-loss">mean squared error (MSE)</a> loss function:</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(loss = \frac{{(3 - 2.5)}^2 + {(4 - 4.5)}^2 + {(5 - 5.2)}^2}{3} = 0.18\)
+                </div>
+
+
+                <h3 id="mse-loss">2.5.1 MSE Loss</h3>
+                <p>In statistics, the <strong>mean squared error (MSE)</strong> or <strong>mean squared deviation (MSD)</strong> of an estimator (of a procedure for estimating an unobserved quantity) measures the average of the squares of the errors—that is, the average squared difference between the estimated values and the true value.</p>
+                <p>We can view <a href="https://docs.pytorch.org/docs/stable/generated/torch.nn.MSELoss.html">torch.nn.MSELoss</a> to understand its calculation rules:</p>
+                <pre><code>CLASS torch.nn.MSELoss(size_average=None, reduce=None, reduction='mean')</code></pre>
+                <p>Creates a criterion that measures the mean squared error (squared L2 norm) between each element in the input \(x\) and target \(y\).</p>
+                <p>The unreduced (i.e. with <code>reduction</code> set to <code>'none'</code>) loss can be described as:</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(\ell(x, y) = L = {\{l_1, \cdots, l_n\}}^T, l_n = {(x_n - y_n)}^2\)
+                </div>
+                <p>where \(N\) is the batch size. If <code>reduction</code> is not <code>'none'</code> (default <code>'mean'</code>), then:</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \[
+                    \ell(x, y) = 
+                    \begin{cases}
+                    \text{mean}(L), & \text{if } \texttt{reduction} = \texttt{mean} \\
+                    \text{sum}(L), & \text{if } \texttt{reduction} = \texttt{sum}
+                    \end{cases}
+                    \]
+                </div>
+                <p>\(x\) and \(y\) are tensors of arbitrary shapes with a total of \(N\) elements each. The mean operation still operates over all the elements, and divides by \(N\). The division by \(N\) can be avoided if one sets <code>reduction = 'sum'</code> .</p>
+
+                <p>File <a href="https://github.com/artinte/deep-learning/blob/develop/02_dnn/5_loss_function/mse_loss.py">mse_loss.py</a> defines <code>dervi_mse(y_pred, y_true)</code> computes the gradient of the Mean Squared Error (MSE) loss with respect to the predicted values:</p>
+                <pre><code>def dervi_mse(y_pred, y_true):
+    return 2 * (y_pred - y_true) / len(y_true)
+
+y_true = numpy.array([1.0, 2.0, 3.0, 4.0, 5.0])
+y_pred = numpy.array([1.2, 1.8, 3.5, 4.1, 5.3])
+
+average_loss = ((y_pred - y_true) ** 2).mean()
+print(average_loss)
+
+dl_dy = dervi_mse(y_pred, y_true)
+print(dl_dy)</code></pre>
+
+                <pre><samp>0.0856
+[ 0.08 -0.08  0.2   0.04  0.12]</samp></pre>
+
+                <p>In PyTorch, we can use the following code to compute the MSE loss and its gradient:</p>
+                <pre><code>y_true = torch.tensor(y_true, requires_grad=False)
+y_pred = torch.tensor(y_pred, requires_grad=True)
+
+# update gradient
+average_loss = torch.nn.MSELoss()(y_pred, y_true)
+print(average_loss.item())
+
+average_loss.backward()
+print(y_pred.grad)</code></pre>
+
+                <pre><samp>0.0856
+tensor([ 0.0800, -0.0800,  0.2000,  0.0400,  0.1200], dtype=torch.float64)</samp></pre>
+                <p>Josh Starmer's <a href="https://www.youtube.com/watch?v=PaFPbb66DxQ">The Main Ideas of Fitting a Line to Data</a> is the same squared error, drawn as the vertical gaps between points and a line.</p>
+
+                <h3 id="cross-entropy-loss">2.5.2 Cross Entropy Loss</h3>
+                <p><a href="https://docs.pytorch.org/docs/stable/generated/torch.nn.CrossEntropyLoss.html">torch.nn.CrossEntropyLoss</a> computes the cross entropy loss between input logits and target.</p>
+
+                <pre><code>CLASS torch.nn.CrossEntropyLoss(weight=None, size_average=None, ignore_index=-100, reduce=None, reduction='mean', label_smoothing=0.0)</code></pre>
+
+                <p>It is useful when training a classification problem with \(C\) classes. If provided, the optional argument <code>weight</code> should be a 1D Tensor assigning weight to each of the classes. This is particularly useful when you have an unbalanced training set.</p>
+                <p>The input is expected to contain the unnormalized logits for each class (which do not need to be positive or sum to 1, in general). input has to be a Tensor of size \((C)\) for unbatched input, \((minibatch, C)\) or \((minibatch, C, d_1, d_2, \cdots, d_k)\) with \(K \ge 1\) for the K-dimensional case. The last being useful for higher dimension inputs, such as computing cross entropy loss per-pixel for 2D images.</p>
+                <pre><code># Suppose we have 3 classes
+num_classes = 3
+
+# Predicted scores (logits), not probabilities
+# Shape: (batch_size, num_classes)
+y_pred = torch.tensor([[2.0, 1.0, 0.1], [0.5, 2.5, 0.3]])
+
+# Ground truth labels (as class indices)
+# Shape: (batch_size,)
+y_true = torch.tensor([0, 1])
+
+criterion = torch.nn.CrossEntropyLoss()
+
+loss = criterion(y_pred, y_true)
+print(f"CrossEntropyLoss: {loss.item():.4f}")</code></pre>
+
+                <pre><samp>CrossEntropyLoss: 0.3185</samp></pre>
+                <p>The matching picture is StatQuest's <a href="https://www.youtube.com/watch?v=6ArSys5qHAU">Neural Networks Part 6: Cross Entropy</a>.</p>
+
+                <h3 id="bce-loss">2.5.3 BCELoss</h3>
+
+                <p><a href="https://docs.pytorch.org/docs/stable/generated/torch.nn.BCELoss.html#torch.nn.BCELoss">torch.nn.BCELoss</a></p>
+                <p>Binary cross-entropy compares a predicted probability with a target in \(\{0, 1\}\). The prediction must already lie in \((0, 1)\), which is what a sigmoid produces. Raw logits belong in <code>BCEWithLogitsLoss</code>, which folds the sigmoid into the loss.</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(\ell = -\frac{1}{N}\sum_i \left[ y_i \log p_i + (1 - y_i) \log (1 - p_i) \right]\)
+                </div>
+                <p><a href="https://github.com/artinte/deep-learning/blob/develop/02_dnn/5_loss_function/demo_bce_loss.py">demo_bce_loss.py</a> builds four probabilities <code>[0.9, 0.2, 0.1, 0.8]</code> and four targets <code>[1, 0, 0, 1]</code>, both float32. <code>BCELoss</code> with its default mean reduction averages the four terms, and the script prints that scalar rounded to four decimals.</p>
+                <p>Binary cross-entropy is the loss inside logistic regression. StatQuest's <a href="https://www.youtube.com/watch?v=yIYKR4sgzI8">Logistic Regression</a> derives that curve and the loss that trains it. Hinge loss, the other linear classifier loss, is with the SVM in <a href="ml_models.html">0.3 Other Models</a>.</p>
+                
+                <div class="navigation">
+                    <a href="activation_function.html">Prev: 2.4 Activation Function</a>
+                    <a href="optimizer.html">Next: 2.6 Optimizer</a>
+                </div>
+            </main>
+
+            <aside class="col-md-2 right-sidebar">
+                <h5><a href="index.html#section2">Fully Connected Network</a></h5>
+                <ul id="dynamic-sidebar" class="nav flex-column">
+                </ul>
+            </aside>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script type="text/javascript" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="article_script.js"></script>
+    <script>
+        hljs.highlightAll();
+    </script>
+</body>
+
+</html>

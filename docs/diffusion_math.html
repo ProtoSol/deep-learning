@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="laptop_coding_48.png" type="image/png">
+    <title>Mathematical Foundation</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" rel="stylesheet">
+    <link href="article_style.css" rel="stylesheet">
+</head>
+
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <nav class="col-md-2 left-sidebar">
+
+            </nav>
+
+            <main class="col-md-8 content">
+                <h2 class="custom-title">6.3 Mathematical Foundation</h2>
+                <p class="title-subtext">Mathematical Foundation of Diffusion Generative Models</p>
+                <p style="color: #a0a0a0;">Created Date: 2025-05-24</p>
+                <p>In this turorial, we covered the mathematical foundation of diffusion generative models. We aim to give you a solid understanding of</p>
+                <ul class="with-bullets">
+                    <li><p>The score function as the gradient to data distribution.</p></li>
+                    <li><p>Score function enables the reversal of forward diffusion process.</p></li>
+                    <li><p>Learning the score function by denoising score matching (and its equivalence to explicit score matching).</p></li>
+                    <li><p>Approximate the score function with a neural network.</p></li>
+                    <li><p>Sampling from diffusion models.</p></li>
+                </ul>
+                <p>with concrete examples in low dimension data (2d) and apply them to high dimensional data (point cloud or images).</p>
+
+                <h3>6.3.1 Mathematical Fundation</h3>
+                <p>This session is on diffusion generative models, an approach to generating samples from distributions; it differs substantially from other approaches, like generative adversarial networks (GANs) and variational autoencoders (VAEs). Notably, it was one of the core ingredients of OpenAI's recent DALL·E 2 system for converting natural language descriptions to detailed images.</p>
+                <p>Diffusion generative models use the following idea. Samples from some distribution (e.g. of images) are gradually corrupted with more and more noise until they become unrecognizable static—this is the 'diffusion'. We then learn to reverse this mapping, so that we can turn unrecognizable static into a sample from our distribution of interest. Because it's easy to sample unrecognizable static, the mapping allows us to easily sample from our target distribution.</p>
+                <p>We will focus on the absolute basics of diffusion generative modeling, and restrict ourselves mostly to toy examples involving analytically tractable distributions.</p>
+
+                <h4>6.3.1.1 Motivation</h4>
+                <p>Generative modeling is an area of statistics and machine learning that involves approximating the probability distribution from which a given set of data is sampled. By learning such a distribution (e.g. of pictures of faces), we can sample new data from it—e.g. a new image of a face.</p>
+                <p>There are different approaches to generative modeling, including using generative adversarial networks (GANs) and variational autoencoders (VAEs). One somewhat newer approach involves adding a large amount of noise to samples, and then learning to undo the noise.</p>
+                <p>In this way, we can learn to convert pure noise into samples from some distribution we're interested in. Because it's easy to generate all sorts of samples of pure noise, and each gets transformed by our noise-undoing-mapping to samples from our target distribution, we have a generative model.</p>
+
+                <p>There are various appealing features to this approach to generative modeling. One notable one is that we do not have to directly learn a probability distribution, but can instead learn a related function sometimes called the score. This is the gradient of the log of the probability density function.</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(\mathbf{s}(\mathbf{x}) := \nabla_{\mathbf{x}} \log p(\mathbf{x})\)
+                </div>
+                <p>This allows us to avoid having to learn a normalization constant for our probability density, which is an often troublesome task.</p>
+
+                <h4>6.3.1.2 Forward Diffusion</h4>
+                <p>How do we add noise to distribution samples 'properly'? Although views on this have varied, recent work has unified different approaches. By and large, various ideas about how to do this amount to subjecting a given distribution sample to a kind of diffusion process. More generally, we can imagine applying some kind of stochastic process (defined by a stochastic differential equation, or SDE) to a distribution sample.</p>
+                <h5>Basics of diffusion</h5>
+                <p>Let's view the basics of diffusion. A one-dimensional diffusion process (on the real line) can be defined by the SDE</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(\dot{x} = \sigma \cdot \eta(t)\)
+                </div>
+                <p>where \(\sigma > 0\) is a constant, and \(\eta(t)\) denotes a Gaussion white noise term.</p>
+                <p>What does this even mean? We can make the above expression concrete by defining it to be the small \(\Delta t\) limit of the discrete process for which:</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(x(t + \Delta t) = x(t) + \sigma \cdot  \sqrt{\Delta t} \cdot r\)
+                </div>
+                <p>where \(r \sim \mathcal{N}(0, 1)\) is a sample from a standard normal distribution. This is an example of an <a href="prob_theory.html#euler_maruyama_method">Euler-Maruyama time step</a>.</p>
+                <p>The above description of diffusion is useful for doing simulations. Given a number \(x\), we can use the above update rule to subject it to one time step of diffusion. But a complementary view describes how the probability density \(p(x, t)\), the probability of the system being at position \(x\) at time \(t\), changes over time.</p>
+                <p>In particular, \(p(x, t)\) changes according to the well-known diffusion equation:</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(\frac{\partial p(x, t)}{\partial t} = \frac{\sigma^2}{2} \cdot \frac{\partial^2 p(x, t)}{\partial x^2}\)
+                </div>
+                <p>You may be used to seeing this equation with a diffusion constant \(D\) instead of a parameter \(\sigma\). The conversion between them is that \(D = \frac{\sigma^2}{2}\).</p>
+                <p>The solution to the diffusion equation, given a delta function initial condition \(p(x, 0) = \delta(x - x_0)\) (that is, given that we are initially certain that the system is at location \(x_0\)) is the well-known <a href="prob_theory.html#heat_kernel">heat kernel</a>:</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(p(x, t | x_0, 0) = \frac{1}{\sqrt{2 \pi \sigma^2 t}} \exp\left\{ - \frac{(x - x_0)^2}{2 \sigma^2 t}  \right\}\)
+                </div>
+                <p>Given an arbitrary initial condition \(p(x, 0) = p_0(x)\), the general solution of the diffusion equation is then:</p>
+                <p class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(p(x, t) = \int_{-\infty}^{\infty} p(x, t | x_0, 0) \cdot p_0(x_0) \cdot dx_0\)
+                </p>
+
+                <h5>Basics of stochastic differential equations (SDEs)</h5>
+                <p>Diffusion is just one particularly simple example of a stochastic process governed by an SDE. The most general one-dimensional SDE looks like</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(\dot{x} = f(x, t) + g(x, t) \cdot \eta(t)\)
+                </div>
+                <p>Where \(f(x, t)\) and \(g(x, t)\) are functions, and \(\eta(t)\) is again a Gaussian white noise term. The function \(f(x, t)\) is the drift term, and describes how the average value of \(x(t)\) evolves with time. The term involving \(g(x, t)\) is the noise or diffusion term, and describes stochastic fluctuations in the value of \(x(t)\).</p>
+                <p>What does this even mean? Unlike in the case of diffusion, for which \(g(x, t)\) is a constant, there are additional mathematical subtleties associated with making the above expression well-defined. For our purposes, we can choose the convention known as the <a href="#">Ito interpretation</a>, which defines the above expression to be the small \(\Delta t\) limit of the discrete process:</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(x(t + \Delta t) = x(t) + f(x(t), t) \cdot \Delta t + g(x, t) \cdot \sqrt{\Delta t} \cdot r\)
+                </div>
+                <p>Where \(r \sim \mathcal{N}(0, 1)\) is a sample from a standard normal distribution. This is a more general Euler-Maruyama time step (although it is still not the most general form of it, given that we are only working in one dimension for now).</p>
+                <p>The analogue to the diffusion equation is the <a href="#">Fokker-Planck equation (FPE)</a>, which describes how \(p(x, t)\) evolves in time for a system described by an SDE. For the one-dimensional Ito-interpreted system written above, it is given by:</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(\frac{\partial p(x, t)}{\partial t} = - \frac{\partial}{\partial x} \left[ f(x, t) \cdot p(x, t) \right] + \frac{1}{2} \cdot \frac{\partial^2}{\partial x^2} \left[ g^2(x, t) \cdot p(x, t) \right]\)
+                </div>
+                <p>Most FPEs are difficult or impossible to solve analytically, so we may not be able to get exact solutions for \(p(x, t)\). Notable cases where we can solve for \(p(x, t)\) exactly include diffusion and <a href="#">Ornstein-Uhlenbeck-like processes (OU processes)</a>. OU processes are mean-reverting stochastic processes; a one-dimensional example is the SDE:</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(\dot{x} = \frac{1}{\tau} \left[ \mu - x \right] + \sigma \cdot \sqrt{\frac{2}{\tau}} \cdot \eta(t)\)
+                </div>
+                <p>Its solution (for an initial condition \(p(x, 0) = \delta(x - x_0)\)) is:</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(p(x, t | x_0, 0) = \frac{1}{\sqrt{2 \pi {s(t)}^2}} \exp\left\{ - \frac{[ x - \mu(t) ]^2}{2 {s(t)}^2}  \right\}\)
+                </div>
+                <p>Where</p>
+                <p class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(\mu(t) = x_0 \cdot e^{-t/\tau} + \mu \cdot (1 - e^{-t/\tau})\)
+                </p>
+                <p class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(s(t) = \sigma \cdot \sqrt{\frac{1 - e^{-2t/\tau}}{2/\tau}}\)
+                </p>
+                <p>In the long-time limit \((t \rightarrow \infty)\), we have:</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(p(x, t | x_0, 0) \xrightarrow{t \to \infty} p_{ss}(x) = \frac{1}{\sqrt{2 \pi \sigma^2}} \exp\left\{ - \frac{(x - \mu)^2}{2 \sigma^2}  \right\}\)
+                </div>
+                <p>i.e. the steady-state solution \(p_{ss}(x)\) is a Gaussian with mean \(\mu\) and variance \(\sigma^2\).</p>
+                <p>The general solution to this OU process (given an initial distribution \(p(x, 0) = p_0(x)\)) is:</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(p(x, t) = \int_{-\infty}^{\infty} p(x, t | x_0, 0) \cdot p_0(x_0) \cdot dx_0\)
+                </div>
+                <p>One thing that makes OU processes somewhat different from a strict diffusion process is that their long-time behavior loses all memory of their initial condition. That is, as \(t\) increases, \(p(x, t)\) depends less and less on \(p_0(x)\).</p>
+                <h5>Basic Example Code</h5>
+                <p>Let's see what it might look like to simulate 1D diffusion, a particularly simple stochastic process. You can also play with the code yourself to simulate other SDEs, like an OU process.</p>
+                
+                <h4>6.3.1.3 Reverse Diffusion</h4>
+                <p>How do we 'undo' the noise that we added to our samples from the forward diffusion process? Although a bit counter to intuition—for example, we expect to observe cream and coffee to mix via diffusion, but not for them to spontaneously separate—it turns out that it is mathematically straightforward to define the time-reverse of a stochastic process governed by an SDE. The time-reversed process is itself a stochastic process governed by an SDE, whose probability density evolves in time according to a Fokker-Planck equation.</p>
+                <h5>Motivating Example: Reversing 1D diffusion</h5>
+                <p>Recall that 1D diffusion (for an amount of time \(T\)) can be described by the SDE:</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(\dot{x} = \sigma \cdot \eta(t)\)
+                </div>
+                <p>Intuitively, diffusion causes things to spread out. We would expect the time-reverse of this process to cause things to come back together.</p>
+                <p>One stochastic process which concentrates things, rather than spreads them out, is an OU process. Might some kind of OU process be the time-reverse of 1D diffusion? It turns out that the OU process described by:</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(\dot{x} = \frac{x_0 - x}{T - t} + \sigma \cdot \eta(t)\)
+                </div>
+                <p>is the time-reverse of a diffusion process that begins concentrated at the point \(x_0\), and spreads out for an amount of time \(T\). In other words, this process compresses a Gaussian until it becomes a delta function centered at \(x_0\) at time \(T\).</p>
+                <p>The transition probability is also opposite:</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(q(x, t | x_0, 0) = \frac{1}{\sqrt{2 \pi \sigma^2 (T - t)}} \exp\left\{ - \frac{(x - x_0)^2}{2 \sigma^2 (T - t)}  \right\}\)
+                </div>
+                <p>To not confuse these probabilities with those of the forward process, we will denote them by \(q\) instead of \(p\).</p>
+                <p>Since the reverse process is also governed by an SDE, we can use Euler-Maruyama time steps to simulate it; here, we would have:</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(x(t + \Delta t) = x(t) + \frac{x_0 - x}{T - t} \Delta t + \sigma \cdot \sqrt{\Delta t} \cdot r\)
+                </div>
+                <p>Note that we're using the convention that time runs forward, from \(t = 0\) to \(t = T\), here. People also use the convention that times runs backward (from \(t = T\) to \(t = 0\)), in which case we would instead have:</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(x(t - \Delta t) = x(t) + \frac{x_0 - x}{t} \Delta t + \sigma \cdot \sqrt{\Delta t} \cdot r\)
+                </div>
+                <p>They are mathematically equivalent, so you can use either one when you're doing simulations.</p>
+
+                <h4>6.3.1.4 Learning the Score Function</h4>
+                <p>The reverse drift in the previous section still names the clean point \(x_0\). At sampling time we do not have that point. The quantity the reverse SDE actually needs is the score of the noisy marginal, \(\nabla_x \log p_t(x)\), the direction in which the density of noisy samples increases.</p>
+                <p>Images do not give us that gradient in closed form, so we turn it into a regression. Draw a clean sample, corrupt it with Gaussian noise of a known scale \(\sigma_t\), and train a network \(s_\theta(x_t, t)\) to match the score of that perturbation kernel. For isotropic Gaussian noise the target is analytic:</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(\nabla_{x_t} \log p(x_t \mid x_0) = -\frac{x_t - x_0}{\sigma_t^2}\)
+                </div>
+                <p>That target is only a rescaling of the noise we added. Averaging the match over clean data and over noise levels is the same objective as matching \(\nabla \log p_t\) itself, and the partition function of \(p_t\) never appears. The next two tutorials check this on a Gaussian mixture: first with the exact score, then with a small network trained by denoising score matching.</p>
+
+                <h3>6.3.2 Day 1 Coding Tutorial</h3>
+                <p>In this tutorial you will gain more intuition about the score functions by examining the analytical score function of a general class of distribution: Gaussian Mixture model.</p>
+                <p>You will empirically validate that the exact score functions enabled the reversal of diffusion process and recovers the original data distribution.</p>
+
+                <h3>6.3.3 Day 2 Coding Tutorial</h3>
+                <p>In this notebook, you will build a toy neural network model to learn the score function in a few different ways: by supervised learning on the exact score, by denoising score matching from the data samples. You will empirically validate that these two methods can both approximate the score of data and be used to recover the original data distribution in reverse diffusion.</p>
+                <div class="navigation">
+                    <a href="gaussian_process.html">Prev: 6.2 Gaussian Processes</a>
+                    <a href="diffusion_scratch.html">Next: 6.4 Diffusion from Scratch</a>
+                </div>
+            </main>
+
+            <aside class="col-md-2 right-sidebar">
+                <h5><a href="index.html#section6">Diffusion Model</a></h5>
+                <ul id="dynamic-sidebar" class="nav flex-column">
+                </ul>
+            </aside>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script type="text/javascript" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="article_script.js"></script>
+    <script>
+        hljs.highlightAll();
+    </script>
+</body>
+
+</html>

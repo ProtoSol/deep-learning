@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="laptop_coding_48.png" type="image/png">
+    <title>Activation Function</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" rel="stylesheet">
+    <link href="article_style.css" rel="stylesheet">
+</head>
+
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <nav class="col-md-2 left-sidebar">
+
+            </nav>
+
+            <main class="col-md-8 content">
+                <h2 class="custom-title">2.4 Activation Function</h2>
+                <p class="title-subtext">Some common <a href="https://docs.pytorch.org/docs/stable/nn.html#non-linear-activations-weighted-sum-nonlinearity">activation functions</a> are summarized and their derivatives are solved.</p>
+                <p style="color: #a0a0a0;">Created Date: 2025-05-10</p>
+                <p>The activation function of a node in an artificial neural network is a function that calculates the output of the node based on its individual inputs and their weights.</p>
+
+                <h3 id="sigmoid">2.4.1 Sigmoid Function</h3>
+                <p>A <strong>sigmoid function</strong> is any mathematical function whose graph has a characteristic S-shaped or sigmoid curve.</p>
+                <p>A common example of a sigmoid function is the logistic function, which is defined by the formula:</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(\sigma(x) = \frac{1}{1 + e^{-x}} = \frac{e^x}{1 + e^x}\)
+                </div>
+                <p>File <a href="https://github.com/artinte/deep-learning/blob/develop/02_dnn/4_activation/sigmoid_dmeo.py">sigmoid_demo.py</a> defines a sigmoid function and its derivative, and plots the function and its derivative.</p>
+
+                <pre><code>def sigmoid(x):
+    return 1 / (1 + numpy.exp(-x))
+
+
+def deriv_sigmoid(x):
+    return sigmoid(x) * (1 - sigmoid(x))
+
+x = numpy.linspace(-10, 10, 400)
+pyplot.plot(x, sigmoid(x), label="f(x) = 1 / (1 + e^-x)")
+pyplot.plot(x, deriv_sigmoid(x), label="f'(x) = f(x) * (1 - f(x))")
+pyplot.legend()
+pyplot.grid(True)
+pyplot.subplots_adjust(left=0.08, right=0.92, top=0.96, bottom=0.06)
+pyplot.show()
+
+print("The derivative at x = 2 is", numpy.round(deriv_sigmoid(2), 4))</code></pre>
+
+                <img src="res/02/sigmoid_func.png" alt="Sigmoid Function" width="600">
+                <p style="text-align: center; color: #555555;">Figure 1 - Sigmoid Function</p>
+
+                <pre><samp>The derivative at x = 2 from scratch is 0.105</samp></pre>
+
+                <p>To compute the derivative of the <a href="https://docs.pytorch.org/docs/stable/generated/torch.nn.Sigmoid.html#torch.nn.Sigmoid">sigmoid function</a> using PyTorch, we can use the following code:</p>
+
+                <pre><code>x_val = torch.tensor([2.0], requires_grad=True)
+output = torch.sigmoid(x_val)
+output.backward()
+print("The derivative at x = 2 using PyTorch is", numpy.round(x_val.grad.item(), 4))</code></pre>
+
+                <pre><samp>The derivative at x = 2 using PyTorch is 0.105</samp></pre>
+
+
+                <h3 id="relu">2.4.2 ReLU Function</h3>
+                <p>One of the most popular and widely-used activation functions is <a href="https://docs.pytorch.org/docs/main/generated/torch.nn.ReLU.html#torch.nn.ReLU">ReLU</a> (rectified linear unit). As with other activation functions, it provides non-linearity to the model for better computation performance.</p>
+                <p>The ReLU activation function has the form:</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(f(x) = max(0, x)\)
+                </div>
+                <p>The ReLU function outputs the maximum between its input and zero, as shown by the graph. For positive inputs, the output of the function is equal to the input. For strictly negative inputs, the output of the function is equal to zero.</p>
+                <img src="res/02/relu_example.png" alt="ReLU Function" width="600">
+                <p style="text-align: center; color: #555555;">Figure 2 - ReLU Function</p>
+                
+                <pre><code># To see the gradients, we need to enable gradient tracking and perform a backward pass.
+input = torch.randn(10, requires_grad=True)
+print("Input:", input)
+
+
+def relu_scratch(input):
+    # Custom implementation of ReLU activation function.
+    return torch.maximum(torch.tensor(0.0), input)
+
+
+output_scratch = relu_scratch(input)
+print("Output after ReLU activation:", output_scratch)</code></pre>
+
+                <pre><samp>Input: tensor([-1.7783,  1.1925, -0.1910, -0.7291, -1.3044, -0.1538,  1.3874,  2.5825,
+         0.4784, -0.2474], requires_grad=True)
+Output after ReLU activation: tensor([0.0000, 1.1925, 0.0000, 0.0000, 0.0000, 0.0000, 1.3874, 2.5825, 0.4784,
+        0.0000], grad_fn=&lt;MaximumBackward0&gt;)</samp></pre>
+
+                <pre><code>output_scratch = relu_scratch(input)
+print("Output after ReLU activation:", output_scratch)
+
+relu_torch = torch.nn.ReLU()
+output = relu_torch(input)
+print("Output after ReLU activation:", output)</code></pre>
+
+                <pre><samp>Output after ReLU activation: tensor([0.0000, 1.1925, 0.0000, 0.0000, 0.0000, 0.0000, 1.3874, 2.5825, 0.4784,
+        0.0000], grad_fn=&lt;ReluBackward0&gt;)</samp></pre>
+
+                <p>To compute the gradient of the ReLU function, we can use the following code:</p>
+                <pre><code>gradients = torch.autograd.grad(outputs=output.sum(), inputs=input)[0]
+print("Gradients:", gradients)</code></pre>
+
+                <pre><samp>Gradients: tensor([0., 1., 0., 0., 0., 0., 1., 1., 1., 0.])</samp></pre>
+
+
+                <h3 id="tanh">2.4.3 Tanh Function</h3>
+                <p>Tanh maps every pre-activation into the open interval (−1, 1). It is an odd function, so negative inputs stay negative, and the output is centered at 0. That centering is the practical difference from the logistic sigmoid, whose outputs all sit in (0, 1).</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(\tanh(x) = \frac{e^{x} - e^{-x}}{e^{x} + e^{-x}}\)
+                </div>
+                <p>The derivative is \(1 - \tanh(x)^{2}\). It is close to 1 at the origin and falls toward 0 in both tails, so a saturated unit passes almost no gradient. Later listings on this page prefer ReLU for that reason.</p>
+                <p>There is no tanh script beside the others. <a href="https://github.com/artinte/deep-learning/blob/develop/02_dnn/4_activation/demo_sigmoid.py">demo_sigmoid.py</a> plots the logistic curve and checks its derivative at \(x = 2\), <a href="https://github.com/artinte/deep-learning/blob/develop/02_dnn/4_activation/demo_relu.py">demo_relu.py</a> compares a hand-written ReLU with <code>torch.nn.ReLU</code>, and <a href="https://github.com/artinte/deep-learning/blob/develop/02_dnn/4_activation/demo_softmax.py">demo_softmax.py</a> turns a vector of scores into probabilities. <code>torch.tanh</code> is the one-line call when a module needs this curve.</p>
+
+                <h3 id="softmax">2.4.4 Softmax Function</h3>
+                <p>The softmax function is a mathematical function that transforms a vector of numbers into a probability distribution. It's commonly used in the output layer of neural networks for multi-class classification, ensuring that the outputs are between 0 and 1 and sum up to 1. This allows the outputs to be interpreted as probabilities for each class:</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(S(x_i) = \frac{e^{x_i}}{\sum_{j=1}^{n} e^{x_j}}\)
+                </div>
+                <p><a href="https://docs.pytorch.org/docs/stable/generated/torch.nn.Softmax.html">torch.nn.Softmax</a></p>
+
+
+                <h3>2.4.5 Gaussian Error Linear Unit</h3>
+                <p>The GELU (Gaussian Error Linear Unit) activation function is a smooth, differentiable alternative to the ReLU (Rectified Linear Unit) activation function, widely used in deep learning, particularly in transformer models like BERT. It addresses some of ReLU's limitations, such as the "dying ReLU" problem and its non-differentiability at zero. </p>
+                <p>The GELU function is defined as:</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(GELU(x) = x \times \Phi(x)\)
+                </div>
+                <p>where \Phi(x) is the cumulative distribution function of the standard normal distribution.</p>
+                
+                <div class="navigation">
+                    <a href="pytorch_basics.html">Prev: 2.3 PyTorch Basics</a>
+                    <a href="loss_function.html">Next: 2.5 Loss Function</a>
+                </div>
+
+                
+            </main>
+
+            <aside class="col-md-2 right-sidebar">
+                <h5><a href="index.html#section2">Fully Connected Network</a></h5>
+                <ul id="dynamic-sidebar" class="nav flex-column">
+                </ul>
+            </aside>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script type="text/javascript" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="article_script.js"></script>
+    <script>
+        hljs.highlightAll();
+    </script>
+</body>
+
+</html>

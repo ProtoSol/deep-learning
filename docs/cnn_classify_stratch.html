@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="laptop_coding_48.png" type="image/png">
+    <title>CNN from Stratch</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" rel="stylesheet">
+    <link href="article_style.css" rel="stylesheet">
+    <style>
+        table.kernel {
+            border-collapse: collapse;
+            margin: 20px auto;
+        }
+        table.kernel td {
+            width: 50px;
+            height: 50px;
+            text-align: center;
+            font-weight: bold;
+            font-family: monospace;
+            border: 1px solid #333;
+        }
+        .container {
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <nav class="col-md-2 left-sidebar">
+
+            </nav>
+
+            <main class="col-md-8 content">
+                <h2 class="custom-title">3.1 CNN from Stratch</h2>
+                <p class="title-subtext">A simple guide to what CNNs are, how they work, and how to build one from scratch in Python.</p>
+                <p style="color: #a0a0a0;">Created Date: 2025-05-11</p>
+                <p>There’s been a lot of buzz about <strong>Convolution Neural Networks (CNNs)</strong> in the past few years, especially because of how they’ve revolutionized the field of Computer Vision. In this post, we’ll build on a basic background knowledge of neural networks and explore what CNNs are, understand how they work, and build a real one from scratch (using only <a href="https://numpy.org/">NumPy</a>) in Python.</p>
+                <p>This post assumes only a basic knowledge of neural networks. Section 1.7 <a href="network_scratch.html">Neural Network from Scratch</a> covers everything you’ll need to know, so you might want to read that first.</p>
+                <p>Ready? Let’s jump in.</p>
+                <h3>3.1.1 Motivation</h3>
+                <p>A classic use case of CNNs is to perform image classification, e.g. looking at an image of a pet and deciding whether it’s a cat or a dog. It’s a seemingly simple task - why not just use a normal Neural Network?</p>
+                <p>Good question.</p>
+                <h5>Reason 1: Images are Big</h5>
+                <p>Images used for Computer Vision problems nowadays are often \(224 \times 224\) or larger. Imagine building a neural network to process \(224 \times 224\) color images: including the 3 color channels (RGB) in the image, that comes out to \(224 \times 224 \times 3 = 150528\) input features!</p>
+                <a href="https://drive.google.com/file/d/1Z7J_Ket1rn0kQNP-w_QkH0YDYPY9wFbE/view?usp=sharing">
+                    <img src="res/03/224x224.jpg" alt="224x224">
+                </a>
+                <p style="text-align: center; color: #555555;">Figure 1 - Image of Size \(224 \times 224 \times 3\)</p>
+
+                <p>A typical hidden layer in such a network might have 1024 nodes, so we'd have to train \(150528 \times 1024 = 150+\) million weights for the first layer alone. Our network would be huge and nearly impossible to train.</p>
+                <p>It’s not like we need that many weights, either. The nice thing about images is that we know pixels are most useful in the context of their neighbors. Objects in images are made up of small, localized features, like the circular iris of an eye or the square corner of a piece of paper. Doesn’t it seem wasteful for every node in the first hidden layer to look at every pixel?</p>
+                <h5>Reason 2: Positions can change</h5>
+                <p>If you trained a network to detect dogs, you’d want it to be able to a detect a dog regardless of where it appears in the image. Imagine training a network that works well on a certain dog image, but then feeding it a slightly shifted version of the same image. The dog would not activate the same neurons, so the network would react completely differently!</p>
+                <p>We’ll see soon how a CNN can help us mitigate these problems.</p>
+
+                <h3>3.1.2 Dataset</h3>
+                <p>In this post, we’ll tackle the <em>"Hello, World!"</em> of Computer Vision: the <a href="data_represent.html#mnist">MNIST</a> handwritten digit classification problem. It’s simple: given an image, classify it as a digit.</p>
+                <img src="res/03/mnist_examples.webp" width="600" alt="MNIST">
+                <p style="text-align: center; color: #555555;">Figure 2 - Sample Images from the MNIST Dataset</p>
+                <p>Each image in the MNIST dataset is \(28 \times 28\) and contains a centered, grayscale digit.</p>
+                <p>Truth be told, a <a href="pytorch_basics.html#build_model">normal neural network</a> would actually work just fine for this problem. You could treat each image as a \(28 \times 28 = 784\) - dimensional vector, feed that to a 784-dim input layer, stack a few hidden layers, and finish with an output layer of 10 nodes, 1 for each digit.</p>
+                <p>This would only work because the MNIST dataset contains small images that are centered, so we wouldn’t run into the aforementioned issues of size or shifting. Keep in mind throughout the course of this post, however, that most real-world image classification problems aren’t this easy.</p>
+                <p>Enough buildup. Let’s get into CNNs!</p>
+
+                <h3 id="convolution">3.1.3 Convolutions</h3>
+                <p>What are Convolutional Neural Networks?</p>
+                <p>They’re basically just neural networks that use <strong>Convolutional layers</strong>, a.k.a. Conv layers, which are based on the mathematical operation of convolution. Conv layers consist of a set of filters, which you can think of as just 2d matrices of numbers. Here’s an example \(3 \times 3\) filter:</p>
+                <table class="kernel">
+                    <tr>
+                        <td>-1</td><td>0</td><td>1</td>
+                    </tr>
+                    <tr>
+                        <td>-2</td><td>0</td><td>2</td>
+                    </tr>
+                    <tr>
+                        <td>-1</td><td>0</td><td>1</td>
+                    </tr>
+                </table>
+                <p style="text-align: center; color: #555555;">Figure 3 - A \(3 \times 3\) filter</p>
+                <p>We can use an input image and a filter to produce an output image by convolving the filter with the input image. This consists of:</p>
+
+                <ol>
+                    <li><p>Overlaying the filter on top of the image at some location.</p></li>
+                    <li><p>Performing element-wise multiplication between the values in the filter and their corresponding values in the image.</p></li>
+                    <li><p>Summing up all the element-wise products. This sum is the output value for the destination pixel in the output image.</p></li>
+                    <li><p>Repeating for all locations.</p></li>
+                </ol>
+                <p class="comment">Side Note: We (along with many CNN implementations) are technically actually using <a href="https://en.wikipedia.org/wiki/Cross-correlation">cross-correlation</a> instead of convolution here, but they do almost the same thing. I won’t go into the difference in this post because it’s not that important, but feel free to look this up if you’re curious.</p>
+                <p>That 4-step description was a little abstract, so let’s do an example. Consider this tiny \(4 \times 4\) grayscale image and this \(3 \times 3\) filter:</p>
+                <table class="kernel">
+                    <tr><td>0</td><td>50</td><td>0</td><td>29</td></tr>
+                    <tr><td>0</td><td>80</td><td>31</td><td>2</td></tr>
+                    <tr><td>33</td><td>90</td><td>0</td><td>75</td></tr>
+                    <tr><td>0</td><td>9</td><td>0</td><td>95</td></tr>
+                </table>
+                <p style="text-align: center; color: #555555;">Figure 4 - A \(4 \times 4\) image</p>
+                <p>The numbers in the image represent pixel intensities, where 0 is black and 255 is white. We’ll convolve the input image and the filter to produce a 2x2 output image:</p>
+                <table class="kernel">
+                    <tr><td>?</td><td>?</td></tr>
+                    <tr><td>?</td><td>?</td></tr>
+                </table>
+                <p style="text-align: center; color: #555555;">Figure 5 - A \(2 \times 2\) output image</p>
+                <p>To start, lets overlay our filter in the top left corner of the image:</p>
+                <table class="kernel">
+                    <tr><td style="background-color: #fde4ff">0x-1</td><td style="background-color: #fde4ff">50x0</td><td style="background-color: #fde4ff">0x1</td><td>29</td></tr>
+                    <tr><td style="background-color: #fde4ff">0x-2</td><td style="background-color: #fde4ff">80x0</td><td style="background-color: #fde4ff">31x2</td><td>2</td></tr>
+                    <tr><td style="background-color: #fde4ff">-33</td><td style="background-color: #fde4ff">90x0</td><td style="background-color: #fde4ff">0x1</td><td>75</td></tr>
+                    <tr><td>0</td><td>9</td><td>0</td><td>95</td></tr>
+                </table>
+                <p style="text-align: center; color: #555555;">Figure 6 - Overlay the filter on top of the image</p>
+                <p>Next, we perform element-wise multiplication between the overlapping image values and filter values. Here are the results, starting from the top left corner and going right, then down. We sum up all the results, hat’s easy enough:</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(0 + 0 + 0 + 0 + 0 + 62 - 33 + 0 + 0 = 29\)
+                </div>
+                <p>Finally, we place our result in the destination pixel of our output image. Since our filter is overlayed in the top left corner of the input image, our destination pixel is the top left pixel of the output image. We do the same thing to generate the rest of the output image:</p>
+                <table class="kernel">
+                    <tr><td>29</td><td>-192</td></tr>
+                    <tr><td>-35</td><td>-22</td></tr>
+                </table>
+                <p style="text-align: center; color: #555555;">Figure 7 - Final Output</p>
+
+                <h4>3.1.3.1 How is This Useful?</h4>
+                <p>Let’s zoom out for a second and see this at a higher level. What does convolving an image with a filter do? We can start by using the example \(3 \times 3\) filter we’ve been using, which is commonly known as the vertical <strong>Sobel filter</strong>:</p>
+                <img src="res/03/lena.jpg" alt="Lena">
+                <p style="text-align: center; color: #555555;">Figure 8 - Standard Test Image</p>
+                <p>File <a href="https://github.com/artinte/deep-learning/blob/develop/03_cnn/1_scratch/sobel_filter.py">sobel_filter.py</a> is an example of what the vertical Sobel filter does:</p>
+                <img src="res/03/sobel_y.png" alt="Vertical Sobel">
+                <p style="text-align: center; color: #555555;">Figure 9 - An Image Convolved with the Vertical Sobel Filter</p>
+                <p>Similarly, there’s also a horizontal Sobel filter:</p>
+                <table class="kernel">
+                    <tr>
+                        <td>1</td><td>2</td><td>1</td>
+                    </tr>
+                    <tr>
+                        <td>0</td><td>0</td><td>0</td>
+                    </tr>
+                    <tr>
+                        <td>-1</td><td>-2</td><td>-1</td>
+                    </tr>
+                </table>
+                <p style="text-align: center; color: #555555;">Figure 10 - The Horizontal Sobel Filter</p>
+                <p>See what’s happening? Sobel filters are edge-detectors. The vertical Sobel filter detects vertical edges, and the horizontal Sobel filter detects horizontal edges. The output images are now easily interpreted: a bright pixel (one that has a high value) in the output image indicates that there’s a strong edge around there in the original image.</p>
+                <img src="res/03/sobel_x.png" alt="Horizontal Sobel">
+                <p style="text-align: center; color: #555555;">Figure 11 - An Image Convolved with the Horizontal Sobel Filter</p>
+                <p>Can you see why an edge-detected image might be more useful than the raw image? Think back to our MNIST handwritten digit classification problem for a second. A CNN trained on MNIST might look for the digit 1, for example, by using an edge-detection filter and checking for two prominent vertical edges near the center of the image. In general, convolution helps us look for specific localized image features (like edges) that we can use later in the network.</p>
+
+                <h4 id="padding">3.1.3.2 Padding</h4>
+                <p>Remember convolving a \(4 \times 4\) input image with a \(3 \times 3\) filter earlier to produce a \(2 \times 2\) output image? Often times, we’d prefer to have the output image be the same size as the input image. To do this, we add zeros around the image so we can overlay the filter in more places. A \(3 \times 3\) filter requires 1 pixel of padding:</p>
+                <table class="kernel">
+                    <tr><td style="background-color: #fde4ff">0</td><td style="background-color: #fde4ff">0</td><td style="background-color: #fde4ff">0</td><td style="background-color: #fde4ff">0</td><td style="background-color: #fde4ff">0</td><td style="background-color: #fde4ff">0</td></tr>
+                    <tr><td style="background-color: #fde4ff">0</td><td>0</td><td>50</td><td>0</td><td>29</td><td style="background-color: #fde4ff">0</td></tr>
+                    <tr><td style="background-color: #fde4ff">0</td><td>0</td><td>80</td><td>31</td><td>2</td><td style="background-color: #fde4ff">0</td></tr>
+                    <tr><td style="background-color: #fde4ff">0</td><td>33</td><td>90</td><td>0</td><td>75</td><td style="background-color: #fde4ff">0</td></tr>
+                    <tr><td style="background-color: #fde4ff">0</td><td>0</td><td>9</td><td>0</td><td>95</td><td style="background-color: #fde4ff">0</td></tr>
+                    <tr><td style="background-color: #fde4ff">0</td><td style="background-color: #fde4ff">0</td><td style="background-color: #fde4ff">0</td><td style="background-color: #fde4ff">0</td><td style="background-color: #fde4ff">0</td><td style="background-color: #fde4ff">0</td></tr>
+                </table>
+                <p style="text-align: center; color: #555555;">Figure 12 - A \(4 \times 4\) Input Convolved with a \(3 \times 3\) Filter</p>
+                <p>This is called <em>"same"</em> padding, since the input and output have the same dimensions. Not using any padding, which is what we’ve been doing and will continue to do for this post, is sometimes referred to as <em>"valid"</em> padding.</p>
+
+                <h4>3.1.3.3 Conv Layers</h4>
+                <p>Now that we know how image convolution works and why it’s useful, let’s see how it’s actually used in CNNs. As mentioned before, CNNs include conv layers that use a set of filters to turn input images into output images. A conv layer’s primary parameter is the number of filters it has.</p>
+                <p>For our MNIST CNN, we'll use a small conv layer with 8 filters as the initial layer in our network. This means it’ll turn the \(28 \times 28\) input image into a \(26 \times 26 \times 8\) output volume:</p>
+                <a href="https://drive.google.com/file/d/1o7layeSLgybVtsly0NSkCJWNSde-Vi51/view?usp=sharing">
+                    <img src="res/03/simple_conv_layer.jpg" alt="Simple Conv Layer">
+                </a>
+                <p style="text-align: center; color: #555555;">Figure 13 - Simple Conv Layer</p>
+                <p class="comment">Reminder: The output is \(26 \times 26 \times 8\) and not \(28 \times 28 \times 8\) because we’re using valid padding, which decreases the input’s width and height by 2.</p>
+                <p>Each of the 8 filters in the conv layer produces a \(26 \times 26\) output, so stacked together they make up a \(26 \times 26 \times 8\) volume. All of this happens because of \(3 \times 3\) (filter size) \(\times\) 8 (number of filters) = only 72 weights!</p>
+
+                <h4>3.1.3.4 Implementing Convolution</h4>
+                <p>Time to put what we’ve learned into code! We’ll implement a conv layer’s feedforward portion, which takes care of convolving filters with an input image to produce an output volume. For simplicity, we’ll assume filters are always 3x3 (which is not true - 5x5 and 7x7 filters are also very common).</p>
+                <p>File <a href="https://github.com/artinte/deep-learning/blob/develop/03_cnn/1_scratch/conv.py">conv.py</a> implementing a conv layer class:</p>
+                <pre><code>class Conv3x3:
+    # A Convolution layer using 3x3 filters.
+    def __init__(self, num_filters):
+        self.num_filters = num_filters
+
+        # filters is a 3d array with dimensions (num_filters, 3, 3)
+        # We divide by 9 to reduce the variance of our initial values
+        self.filters = numpy.random.randn(num_filters, 3, 3) / 9</code></pre>
+
+                <p>The <code>Conv3x3</code> class takes only one argument: the number of filters. In the constructor, we store the number of filters and initialize a random filters array using NumPy’s <a href="https://numpy.org/doc/stable/reference/random/generated/numpy.random.randn.html">random.randn()</a> method.</p>
+                <p class="comment">Note: Diving by 9 during the initialization is more important than you may think. If the initial values are too large or too small, training the network will be ineffective.</p>
+                <p>Next, the actual convolution:</p>
+                <pre><code>class Conv3x3:
+    # ...
+
+    def iterate_regions(self, image):
+        '''
+        Generates all possible 3x3 image regions using valid padding.
+        - image is a 2d numpy array
+        '''
+        h, w = image.shape
+
+        for i in range(h - 2):
+            for j in range(w - 2):
+                im_region = image[i:(i+3), j:(j+3)]
+                yield im_region, i, j
+
+    def forward(self, input):
+        '''
+        Performs a forward pass of the conv layer using the given input.
+        Returns a 3d numpy array with dimensions (h, w, num_filters).
+        - input is a 2d numpy array
+        '''
+        h, w = input.shape
+        output = numpy.zeros((h - 2, w - 2, self.num_filters))
+
+        for im_region, i, j in self.iterate_regions(input):
+            <span class="highlight">output[i, j] = numpy.sum(im_region * self.filters, axis=(1, 2))</span>
+
+        return output</code></pre>
+
+                <p><code>iterate_regions()</code> is a helper generator method that yields all valid \(3 \times 3\) image regions for us. This will be useful for implementing the backwards portion of this class later on.</p>
+
+                <p>The line of code that actually performs the convolutions is highlighted above. Let’s break it down:</p>
+                <ul class="with-bullets">
+                    <li><p>We have <code>im_region</code>, a \(3 \times 3\) array containing the relevant image region.</p></li>
+                    <li><p>We have <code>self.fitlers</code>, a 3d array.</p></li>
+                    <li><p>We do <code>im_region * self.filters</code>, which uses NumPy's <a href="tensor_intro.html#broadcasting">broadcasting</a> feature to element-wise multiply the two arrays. The result is a 3d array with the same dimension as <code>self.filters</code>.</p></li>
+                    <li><p>We <a href="https://numpy.org/doc/stable/reference/generated/numpy.sum.html">numpy.sum()</a> the result of the previous step using <code>axis=(1, 2)</code>, which produces a 1d array of length <code>num_filters</code> where each element contains the convolution result for the corresponding filter.</p></li>
+                    <li><p>We assign the result to <code>output[i, j]</code>, which contains convolution results for pixel <code>(i, j)</code> in the output.</p></li>
+                </ul>
+                <p>The sequence above is performed for each pixel in the output until we obtain our final output volume! Let’s give our code a test run:</p>
+                <pre><code>(x_train, y_train), (x_test, y_test) = mnist.load()
+
+conv = Conv3x3(8)
+output = conv.forward(x_train[0])
+assert output.shape == (26, 26, 8)</code></pre>
+
+                <p>Looks good so far.</p>
+
+                <h3 id="pooling">3.1.4 Pooling</h3>
+                <p>Neighboring pixels in images tend to have similar values, so conv layers will typically also produce similar values for neighboring pixels in outputs. As a result, much of the information contained in a conv layer’s output is redundant.</p>
+                <p>For example, if we use an edge-detecting filter and find a strong edge at a certain location, chances are that we’ll also find relatively strong edges at locations 1 pixel shifted from the original one. However, these are all the same edge! We’re not finding anything new.</p>
+                <p>Pooling layers solve this problem. All they do is reduce the size of the input it’s given by (you guessed it) pooling values together in the input. The pooling is usually done by a simple operation like <code>max</code>, <code>min</code>, or <code>average</code>. Here’s an example of a Max Pooling layer with a pooling size of 2:</p>
+                <div class="container">
+                    <table class="kernel">
+                        <tr><td>0</td><td>50</td><td>0</td><td>29</td></tr>
+                        <tr><td>0</td><td>80</td><td>31</td><td>2</td></tr>
+                        <tr><td>33</td><td>90</td><td>0</td><td>75</td></tr>
+                        <tr><td>0</td><td>9</td><td>0</td><td>95</td></tr>
+                    </table>
+                    <table class="kernel">
+                        <tr><td>80</td><td>31</td></tr>
+                        <tr><td>90</td><td>95</td></tr>
+                    </table>
+                </div>
+                <p style="text-align: center; color: #555555;">Figure 14 - Max Pooling</p>
+
+                <p>To perform max pooling, we traverse the input image in 2x2 blocks (because pool size = 2) and put the max value into the output image at the corresponding pixel. That’s it!</p>
+                <p>Pooling divides the input’s width and height by the pool size. For our MNIST CNN, we’ll place a Max Pooling layer with a pool size of 2 right after our initial conv layer. The pooling layer will transform a 26x26x8 input into a 13x13x8 output:</p>
+                <img src="res/03/max_pool.svg" alt="Max Pooling" width="600">
+                <p style="text-align: center; color: #555555;">Figure 15 - Max Pooling Layer</p>
+
+                <p>File <a href="https://github.com/artinte/deep-learning/blob/develop/03_cnn/1_scratch/max_pool.py">max_pool.py</a> implement a MaxPool2 class with the same methods as our conv class from the previous section:</p>
+                <pre><code>class MaxPool2:
+    # A Max Pooling layer with a 2x2 filter.
+    
+    def iterate_regions(self, image):
+        '''
+        Generates non-overlapping 2x2 image regions to pool over.
+        - image is a 2d numpy array
+        '''
+        h, w, _ = image.shape
+        new_h = h // 2
+        new_w = w // 2
+
+        for i in range(new_h):
+            for j in range(new_w):
+                im_region = image[(i * 2):(i * 2 + 2), (j * 2):(j * 2 + 2)]
+                yield im_region, i, j
+
+    def forward(self, input):
+        '''
+        Performs a forward pass of the maxpool layer using the given input.
+        Returns a 3d numpy array with dimensions (h / 2, w / 2, num_filters).
+        - input is a 3d numpy array with dimensions (h, w, num_filters)
+        '''
+        h, w, num_filters = input.shape
+        output = numpy.zeros((h // 2, w // 2, num_filters))
+        
+        for im_region, i, j in self.iterate_regions(input):
+            <span class="highlight">output[i, j] = numpy.amax(im_region, axis=(0, 1))</span>
+    
+        return output</code></pre>
+
+                <p>This class works similarly to the <code>Conv3x3</code> class we implemented previously. The critical line is again highlighted: to find the max from a given image region, we use <a href="https://numpy.org/doc/stable/reference/generated/numpy.amax.html">numpy.amax()</a>, NumPy's array max method. We set <code>axis=(0, 1)</code> because we only want to maximize over the first two dimensions, height and width, and not the third <code>num_filters</code>.</p>
+                <p>Let’s test it:</p>
+                <pre><code>(x_train, y_train), (x_test, y_test) = mnist.load()
+
+conv = Conv3x3(8)
+pool = MaxPool2()
+
+output = conv.forward(x_train[0])
+output = pool.forward(output)
+assert output.shape == (13, 13, 8)</code></pre>
+
+                <p>Our MNIST CNN is starting to come together!</p>
+
+                <h3>3.1.5 Softmax</h3>
+
+                <p>To complete our CNN, we need to give it the ability to actually make predictions. We’ll do that by using the standard final layer for a multiclass classification problem: the Softmax layer, a fully-connected (dense) layer that uses the <a href="activation_function.html#softmax">softmax function</a> as its activation.</p>
+
+                <h4>3.1.5.1 Usage</h4>
+                <p>We’ll use a softmax layer with 10 nodes, one representing each digit, as the final layer in our CNN. Each node in the layer will be connected to every input. After the softmax transformation is applied, the digit represented by the node with the highest probability will be the output of the CNN!</p>
+                <img src="res/03/softmax_layer.svg" alt="Softmax Layer" width="600">
+                <p style="text-align: center; color: #555555;">Figure 16 - Softmax Layer</p>
+
+                <h4>3.1.5.2 Cross-Entropy Loss</h4>
+                <p>You might have just thought to yourself, why bother transforming the outputs into probabilities? Won’t the highest output value always have the highest probability? If you did, you’re absolutely right. We don’t actually need to use softmax to predict a digit - we could just pick the digit with the highest output from the network!</p>
+                <p>What softmax really does is help us quantify how sure we are of our prediction, which is useful when training and evaluating our CNN. More specifically, using softmax lets us use cross-entropy loss, which takes into account how sure we are of each prediction. Here’s how we calculate <a href="loss_function.html#cross-entropy-loss">cross-entropy loss</a>:</p>
+
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(L = -ln(p_c)\)
+                </div>
+
+                <p>where \(c\) is the correct class (in our case, the correct digit), \(p_c\) is the predicted probability for class \(c\), and \(ln\) is the natural log. As always, a lower loss is better. For example, in the best case, we’d have:</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(p_c = 1, L = -ln(1) = 0\)
+                </div>
+                <p>In a more realistic case, we might have:</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(p_c = 0.8, L = -ln(0.8) \approx 0.223\)
+                </div>
+                <p>We’ll be seeing cross-entropy loss again later on in this post, so keep it in mind!</p>
+
+                <h4>3.1.5.3 Implementing Softmax</h4>
+                <p>You know the drill by now - File <a href="https://github.com/artinte/deep-learning/blob/develop/03_cnn/1_scratch/softmax.py">softmax.py</a> implement a <code>Softmax</code> layer class:</p>
+                <pre><code>class Softmax:
+    # A standard fully-connected layer with softmax activation.
+    
+    def __init__(self, input_len, nodes):
+        # We divide by input_len to reduce the variance of our initial values.
+        self.weights = numpy.random.randn(input_len, nodes) / input_len
+        self.bias = numpy.zeros(nodes)
+    
+    def forward(self, input):
+        '''
+        Performs a forward pass of the softmax layer using the given input.
+        Returns a 1d numpy array containing the respective probability values.
+        - input can be any array with any dimensions.
+        '''
+        input = input.flatten()
+        input_len, nodes = self.weights.shape
+        
+        totals = numpy.dot(input, self.weights) + self.bias
+        exp = numpy.exp(totals)
+        return exp / numpy.sum(exp, axis=0)</code></pre>
+
+                <p>There’s nothing too complicated here. A few highlights:</p>
+                <ul class="with-bullets">
+                    <li><p><code>flatten()</code> the input to make it easier to work with, since we no longer need its shape.</p></li>
+                    <li><p><code>numpy.dot()</code> multiplies <code>input</code> and <code>self.weights</code> element-wise and then sums the results.</p></li>
+                    <li><p><code>numpy.exp()</code> calculates the exponentials used for Softmax.</p></li>
+                </ul>
+
+                <p>We’ve now completed the entire forward pass of our CNN! File <a href="https://github.com/artinte/deep-learning/blob/develop/03_cnn/1_scratch/cnn_forward.py">cnn_forward.py</a> putting it together:</p>
+                <pre><code>(x_train, y_train), (x_test, y_test) = mnist.load()
+
+conv = Conv3x3(8)                   # 28x28x1 -> 26x26x8
+pool = MaxPool2()                   # 26x26x8 -> 13x13x8
+softmax = Softmax(13 * 13 * 8, 10)  # 13x13x8 -> 10
+
+def forward(input, label):
+    '''
+    Completes a forward pass of the CNN and calculates the accuracy and
+    cross-entropy loss.
+    - image is a 2d numpy array
+    - label is a digit
+    '''
+    
+    # We transform the image from [0, 255] to [-0.5, 0.5] to make it easier
+    # to work with. This is standard practice.
+    out = conv.forward(input / 255 - 0.5)
+    out = pool.forward(out)
+    out = softmax.forward(out)
+
+    # Calculate cross-entropy loss and accuracy. np.log() is the natural log.
+    loss = -numpy.log(out[label])
+    acc = 1 if numpy.argmax(out) == label else 0
+    
+    return out, loss, acc
+
+loss = 0
+num_correct = 0
+
+for i, (image, label) in enumerate(zip(x_test[:400], y_test[:400])):
+    out, l, acc = forward(image, label)
+    loss += l
+    num_correct += acc
+    
+    if (i + 1) % 100 == 0:
+        print('Step' + str(i + 1) + ': loss = ' + str(round(loss / 100, 4)) +
+                ', accuracy = ' + str(num_correct / 100))
+        loss = 0
+        num_correct = 0</code></pre>
+
+                <p>Running <span class="highlight">cnn_forward.py</span> gives us output similar to this:</p>
+
+                <pre><samp>Step100: loss = 2.302, accuracy = 0.12
+Step200: loss = 2.3025, accuracy = 0.09
+Step300: loss = 2.302, accuracy = 0.14
+Step400: loss = 2.3025, accuracy = 0.12</samp></pre>
+
+                <p>This makes sense: with random weight initialization, you’d expect the CNN to be only as good as random guessing. Random guessing would yield 10% accuracy (since there are 10 classes) and a cross-entropy loss of \(−ln(0.1) \approx 2.302\), which is what we get!</p>
+
+                <h3>3.1.6 Training Overview</h3>
+                <p>Training a neural network typically consists of two phases:</p>
+                <ol>
+                    <li><p>A forward phase, where the input is passed completely through the network.</p></li>
+                    <li><p>A backward phase, where gradients are backpropagated (backprop) and weights are updated.</p></li>
+                </ol>
+                <p>We’ll follow this pattern to train our CNN. There are also two major implementation-specific ideas we’ll use:</p>
+                <ul class="with-bullets">
+                    <li><p>During the forward phase, each layer will cache any data (like inputs, intermediate values, etc) it’ll need for the backward phase. This means that any backward phase must be preceded by a corresponding forward phase.</p></li>
+                    <li><p>During the backward phase, each layer will receive a gradient and also return a gradient. It will receive the gradient of loss with respect to its outputs \(\frac{\partial L}{\partial out}\) and return the gradient of loss with respect to its inputs \(\frac{\partial L}{\partial in}\).</p></li>
+                </ul>
+                <p>These two ideas will help keep our training implementation clean and organized. The best way to see why is probably by looking at code. Training our CNN will ultimately look something like this:</p>
+                <pre><code># Feed forward
+out = conv.forward((image / 255) - 0.5)
+out = pool.forward(out)
+out = softmax.forward(out)
+
+# Calculate initial gradient
+gradient = np.zeros(10)
+
+# Backprop
+gradient = softmax.backprop(gradient)
+gradient = pool.backprop(gradient)
+gradient = conv.backprop(gradient)</code></pre>
+
+                <p>See how nice and clean that looks? Now imagine building a network with 50 layers instead of 3 - it’s even more valuable then to have good systems in place.</p>
+
+                <h3>3.1.7 Backprop: Softmax</h3>
+                <p>We’ll start our way from the end and work our way towards the beginning, since that’s how backprop works. First, recall the cross-entropy loss:</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(L = -ln(p_c)\)
+                </div>
+                <p>where \(p_c\) is the predicted probability for the correct class \(c\) (in other words, what digit our current image actually is).</p>
+
+                <p>The first thing we need to calculate is the input to the Softmax layer’s backward phase, \(\frac{\partial L}{\partial {out}_s}\), where \({out}_s\) s the output from the Softmax layer: a vector of 10 probabilities. This is pretty easy, since only \(p_i\) shows up in the loss equation:</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \[\frac{\partial L}{\partial {out}_s (i)} = \begin{cases}
+                        -\frac{1}{p_i} & \text{if } i = c \\
+                        0 & \text{if } i \neq c
+                    \end{cases}\]</div>
+                <p>That’s our initial gradient you saw referenced above:</p>
+                <pre><code># Calculate initial gradient
+gradient = np.zeros(10)
+gradient[label] = -1 / out[label]</code></pre>
+                
+                <p>We’re almost ready to implement our first backward phase - we just need to first perform the forward phase caching we discussed earlier:</p>
+                <pre><code>class Softmax:
+    # ...
+    def forward(self, input):
+        <span class="highlight">self.last_input_shape = input.shape</span>
+        input = input.flatten()
+        <span class="highlight">self.last_input = input</span>
+
+        totals = numpy.dot(input, self.weights) + self.bias
+        <span class="highlight">self.last_totals = totals</span>
+
+        exp = numpy.exp(totals)
+        return exp / numpy.sum(exp, axis=0)</code></pre>
+
+                <p>We cache 3 things here that will be useful for implementing the backward phase:</p>
+                <ul class="with-bullets">
+                    <li><p>The <code>input</code>’s shape before we flatten it.</p></li>
+                    <li><p>The <code>input</code> after we flatten it.</p></li>
+                    <li><p>The <code>totals</code>, which are the values passed in to the softmax activation.</p></li>
+                </ul>
+                <p>With that out of the way, we can start deriving the gradients for the backprop phase. We’ve already derived the input to the Softmax backward phase: \(\frac{\partial L}{\partial {out}_s}\). One fact we can use about \(\frac{\partial L}{\partial {out}_s}\) is that it’s only nonzero for \(c\), the correct class. That means that we can ignore everything but \({out}_s(c)!\)</p>
+                <p>First, let’s calculate the gradient of \({out}_s(c)\) with respect to the totals (the values passed in to the softmax activation). Let \(t_i\) be the total for class \(i\). Then we can write \({out}_s(c)\) as:</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \({out}_s(c) = \frac{e^{t_c}}{\sum_{i=0}^{9} e^{t_i}} = \frac{e^{t_c}}{S}\)
+                </div>
+
+                <p>Where \(S = \sum_i e^{t_i}\)</p>
+                <p>Now, consider some class \(k\) such that \(k \ne c\), and use <a href="calculus.html#chain_rule">chain rule</a> to derive:</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(\frac{\partial {out}_s(c)}{\partial t_k} = -\frac{e^{t_c} e^{t_k}}{S^2}\)
+                </div>
+                <p>Remember, that was assuming \(k \ne c\). Now let’s do the derivation for \(c\), this time using Quotient Rule (because we have an \(e^{t_c}\) in the numerator of \(out_s(c)\)):</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(\frac{\partial {out}_s(c)}{\partial t_c}  = \frac{e^{t_c}(S - e^{t_c})}{S^2}\)
+                </div>
+                <p>For a detailed derivation, please refer to the <a href="activation_function.html#softmax">Softmax</a> section. That was the hardest bit of calculus in this entire post - it only gets easier from here! Let’s start implementing this:</p>
+                <pre><code>class Softmax:
+    # ...
+    def backprop(self, dl_dout, learn_rate):
+        '''
+        Performs a backward pass of the softmax layer.
+        Returns the loss gradient for this layer's inputs.
+        - dl_dout is the loss gradient for this layer's outputs.
+        '''
+        # We know only 1 element of dl_dout will be nonzero.
+        for i, gradient in enumerate(dl_dout):
+            t_exp = numpy.exp(self.last_totals)
+
+            S = numpy.sum(t_exp)
+
+            # Gradient of the softmax  function.
+            dout_dt = -t_exp[i] * t_exp / (S * S)
+            dout_dt[i] += t_exp[i] * (S - t_exp[i]) / (S * S)</code></pre>
+
+                <p>Remember how \(\frac{\partial L}{\partial {out}_s}\) is only nonzero for the correct class, \(c\)? We start by looking for \(c\) by looking for a nonzero gradient in <code>dl_dout</code>. Once we find that, we calculate the gradient \(\frac{\partial {out}_s(i)}{\partial t}\) (<code>dout_dtotals</code>) using the result we derived above:</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \[\frac{\partial {out}_s(k)}{\partial t} = \begin{cases}
+                        -\frac{e^{t_c} e^{t_k}}{S^2} & \text{if } k \neq c \\
+                        \frac{e^{t_c} (S - e^{t_c})}{S^2} & \text{if } k = c
+                    \end{cases}\]
+                </div>
+                <p>Let’s keep going. We ultimately want the gradients of loss against weights, biases, and input:</p>
+                <ol>
+                    <li><p>We’ll use the weights gradient \(\frac{\partial L}{\partial w}\) to update our layer's weights.</p></li>
+                    <li><p>We’ll use the biases gradient \(\frac{\partial L}{\partial b}\) to update our layer’s biases.</p></li>
+                    <li><p>We’ll return the input gradient \(\frac{\partial L}{\partial input}\) from our <code>backprop()</code> method so the next layer can use it. This is the return gradient we talked about in the Training Overview section!</p></li>
+                </ol>
+                <p>To calculate those 3 loss gradients, we first need to derive 3 more results: the gradients of totals against weights, biases, and input. The relevant equation here is:</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(t = w * input + b\)
+                </div>
+                <p>Using chain rule, putting this into code is a little less straightforward:</p>
+                <pre><code>class Softmax:
+    def backprop(self, dl_dout):
+        for i, gradient in enumerate(dl_dout):
+            # ...
+            # Gradients of totals against weights and bias.
+            dt_dw = self.last_input
+            dt_db = 1
+            dt_dinputs = self.weights
+            # Graidents of the loss against totals.
+            dl_dt = gradient * dout_dt
+            # Gradients of loss against weights and bias.
+            dl_dw = dt_dw[numpy.newaxis].T @ dl_dt[numpy.newaxis]
+            dl_db = dl_dt * dt_db
+            dl_dinputs = dt_dinputs @ dl_dt</code></pre>
+                <p>First, we pre-calculate <code>dl_dt</code> since we’ll use it several times. Then, we calculate each gradient:</p>
+                <ul class="with-bullets">
+                    <li><p><code>dl_dw</code>: We need 2d arrays to do matrix multiplication, but <code>dt_dw</code> and <code>dl_dt</code> are 1d arrays. <code>numpy.newaxis</code> lets us easily create a new axis of length one, so we end up multiplying matrices with dimensions \((input_len, 1)\) and \((1, nodes)\). Thus, the final result for <code>dl_dw</code> will have shape \((input_len, nodes)\), which is the same as <code>self.weights</code>!</p></li>
+                    <li><p><code>dl_db</code>: This one straightforward, since <code>dt_db</code> is 1.</p></li>
+                    <li><p><code>dl_dinputs</code>: We multiply matrices with dimensions \((input_len, nodes)\) and \((nodes, 1)\) to get a result with length <code>input_len</code>.</p></li>
+                </ul>
+                <p>With all the gradients computed, all that’s left is to actually train the Softmax layer! We’ll update the weights and bias using <a href="optimizer.html#sgd">Stochastic Gradient Descent (SGD)</a> and then return <code>dl_dinputs</code>:</p>
+                <pre><code>class Softmax:
+    def backprop(self, dl_dout, learn_rate):
+        for i, gradient in enumerate(dl_dout):
+            # ...
+            # Update weights and bias.
+            self.weights -= learn_rate * dl_dw
+            self.bias -= learn_rate * dl_db
+
+        return dl_dinputs.reshape(self.last_input_shape)</code></pre>
+                <p>Notice that we added a <code>learn_rate</code> parameter that controls how fast we update our weights. Also, we have to <code>reshape()</code> before returning <code>dl_dinputs</code> because we flattened the input during our forward pass:</p>
+                <p>Reshaping to <code>last_input_shape</code> ensures that this layer returns gradients for its input in the same format that the input was originally given to it.</p>
+
+                <p>We’ve finished our first backprop implementation! Let’s quickly test it to see if it’s any good. We’ll start implementing a <code>train()</code> method in our <a href="https://github.com/artinte/deep-learning/blob/develop/03_cnn/1_scratch/cnn_training.py">cnn_training.py</a> file:</p>
+                <pre><code>def train(iamge, label, lr=0.005):
+    '''
+    Completes a full training step on the given image and label.
+    Returns the cross-entropy loss and accuracy.
+    - image is a 2d numpy array
+    - label is a digit
+    - lr is the learning rate
+    '''
+    out, loss, acc = forward(iamge, label)
+
+    # Calculate initial gradient.
+    gradient = numpy.zeros(10)
+    gradient[label] = -1 / out[label]
+    
+    gradient = softmax.backprop(gradient, lr)
+    # gradient = pool.backprop(gradient)
+    # gradient = conv.backprop(gradient, lr)
+
+    return loss, acc</code></pre>
+
+                <p>Running this gives results similar to:</p>
+                <pre><samp>Step 100: loss = 2.2088, accuracy = 0.22
+Step 200: loss = 2.0672, accuracy = 0.38
+Step 300: loss = 1.8912, accuracy = 0.56
+Step 400: loss = 1.7211, accuracy = 0.68
+Step 500: loss = 1.6354, accuracy = 0.68
+Step 600: loss = 1.6632, accuracy = 0.59
+Step 700: loss = 1.5719, accuracy = 0.69
+Step 800: loss = 1.4217, accuracy = 0.7
+Step 900: loss = 1.3351, accuracy = 0.77
+Step 1000: loss = 1.3272, accuracy = 0.75</samp></pre>
+                <p>The loss is going down and the accuracy is going up - our CNN is already learning!</p>
+
+                <h3>3.1.8 Backprop: Max Pooling</h3>
+                <p>A Max Pooling layer can’t be trained because it doesn’t actually have any weights, but we still need to implement a <code>backprop()</code> method for it to calculate gradients. We’ll start by adding forward phase caching again. All we need to cache this time is the input:</p>
+                <pre><code>class MaxPool2:
+    # ...
+    def forward(self, input):
+        self.last_input = input</code></pre>
+
+                <p>During the forward pass, the Max Pooling layer takes an input volume and halves its width and height dimensions by picking the max values over 2x2 blocks. The backward pass does the opposite: we’ll double the width and height of the loss gradient by assigning each gradient value to where the original max value was in its corresponding 2x2 block.</p>
+                <p>Each gradient value is assigned to where the original max value was, and every other value is zero.</p>
+
+                <p>Why does the backward phase for a max pooling layer work like this? Think about what \(\frac{\partial L}{\partial inputs}\) intuitively should be. An input pixel that isn’t the max value in its 2x2 block would have zero marginal effect on the loss, because changing that value slightly wouldn’t change the output at all!</p>
+                <p>In other words, \(\frac{\partial L}{\partial inputs} = 0\) for non-max pixels. On the other hand, an input pixel that is the max value would have its value passed through to the output, so \(\frac{\partial output}{\partial input} = 1\) meaning \(\frac{\partial L}{\partial input} = \frac{\partial L}{\partial output}\).</p>
+                <p>We can implement this pretty quickly using the <code>iterate_regions()</code> helper method:</p>
+                <pre><code>class MaxPool2:
+    # ...
+    def backprop(self, dl_dout):
+    '''
+    Performs a backward pass of the maxpool layer.
+    Returns the loss gradient for this layer's inputs.
+    - dl_dout is the loss gradient for this layer's outputs.
+    '''
+    dl_dinput = numpy.zeros(self.last_input.shape)
+    for im_region, i, j in self.iterate_regions(self.last_input):
+        h, w, f = im_region.shape
+        amax = numpy.amax(im_region, axis=(0, 1))
+        
+        for i2 in range(h):
+            for j2 in range(w):
+                for f2 in range(f):
+                    # If this pixel was the max value, copy the gradient to it.
+                    if im_region[i2, j2, f2] == amax[f2]:
+                        <span class="highlight">dl_dinput[i * 2 + i2, j * 2 + j2, f2] = dl_dout[i, j, f2]</span>
+    return dl_dinput</code></pre>
+
+                <p>For each pixel in each 2x2 image region in each filter, we copy the gradient from <code>dl_dout</code> to <code>dl_dinput</code> if it was the max value during the forward pass.</p>
+
+                <h3>3.1.9 Backprop: Conv</h3>
+                <p>We’re finally here: backpropagating through a Conv layer is the core of training a CNN. </p>
+                <p>We’re primarily interested in the loss gradient for the filters in our conv layer, since we need that to update our filter weights. We already have \(\frac{\partial L}{\partial out}\) or the conv layer, so we just need \(\frac{\partial out}{\partial filters}\). To calculate that, we ask ourselves this: how would changing a filter’s weight affect the conv layer’s output?</p>
+                <p>The reality is that changing any filter weights would affect the entire output image for that filter, since every output pixel uses every pixel weight during convolution. To make this even easier to think about, let’s just think about one output pixel at a time: how would modifying a filter change the output of one specific output pixel?</p>
+
+                <p>Here’s a super simple example to help think about this question:</p>
+                <div class="container">
+                    <table class="kernel">
+                        <tr><td>0</td><td>7</td><td>0</td></tr>
+                        <tr><td>0</td><td>80</td><td>31</td></tr>
+                        <tr><td>33</td><td>14</td><td>0</td></tr>
+                    </table>
+                    <table class="kernel">
+                        <tr><td>0</td><td>0</td><td>0</td></tr>
+                        <tr><td>0</td><td>0</td><td>0</td></tr>
+                        <tr><td>0</td><td>0</td><td>0</td></tr>
+                    </table>
+                    <table class="kernel">
+                        <tr><td>0</td></tr>
+                    </table>
+                </div>
+                <p style="text-align: center; color: #555555;">Figure 17 - Produce a \(1 \times 1\) Output</p>
+                <p>We have a \(3 \times 3\) image convolved with a \(3 \times 3\) filter of all zeros to produce a \(1 \times 1\) output. What if we increased the center filter weight by 1? The output would increase by the center image value 80:</p>
+                <div class="container">
+                    <table class="kernel">
+                        <tr><td>0</td><td>7</td><td>0</td></tr>
+                        <tr><td>0</td><td>80</td><td>31</td></tr>
+                        <tr><td>33</td><td>14</td><td>0</td></tr>
+                    </table>
+                    <table class="kernel">
+                        <tr><td>0</td><td>0</td><td>0</td></tr>
+                        <tr><td>0</td><td>1</td><td>0</td></tr>
+                        <tr><td>0</td><td>0</td><td>0</td></tr>
+                    </table>
+                    <table class="kernel">
+                        <tr><td>80</td></tr>
+                    </table>
+                </div>
+                <p style="text-align: center; color: #555555;">Figure 18 - Increase Center Filter Weight by 1</p>
+
+                <p>Similarly, increasing any of the other filter weights by 1 would increase the output by the value of the corresponding image pixel! This suggests that the derivative of a specific output pixel with respect to a specific filter weight is just the corresponding image pixel value. Doing the math confirms this:</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \[
+                    \begin{flalign*}
+                    & out(i, j) = convolve(image, filter) \\
+                    & = \sum_{x=0}^3 \sum_{y=0}^3 image(i + x, j + y) * filter(x, y) \\
+                    & \frac{\partial out(i, j)}{\partial filter(x, y)} = image(i + x, j + y)
+                    \end{flalign*}
+                    \]
+                </div>
+                <p>We can put it all together to find the loss gradient for specific filter weights:</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">    
+                    \(\frac{\partial L}{\partial filter(x, y)} = \sum_{i} \sum_{j} \frac{\partial L}{\partial out(i, j)} * \frac{\partial out(i, j)}{\partial filter(x, y)}\)
+                </div>
+                <p>We’re ready to implement backprop for our conv layer:</p>
+                <pre><code>class Conv3x3:
+    # ...
+    def backprop(self, dl_dout, learn_rate):
+        '''
+        Performs a backward pass of the conv layer.
+        - dl_dout is the loss gradient for this layer's outputs.
+        - learn_rate is a float.
+        '''
+        dl_dfilters = numpy.zeros(self.filters.shape)
+        for im_region, i, j in self.iterate_regions(self.last_input):
+            for f in range(self.num_filters):
+                dl_dfilters[f] += im_region * dl_dout[i, j, f]
+        
+        # Update filters.
+        self.filters -= learn_rate * dl_dfilters
+        
+        # We aren't returning anything here since we use Conv3x3 as
+        # the first layer in our CNN. Otherwise, we'd need to return
+        # the loss gradient for this layer's inputs, just like every
+        # other layer in our CNN.
+        return None</code></pre>
+                <p>We apply our derived equation by iterating over every image region / filter and incrementally building the loss gradients. Once we’ve covered everything, we update <code>self.filters</code> using SGD just as before.</p>
+                <p>With that, we’re done! We’ve implemented a full backward pass through our CNN. Time to test it out...</p>
+
+                <h3>3.1.10 Training a CNN</h3>
+                <p>We’ll train our CNN for a few epochs, track its progress during training, and then test it on a separate test set. Here’s the full code:</p>
+                <pre><code># Train the model.
+loss = 0
+num_correct = 0
+
+for epoch in range(10):
+    print('Epoch ' + str(epoch + 1))
+
+    for i, (image, label) in enumerate(zip(x_train[:5000], y_train[:5000])):
+        if (i + 1) % 500 == 0:
+            print('Step ' + str(i + 1) + ': loss = ' + str(round(loss / 500, 4)) +
+                ', accuracy = ' + str(num_correct / 500))
+            loss = 0
+            num_correct = 0
+        
+        l, acc = train(image, label)
+        loss += l
+        num_correct += acc
+
+# Test the model.
+loss = 0
+num_correct = 0
+for i, (image, label) in enumerate(zip(x_test[:400], y_test[:400])):
+    _, l, acc = forward(image, label)
+    loss += l
+    num_correct += acc
+
+print('Test loss:', round(loss / 400, 4))
+print('Test accuracy:', num_correct / 400)</code></pre>
+                <p>Example output from running the code:</p>
+                <pre><samp>Epoch 1
+Step 100: loss = 2.2685, accuracy = 0.14
+Step 200: loss = 2.2279, accuracy = 0.22
+Step 300: loss = 2.1314, accuracy = 0.36
+Step 400: loss = 1.9805, accuracy = 0.51
+Step 500: loss = 1.8408, accuracy = 0.47
+...
+Step 4500: loss = 0.1929, accuracy = 0.948
+Step 5000: loss = 0.1723, accuracy = 0.956
+Epoch 10
+Step 500: loss = 0.1845, accuracy = 0.948
+Step 1000: loss = 0.2391, accuracy = 0.928
+Step 1500: loss = 0.2536, accuracy = 0.938
+Step 2000: loss = 0.1368, accuracy = 0.962
+Step 2500: loss = 0.1488, accuracy = 0.952
+Step 3000: loss = 0.1878, accuracy = 0.952
+Step 3500: loss = 0.1767, accuracy = 0.952
+Step 4000: loss = 0.1863, accuracy = 0.948
+Step 4500: loss = 0.1864, accuracy = 0.952
+Step 5000: loss = 0.1702, accuracy = 0.956
+Test loss: 0.2451
+Test accuracy: 0.9325</samp></pre>
+                <h3>3.1.11 What Now?</h3>
+                <p>We’re done! We did a full walkthrough of Convolutional Neural Networks, including what they are, how they work, why they’re useful, and how to train them. This is just the beginning, though. There’s a lot more you could do:</p>
+                <ul class="with-bullets">
+                    <li><p>Excecise: rewrite the above process using PyTorch.</p></li>
+                    <li><p>Read about the ImageNet project and its famous Computer Vision contest, the ImageNet Large Scale Visual Recognition Challenge (ILSVRC).</p></li>
+                    <li><p>Read about <a href="alex_net.html">AlexNet</a>, the first CNN to win the ILSVRC contest.</p></li>
+                    <li><p>Read about <a href="res_net.html">ResNet</a>, which introduced skip connections to allow for even deeper CNNs.</p></li>
+                </ul>
+
+                <p>Thanking for reading!</p>
+                <div class="navigation">
+                    <a href="optimizer.html">Prev: 2.6 Optimizer</a>
+                    <a href="alex_net.html">Next: 3.2 AlexNet</a>
+                </div>
+            </main>
+
+            <aside class="col-md-2 right-sidebar">
+                <h5><a href="index.html#section3">Convolutional Network</a></h5>
+                <ul id="dynamic-sidebar" class="nav flex-column">
+                </ul>
+            </aside>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script type="text/javascript" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="article_script.js"></script>
+    <script>
+        hljs.highlightAll();
+    </script>
+</body>
+
+</html>

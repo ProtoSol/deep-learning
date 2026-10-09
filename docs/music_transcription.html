@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="laptop_coding_48.png" type="image/png">
+    <title>Music Transcription</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" rel="stylesheet">
+    <link href="article_style.css" rel="stylesheet">
+</head>
+
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <nav class="col-md-2 left-sidebar">
+
+            </nav>
+
+            <main class="col-md-8 content">
+                <h2 class="custom-title">8.4 Music Transcription</h2>
+                <p class="title-subtext">Music Transcription with Transformers</p>
+                <p style="color: #a0a0a0;">Created Date: 2025-07-18</p>
+
+                <p>Automatic Music Transcription (AMT) is the task of extracting symbolic representations of music from raw audio. AMT is valuable in that it not only helps with understanding, but also enables new forms of creation via training powerful language models (such as Music Transformer) and building interactive applications (such as Piano Genie and Magenta Studio) that rely on symbolic representations of music.</p>
+
+                <p>Notes are a powerful and intuitive such representation, motivating our effort to dramatically improve AMT in the past several years. We focused initially on piano transcription with the Onsets and Frames model by Hawthorne et al. and the MAESTRO piano dataset. In 2020, we expanded the set of instruments we’re able to transcribe by adapting Onsets and Frames to drum transcription. However, adding new instruments one at a time is tedious; furthermore these architectures are specifically designed for percussive instruments with well-defined note onsets and less suitable for other instruments.</p>
+
+                <p>Recently, we’ve been exploring how to make general-purpose music transcription systems — systems that don’t need to be redesigned by hand for each new instrument or task. In this blog post, we highlight some of our recent advances toward more general music transcription systems.</p>
+
+                <p>In short, the main things we’ve discovered recently are:</p>
+                <ol>
+                    <li><p>Off-the-shelf Transformers work at least as well as custom neural network architectures for piano transcription; we just train the model to take spectrograms as input and output a sequence of MIDI-like note events.</p></li>
+                    <li><p>For multi-instrument transcription, training a single model on basically all existing datasets is very helpful, especially for the smallest datasets.</p></li>
+                </ol>
+
+                <h3>8.4.1 Transformers for Piano Transcription</h3>
+
+                <p>Most work in music transcription over the years has focused on transcribing piano recordings. As we mentioned above, many researchers have hand-designed neural network architectures based on the specifics of how piano notes sound. A great example of this is the Onsets and Frames architecture, which has dedicated output “heads” for the piano note onset, the velocity of the note (how hard it is struck), and the continued presence of the note (i.e. “frames”). Some research goes even further, modeling piano pedal events or the ADSR curves of piano notes.</p>
+
+                <p>However, as piano transcription architectures became more task-specific, researchers in other areas of machine learning were using generalized architectures to solve multiple tasks; in particular, the Transformer architecture has shown remarkable performance on a diverse set of tasks within both language and vision. We wondered: is it possible to use Transformers for piano transcription?</p>
+
+                <p>To answer this question, we modeled piano transcription as a sequence-to-sequence task, using the Transformer architecture from T5 (“T5-small” to be specific). We used spectrogram frames as our input sequence, and output a sequence of tokens from a MIDI-like vocabulary to represent note onsets, velocities, and offsets. Despite the simplicity of our approach, we achieved similar or better piano transcription performance (as measured by the F1 metric over notes accounting for onset time, offset time, and velocity) than the previous state-of-the-art hand-designed piano transcription systems:</p>
+
+                <h3>8.4.2 Transcribing Multiple Instruments</h3>
+                <p>The piano system above is a sequence-to-sequence Transformer: spectrogram frames in, MIDI-like note tokens out. A new onset head for every added instrument would restart that design for each timbre. The same token vocabulary can carry an instrument tag on each note event, so one decoder writes piano, drums, guitar, and the rest as one stream.</p>
+                <p>A model trained on a single small corpus fits the microphones and rooms of that corpus. Pooling the available transcription datasets into one run gives the rare instruments an encoder that has already learned pitch and timing from the large piano and drum collections. The smallest sets gain the most, because their own labeled audio is too little to train a T5-style model on its own. The model emits note events, pitches, times, and instrument tags. A later synthesis or score stage is what turns those events into audio or notation.</p>
+                
+                <div class="navigation">
+                    <a href="text_to_speech.html">Prev: 8.3 Text-to-Speech</a>
+                    <a href="music_synthesis.html">Next: 8.5 Music Synthesis</a>
+                </div>
+            </main>
+
+            <aside class="col-md-2 right-sidebar">
+                <h5><a href="index.html#section8">Audio</a></h5>
+                <ul id="dynamic-sidebar" class="nav flex-column">
+                </ul>
+            </aside>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script type="text/javascript" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="article_script.js"></script>
+    <script>
+        hljs.highlightAll();
+    </script>
+</body>
+
+</html>

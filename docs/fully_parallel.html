@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="laptop_coding_48.png" type="image/png">
+    <title>Fully Sharded Data Parallel</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" rel="stylesheet">
+    <link href="article_style.css" rel="stylesheet">
+</head>
+
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <nav class="col-md-2 left-sidebar">
+
+            </nav>
+
+            <main class="col-md-8 content">
+                <h2 class="custom-title">14.2 Fully Sharded Data Parallel</h2>
+                <p class="title-subtext">Large Scale Transformer model training with Tensor Parallel (TP)</p>
+                <p style="color: #a0a0a0;">Created Date: 2025-07-07</p>
+
+                <p>PyTorch FSDP2 provides a fully sharded data parallelism (FSDP) implementation targeting performant eager-mode while using per-parameter sharding for improved usability.</p>
+
+                <h3>14.2.1 How FSDP2 works</h3>
+                <p>In DistributedDataParallel (DDP) training, each rank owns a model replica and processes a batch of data, finally it uses all-reduce to sync gradients across ranks.</p>
+
+                <p>Comparing with DDP, FSDP reduces GPU memory footprint by sharding model parameters, gradients, and optimizer states. It makes it feasible to train models that cannot fit on a single GPU. As shown below in the picture:</p>
+                <ul class="with-bullets">
+                    <li><p>Outside of forward and backward computation, parameters are fully sharded;</p></li>
+                    <li><p>Before forward and backward, sharded parameters are all-gathered into unsharded parameters;</p></li>
+                    <li><p>Inside backward, local unsharded gradients are reduce-scatterred into sharded gradients;</p></li>
+                    <li><p>Optimizer updates sharded parameters with sharded gradients, resulting in sharded optimizer states.</p></li>
+                </ul>
+
+                <p>FSDP can be considered a decomposition of DDP’s all-reduce into reduce-scatter and all-gather operations.</p>
+
+                <h3>14.2.2 How to use FSDP2</h3>
+                <p>The working sketch is <a href="https://github.com/artinte/deep-learning/blob/develop/14_distribute/2_fsdp/fully_shared_dp.py">fully_shared_dp.py</a>, around the transformer in <a href="https://github.com/artinte/deep-learning/blob/develop/14_distribute/2_fsdp/model.py">model.py</a>. It is a ten-layer model with four heads, vocabulary 1024, and sequence length 64 — small enough to read, shaped like the model you would shard for real.</p>
+
+                <h4>14.2.2.1 Model Initialization</h4>
+                <p>Construct the module on every rank first, then shard it. The script loops over <code>model.layers</code> and calls <code>fully_shard(layer)</code>, then <code>fully_shard(model)</code> so the root owns the leftover parameters (the embedding and the output head). After that the module is both a <code>Transformer</code> and an <code>FSDPModule</code>, which the two asserts check. Sharding a layer wraps its parameters as DTensors. Until <code>fully_shard</code> runs, each rank still holds a full replica, so the call belongs immediately after construction and before the optimizer is built.</p>
+
+                <h4>14.2.2.2 Forward/Backward with Prefetching</h4>
+                <p>A forward pass all-gathers the parameters of a layer just before that layer runs, computes as if they were local, and can free the unsharded copy afterward. Backward does the same for the gradient, then reduce-scatters it. FSDP2 overlaps the next layer's all-gather with the current layer's compute when prefetching is left on, which is the default: while layer \(i\) multiplies, layer \(i+1\) is already gathering. Explicit prefetch is the hook you set when the schedule should look further ahead than one layer, for example a backward prefetch recorded during forward. The script stops at construction; the next line you add is an ordinary <code>loss.backward()</code> on a batch of token ids. The communication is inside <code>fully_shard</code>, not in the training loop.</p>
+
+                <h4>14.2.2.3 Enabling Mixed Precision</h4>
+                <p>Pass a mixed-precision policy into <code>fully_shard</code> when the matmuls should run in bfloat16 or float16 while the master weights stay in float32. The reduction dtype for gradients can differ from the compute dtype. The model in <code>model.py</code> does not set a policy, so it trains in the parameter dtype. Turn the policy on only after the unsharded run fits and learns; a dtype bug looks like a divergence, and you want a float32 baseline to compare against.</p>
+
+                <h4>14.2.2.4 Gradient Clipping and Optimizer with DTensor</h4>
+                <p>After backward, gradients are sharded DTensors. <code>clip_grad_norm_</code> on an FSDP2 root reduces the global norm across ranks and scales each shard, so you clip the root module rather than a local parameter list you assembled by hand. The optimizer — Adam is the usual choice — must be constructed after <code>fully_shard</code>, so its state (moments) is allocated per shard and not replicated. Clipping a full unsharded gradient that no rank holds is the mistake this ordering prevents.</p>
+
+                <h4>14.2.2.5 State Dicts with DTensor APIs</h4>
+                <p><code>model.state_dict()</code> on an FSDP2 module returns DTensor values, one shard per rank. That is the right object to keep in memory for a same-world resume: load it back with <code>load_state_dict</code> on the same mesh and the shards line up. It is the wrong object to copy to a trainer that is not distributed. Summoning a full tensor on one rank gathers those shards; do it for a small module when you need to print a weight, not for a checkpoint of the whole model.</p>
+
+                <h4>14.2.2.6 State Dict with DCP APIs</h4>
+                <p>Distributed checkpoint (DCP) writes each rank's shard to its own file and records the metadata that can reassemble them on a different number of ranks. Call it with the FSDP2 state dict instead of <code>torch.save</code> on rank 0. Loading plans the shards onto whatever mesh you have now. Use DCP when the checkpoint has to outlive the job that wrote it. Use the raw DTensor state dict from the previous section when it does not.</p>
+
+                <div class="navigation">
+                    <a href="distrib_parallel.html">Prev: 14.1 Distributed Data Parallel</a>
+                    <a href="tensor_parallel.html">Next: 14.3 Tensor Parallel</a>
+                </div>
+            </main>
+
+            <aside class="col-md-2 right-sidebar">
+                <h5><a href="index.html#section14">Distributed Training</a></h5>
+                <ul id="dynamic-sidebar" class="nav flex-column">
+                </ul>
+            </aside>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script type="text/javascript" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="article_script.js"></script>
+    <script>
+        hljs.highlightAll();
+    </script>
+</body>
+
+</html>

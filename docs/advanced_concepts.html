@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="laptop_coding_48.png" type="image/png">
+    <title>Advanced Concepts</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" rel="stylesheet">
+    <link href="article_style.css" rel="stylesheet">
+</head>
+
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <nav class="col-md-2 left-sidebar">
+
+            </nav>
+
+            <main class="col-md-8 content">
+                <h2 class="custom-title">15.5 Advanced Concepts</h2>
+                <p class="title-subtext"></p>
+                <p style="color: #a0a0a0;">Created Date: 2025-06-11</p>
+
+                <p>The GCN in the previous chapter runs on one small graph that fits in a single <code>edge_index</code>. These four topics are what changes when the graph does not fit, or when the training step should be compiled. The notes point at the PyG write-ups; the idea of each one is below.</p>
+
+                <h3>15.5.1 Advanced Mini-Batching</h3>
+                <p>A batch of graphs is stored as one disconnected graph. Node features are concatenated, and <code>edge_index</code> is shifted so each graph keeps its own nodes. A <code>batch</code> vector records which graph a node belongs to, and a readout (mean or sum over that vector) produces one embedding per graph. Pairing nodes across graphs by accident is the bug this vector prevents. <a href="https://pytorch-geometric.readthedocs.io/en/latest/advanced/batching.html">Advanced Mini-Batching</a> covers the collate rules, including when a follow-batch index has to be built for a second tensor.</p>
+
+                <h3>15.5.2 Memory-Efficient Aggregations</h3>
+                <p>Materializing a message for every edge costs memory proportional to the edge count times the feature width. Sparse layouts and fused aggregations keep the neighbor sum in a kernel and never write that expanded tensor. Use them when the graph is large and the GCN from <code>message_passing.py</code> runs out of memory inside <code>propagate</code>. <a href="https://pytorch-geometric.readthedocs.io/en/latest/advanced/sparse_tensor.html">Memory-Efficient Aggregations</a> is the menu of layouts. The mathematics of the sum does not change.</p>
+
+                <h3>15.5.3 Hierarchical Neighborhood Sampling</h3>
+                <p>A full neighborhood of a hub node can be most of the graph. Sampling draws a fixed number of neighbors at each hop, and a hierarchical scheme clusters nodes so the sample respects communities instead of picking uniformly. The GCN then runs on the sampled subgraph, with the same <code>message</code> as before. <a href="https://pytorch-geometric.readthedocs.io/en/latest/advanced/hgam.html">Hierarchical Neighborhood Sampling</a> describes the clustering. You pay variance in the gradient for a bound on the subgraph size.</p>
+
+                <h3>15.5.4 Compiled Graph Neural Networks</h3>
+                <p><code>torch.compile</code> can fuse the gather and the MLP inside a message-passing layer, but dynamic shapes — a different edge count every batch — are the usual reason the compile fails or silently falls back. Fix the sampled neighborhood size from the previous section and compilation has a static graph to work with. <a href="https://pytorch-geometric.readthedocs.io/en/latest/advanced/compile.html">Compiled Graph Neural Networks</a> lists which PyG layers compile cleanly. Compile after the eager GCN is correct, not before.</p>
+
+                <div class="navigation">
+                    <a href="use_cases.html">Prev: 15.4 Use-Cases & Applications</a>
+                    <a href="index.html">Next: 1.0 Deep Learning With PyTorch</a>
+                </div>
+            </main>
+
+            <aside class="col-md-2 right-sidebar">
+                <h5><a href="index.html#section15">Graph Netural Network</a></h5>
+                <ul id="dynamic-sidebar" class="nav flex-column">
+                </ul>
+            </aside>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script type="text/javascript" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="article_script.js"></script>
+    <script>
+        hljs.highlightAll();
+    </script>
+</body>
+
+</html>

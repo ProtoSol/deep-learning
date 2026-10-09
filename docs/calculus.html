@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="laptop_coding_48.png" type="image/png">
+    <title>Calculus</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" rel="stylesheet">
+    <link href="article_style.css" rel="stylesheet">
+</head>
+
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <nav class="col-md-2 left-sidebar">
+
+            </nav>
+
+            <main class="col-md-8 content">
+                <h2 class="custom-title">1.5 Calculus</h2>
+                <p class="title-subtext">Calculus <a href="https://openstax.org/details/books/calculus-volume-1">Volume 1</a> - OpenStax</p>
+                <p style="color: #a0a0a0;">Created Date: 2025-05-10</p>
+                <p>Just quickly familiarize yourself with the core concepts of calculus and recall the math classes you have taken. If you have not studied it, you need to read the recommended textbooks in detail.</p>
+
+                <h3>1.4.1 Functions and Graphs</h3>
+
+                <p>In this section, we provide a formal definition of a function and examine several ways in which functions are represented—namely, through tables, formulas, and graphs. We study formal notation and terms related to functions. We also define composition of functions and symmetry properties. Most of this material will be a review for you, but it serves as a handy reference to remind you of some of the algebraic techniques useful for working with functions.</p>
+
+                <h4>1.4.1.1 Review of Functions</h4>
+
+                <p><strong>Linear functions</strong> have the form \(f(x) = ax + b\), where \(a\) and \(b\) are constants. The following figure plots \(f(x) = 83x + 250\):</p>
+                <img src="res/01/linear_function.png" alt="Linear Function" width="600">
+                <p>Consider line \(L\) passing through points \((x_1, y_1)\) and \((x_2, y_2)\). Let \(\triangle{y} = y_2 - y_1\) and \(\triangle{x} = x_2 - x_1\) denote the changes in \(y\) and \(x\), respectively. The <strong>slope</strong> of the line is:</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(m = \frac{y_2 - y_1}{x_2 - x_1} = \frac{\triangle{y}}{\triangle{x}}\)
+                </div>
+
+                <h4>1.4.1.2 Basic Classes of Functions</h4>
+                <p>A linear function is a special type of a more general class of functions: polynomials. A <strong>polynomial function</strong> is any function that can be written in the form:</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(f(x) = a_n x^n + a_{n-1}x^{n-1} + \cdots + a_1 x + a_0\)
+                </div>
+                <p>for some integer \(n \ge 0\) and constants \(a_n, a_{n-1}, \cdots, a_0\), where \(a_n \ne 0\).</p>
+
+                <h4>1.4.1.3 Trigonometric Functions</h4>
+                <p>On the unit circle, the point at angle \(x\) radians has coordinates \((\cos x, \sin x)\). Sine is the vertical coordinate, cosine the horizontal one, and tangent is their ratio \(\tan x = \sin x / \cos x\), defined wherever cosine is not zero.</p>
+                <p>Both sine and cosine repeat every \(2\pi\), stay between \(-1\) and \(1\), and are smooth. That smoothness is why their derivatives, computed later in this chapter, are again trigonometric functions. You will meet the same pair whenever a model needs a periodic feature, for example a position along a cycle.</p>
+                <img src="res/01/trig_functions.png" alt="Sine and cosine on one period pair" width="640">
+                <p style="text-align: center; color: #555555;">Figure 1 - Sine and cosine</p>
+
+                <h4>1.4.1.4 Inverse Functions</h4>
+                <p>A function \(f\) has an inverse when each output comes from exactly one input. The inverse \(f^{-1}\) swaps the two: if \(f(a) = b\), then \(f^{-1}(b) = a\). The graph of the inverse is the graph of \(f\) reflected across the line \(y = x\).</p>
+                <p>Not every function has an inverse on its whole domain. \(f(x) = x^2\) fails, because both \(2\) and \(-2\) square to \(4\). Restrict the domain to \(x \ge 0\) and the inverse is the square root. The same idea gives \(\ln\) as the inverse of \(e^x\), which is the pair drawn below.</p>
+                <img src="res/01/inverse_function.png" alt="A function reflected across y equals x" width="480">
+                <p style="text-align: center; color: #555555;">Figure 2 - A function and its inverse</p>
+
+                <h4>1.4.1.5 Exponential and Logarithmic Functions</h4>
+                <p>An exponential function has the form \(f(x) = a^x\) with \(a &gt; 0\) and \(a \ne 1\). The most useful base is \(e \approx 2.71828\), because the slope of \(e^x\) at every point equals the height of the curve. A logarithm is the inverse question: \(\log_a y\) is the exponent that turns \(a\) into \(y\). The natural logarithm \(\ln y\) uses base \(e\).</p>
+                <p>Two identities are worth memorizing, because training losses use them constantly. A product inside a log becomes a sum, \(\ln(uv) = \ln u + \ln v\), and a power comes down, \(\ln(u^c) = c \ln u\). That is why a model can minimize the log of a likelihood instead of the likelihood itself: the location of the minimum does not change, and the arithmetic is stabler.</p>
+                <img src="res/01/exp_log.png" alt="Exponential and natural logarithm" width="600">
+                <p style="text-align: center; color: #555555;">Figure 3 - \(e^x\) and \(\ln x\)</p>
+
+                <h3>1.4.2 Limits</h3>
+                <p>A limit describes the value a function approaches as its input approaches some number. The function does not have to attain that value, and it does not have to be defined at the point itself. Derivatives are limits of slopes, and integrals are limits of sums, so every later section in this chapter rests on this idea.</p>
+
+                <h4>1.4.2.1 A Preview of Calculus</h4>
+                <p>Calculus answers two geometric questions. The first: how steep is a curve at a single point? The second: how much area sits under a curve between two vertical lines? The steepness question becomes the derivative. The area question becomes the integral. They look unrelated until the fundamental theorem of calculus shows that each undoes the other.</p>
+                <p>Deep learning lives almost entirely on the first question. Training moves each weight a little in the direction that reduces the loss, and that direction is a derivative. The area question returns when a probability model has to integrate a density, which is why the diffusion chapters need both.</p>
+
+                <h4>1.4.2.2 The Limit of a Function</h4>
+                <p>We write \(\lim_{x \to a} f(x) = L\) when \(f(x)\) gets arbitrarily close to \(L\) as \(x\) gets arbitrarily close to \(a\), from both sides. The value \(f(a)\), if it even exists, is irrelevant.</p>
+                <p>A standard example is \(f(x) = (x^2 - 1)/(x - 1)\). Direct substitution at \(x = 1\) divides by zero, so \(f(1)\) is undefined. For every other \(x\), the expression simplifies to \(x + 1\), which approaches \(2\). The limit is \(2\). The open circle in the figure is the missing point; the curve still aims at it.</p>
+                <img src="res/01/limit_hole.png" alt="A function with a hole whose limit exists" width="600">
+                <p style="text-align: center; color: #555555;">Figure 4 - The limit exists at the hole</p>
+                <p>One-sided limits matter when the two sides disagree. \(\lim_{x \to 0^+} 1/x\) runs to \(+\infty\) and \(\lim_{x \to 0^-} 1/x\) runs to \(-\infty\), so the two-sided limit does not exist.</p>
+
+                <h4>1.4.2.3 The Limit Laws</h4>
+                <p>Suppose \(\lim_{x \to a} f(x)\) and \(\lim_{x \to a} g(x)\) both exist, and let \(c\) be a constant. Then the limit of a sum, difference, or constant multiple is the sum, difference, or multiple of the limits. The limit of a product is the product of the limits. The limit of a quotient is the quotient of the limits, provided the limit of the denominator is not zero. Powers pass through the limit as well: \(\lim_{x \to a} [f(x)]^n = [\lim_{x \to a} f(x)]^n\).</p>
+                <p>These laws are why polynomials are easy. \(\lim_{x \to 2} (3x^2 - x + 4)\) is just the polynomial evaluated at \(2\), which is \(14\). You only need a special argument when substitution hits a zero denominator or an infinity.</p>
+
+                <h4>1.4.2.4 Continuity</h4>
+                <p>A function is continuous at \(a\) when three things hold: \(f(a)\) is defined, \(\lim_{x \to a} f(x)\) exists, and the two are equal. Informally, you can draw the graph through that point without lifting the pen.</p>
+                <p>Polynomials, sine, cosine, and \(e^x\) are continuous everywhere they are defined. A quotient of continuous functions is continuous wherever the denominator is not zero. The three usual failures are a hole (the limit exists but \(f(a)\) does not), a jump (the one-sided limits differ), and a vertical asymptote (the function blows up).</p>
+                <p>A network built from sums, products, and ReLU is continuous: ReLU, \( \max(x, 0) \), has no jump. Continuity is not the same as differentiability. ReLU has a corner at \(0\), and the derivative there is not defined in the classical sense. Training still proceeds by picking a one-sided slope, which is enough for the gradient step in the next chapter.</p>
+
+                <h4>1.4.2.5 The Precise Definition of a Limit</h4>
+                <p>The sentence "gets arbitrarily close" has a precise form. \(\lim_{x \to a} f(x) = L\) means: for every tolerance \(\varepsilon &gt; 0\), there is a distance \(\delta &gt; 0\) such that</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(0 &lt; |x - a| &lt; \delta \quad \text{implies} \quad |f(x) - L| &lt; \varepsilon\)
+                </div>
+                <p>The strict inequality \(0 &lt; |x - a|\) is what leaves \(f(a)\) out of the definition. For a concrete case, take \(f(x) = 2x\), \(a = 1\), \(L = 2\). Then \(|2x - 2| = 2|x - 1|\). Choosing \(\delta = \varepsilon / 2\) forces the error under \(\varepsilon\). Most of the time you will not write an \(\varepsilon\)-\(\delta\) proof; you will use the limit laws. The definition is here so the derivative, which is a limit, means something exact.</p>
+
+                <h3>1.4.3 Derivatives</h3>
+                <p>A derivative is the slope of a curve at one point, defined as a limit of secant slopes. The rules that follow are how you compute that slope without writing the limit every time.</p>
+
+                <h4>1.4.3.1 Defining the Derivative</h4>
+                <p>Now that we have both a conceptual understanding of a limit and the practical ability to compute limits, we have established the foundation for our study of calculus, the branch of mathematics in which we compute derivatives and integrals.</p>
+                <h5>Tangent Lines</h5>
+                <p>We begin our study of calculus by revisiting the notion of secant lines and tangent lines. Recall that we used the slope of a secant line to a function at a point \((a, f(a))\) to estimate the rate of change, or the rate at which one variable changes in relation to another variable. We can obtain the slope of the secant by choosing a value of \(x\) near \(a\) and drawing a line through the points \((a, f(a))\) and \((x, f(x))\). The slope of this line is given by an equation in the form of a difference quotient:</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(m_{sec} = \frac{f(x) - f(a)}{x - a}\)
+                </div>
+                <p>We can also calculate the slope of a secant line to a function at a value a by using this equation and replacing \(x\) with \(a + h\), where \(h\) is a value close to 0. We can then calculate the slope of the line through the points \((a, f(a))\) and \((a + h, f(a + h))\). In this case, we find the secant line has a slope given by the following difference quotient with increment \(h\):</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(m_{sec} = \frac{f(a + h) - f(a)}{a + h - a} = \frac{f(a + h) - f(a)}{h}\)
+                </div>
+                <p>These two expressions for calculating the slope of a secant line are illustrated in Figure 1. We will see that each of these two methods for finding the slope of a secant line is of value. Depending on the setting, we can choose one or the other. The primary consideration in our choice usually depends on ease of calculation.</p>
+                <h5>The Derivative of a Function at a Point</h5>
+                <p>The derivative of \(f\) at \(a\) is the limit of those secant slopes, when the limit exists:</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(f'(a) = \lim_{h \to 0} \frac{f(a + h) - f(a)}{h}\)
+                </div>
+                <p>For \(f(x) = x^2\) at \(a = 1\), the difference quotient is \((1 + 2h + h^2 - 1)/h = 2 + h\), and the limit as \(h \to 0\) is \(2\). The animation starts with a wide secant and shrinks \(h\). The secant slope falls toward \(2\), which is the slope of the tangent line drawn in green.</p>
+                <img src="res/01/secant_tangent.gif" alt="Secant lines collapsing onto the tangent" width="640">
+                <p style="text-align: center; color: #555555;">Figure 5 - Secant slopes approach \(f'(1) = 2\)</p>
+                <p>The same limit at a general point gives \(f'(a) = 2a\). At \(a = 3\) the slope is \(6\), which is the number checked in <a href="https://github.com/artinte/deep-learning/blob/develop/01_basic/5_calculus/demo_simple_grad.py">demo_simple_grad.py</a> for a slightly larger polynomial, and again in <a href="https://github.com/artinte/deep-learning/blob/develop/01_basic/5_calculus/demo_calculus_figures.py">demo_calculus_figures.py</a>.</p>
+
+                <h4>1.4.3.2 The Derivative as a Function</h4>
+
+                <p>Let \(f\) be a function. The derivative function, denoted by \(f'\) , is the function whose domain consists of those values of \(x\) such that the following limit exists:</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(f'(x) = \lim_{h \to 0} \frac{f(x+h) - f(x)}{h}\)
+                </div>
+                <p>The derivative is itself a function: feed it an \(x\) and it returns the slope of \(f\) at that \(x\). For \(f(x) = x^2\), the derivative function is \(f'(x) = 2x\). Where \(f'\) is positive the original curve is rising; where \(f'\) is negative it is falling; where \(f'\) is zero the tangent is horizontal.</p>
+                <img src="res/01/derivative_function.png" alt="Parabola and its derivative line" width="600">
+                <p style="text-align: center; color: #555555;">Figure 6 - \(x^2\) and its derivative \(2x\)</p>
+                <p>The derivative function is only defined where the limit exists. \(|x|\) is continuous everywhere and has a corner at \(0\). The difference quotient approaches \(1\) from the right and \(-1\) from the left, so \(f'(0)\) does not exist. A corner is the usual reason a layer is continuous but not differentiable.</p>
+
+                <h4>1.4.3.3 Differentiation Rules</h4>
+                <p>The limit definition always works and is rarely the fastest path. These rules differentiate constants, powers, sums, products, and quotients from the derivatives of the pieces.</p>
+
+                <h5>The Constant Rule</h5>
+                <p>We first apply the limit definition of the derivative to find the derivative of the constant function, \(f(x) = c\) . For this function, both \(f(x) = c\) and \(f(x+h) = c\) , so we obtain the following result:</p>
+
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(f'(x) = \lim_{h \to 0} \frac{f(x+h) - f(x)}{h} = \lim_{h \to 0} \frac{0}{h} = 0\)
+                </div>
+
+                <p>The rule for differentiating constant functions is called the constant rule. It states that the derivative of a constant function is zero; that is, since a constant function is a horizontal line, the slope, or the rate of change, of a constant function is 0. We restate this rule in the following theorem.</p>
+
+                <h5>The Power Rule</h5>
+
+                <p>Let \(n\) be a positive integer. If \(f(x) = x^n\) , then \(f'(x) = n x^{n-1}\) .</p>
+
+                <p>Alternatively, we may express this rule as \(\frac{d}{dx} x^n = n x^{n-1}\).</p>
+
+                <h5>The Sum, Difference, and Constant Multiple Rules</h5>
+                <p>Let \(f(x)\) and \(g(x)\) be differentiable functions and \(k\) be a constant. Then each of the following equations holds.</p>
+
+                <p>Sum Rule. The derivative of the sum of a function \(f\) and a function \(g\) is the same as the sum of the derivative of \(f\) and the derivative of \(g\) .</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(\frac{d}{dx}(f(x) + g(x)) = \frac{d}{dx}(f(x)) + \frac{d}{dx}(g(x))\)
+                </div>
+
+                <p>Difference Rule. The derivative of the difference of a function \(f\) and a function \(g\) is the same as the difference of the derivative of \(f\) and the derivative of \(g\) :</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(\frac{d}{dx}(f(x) - g(x)) = \frac{d}{dx}(f(x)) - \frac{d}{dx}(g(x))\)
+                </div>
+
+                <p>Constant Multiple Rule. The derivative of a constant \(k\) multiplied by a function \(f\) is the same as the constant multiplied by the derivative: </p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(\frac{d}{dx} (kf(x)) = k \frac{d}{dx}(f(x))\)
+                </div>
+
+                <p>Product Rule. The derivative of a product is not the product of the derivatives. Each factor is differentiated in turn, and the other factor is left as it is:</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(\frac{d}{dx}(f(x)g(x)) = f'(x)g(x) + f(x)g'(x)\)
+                </div>
+                <p>At \(x = \pi/2\), the product \(x \sin x\) has derivative \(\sin x + x \cos x = 1\). <a href="https://github.com/artinte/deep-learning/blob/develop/01_basic/5_calculus/demo_calculus_figures.py">demo_calculus_figures.py</a> checks that value.</p>
+
+                <p>Quotient Rule. For \(g(x) \ne 0\),</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(\frac{d}{dx}\left(\frac{f(x)}{g(x)}\right) = \frac{f'(x)g(x) - f(x)g'(x)}{[g(x)]^2}\)
+                </div>
+
+                <h4>1.4.3.4 Derivatives as Rates of Change</h4>
+                <p>If \(s(t)\) is position at time \(t\), the difference quotient \((s(t+h) - s(t))/h\) is the average velocity over a short interval. Its limit is the instantaneous velocity \(v(t) = s'(t)\). The derivative of velocity is acceleration. The same reading works for any pair of quantities: \(f'(a)\) is the instantaneous rate at which \(f\) changes per unit change in its input, evaluated at \(a\).</p>
+                <p>In the next chapter the input is a weight and \(f\) is the loss. \(\partial L / \partial w\) is how fast the loss changes when that weight moves. A negative rate means increasing the weight reduces the loss, which is the step gradient descent takes.</p>
+
+                <h4>1.4.3.5 Derivatives of Trigonometric Functions</h4>
+                <p>The two limits \(\lim_{h \to 0} \sin h / h = 1\) and \(\lim_{h \to 0} (1 - \cos h) / h = 0\) are enough to differentiate sine from the definition. Expanding \(\sin(x+h)\) and taking the limit produces</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(\frac{d}{dx}\sin x = \cos x, \qquad \frac{d}{dx}\cos x = -\sin x, \qquad \frac{d}{dx}\tan x = \sec^2 x\)
+                </div>
+                <p>The cosine rule follows by writing \(\cos x = \sin(x + \pi/2)\) and using the chain rule from the next section, or by repeating the difference-quotient argument. The tangent rule is the quotient rule applied to \(\sin x / \cos x\). Higher derivatives cycle every four steps: sine, cosine, negative sine, negative cosine, and back to sine.</p>
+
+                <h4 id="chain_rule">1.4.3.6 The Chain Rule</h4>
+
+                <p>We have seen the techniques for differentiating basic functions (\(x^n\), \(sinx\), \(cosx\), etc.) as well as sums, differences, products, quotients, and constant multiples of these functions. However, these techniques do not allow us to differentiate compositions of functions, such as \(h(x) = sin(x^3)\) or \(k(x) = \sqrt{3x^2 + 1}\). In this section, we study the rule for finding the derivative of the composition of two or more functions.</p>
+                <h5>Deriving the Chain Rule</h5>
+                <p>Let \(y = f(u)\) and \(u = g(x)\), so \(y = f(g(x))\). A small change \(\Delta x\) produces \(\Delta u \approx g'(x)\,\Delta x\), and that change in the inner variable produces \(\Delta y \approx f'(u)\,\Delta u\). Multiply the two approximations and the \(\Delta u\) cancels:</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(\frac{dy}{dx} = \frac{dy}{du} \cdot \frac{du}{dx} = f'(g(x))\, g'(x)\)
+                </div>
+                <p>For \(h(x) = \sin(x^3)\), the outer derivative is \(\cos(u)\) and the inner derivative is \(3x^2\), so \(h'(x) = \cos(x^3) \cdot 3x^2\). For \(k(x) = (3x^2 + 1)^{1/2}\), the outer power rule and the inner derivative give \(k'(x) = \frac{1}{2}(3x^2+1)^{-1/2} \cdot 6x\).</p>
+                <p>The animation follows one input through the composition \(y = \sin(x^2)\). The left panel is the inner map \(u = x^2\). The right panel is the composed curve. The caption is the chain rule evaluated at the moving point: \(\cos(x^2) \cdot 2x\).</p>
+                <img src="res/01/chain_rule.gif" alt="Chain rule applied to sine of x squared" width="700">
+                <p style="text-align: center; color: #555555;">Figure 7 - The chain rule on \(\sin(x^2)\)</p>
+                <p>Backpropagation is this rule applied from the loss back to every weight. Each layer is one link in the chain. The gradient chapter writes the same multiplication on a small circuit of three variables.</p>
+
+                <h4>1.4.3.7 Derivatives of Inverse Functions</h4>
+                <p>Suppose \(f\) is differentiable and \(f'(a) \ne 0\), and let \(b = f(a)\). The inverse \(f^{-1}\) is differentiable at \(b\), and its slope is the reciprocal of the original slope:</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \((f^{-1})'(b) = \frac{1}{f'(a)} = \frac{1}{f'(f^{-1}(b))}\)
+                </div>
+                <p>The geometric reason is the reflection across \(y = x\): a tangent of slope \(m\) reflects to a tangent of slope \(1/m\). The practical payoff is \(\ln x\). It is the inverse of \(e^x\), and the derivative of \(e^x\) is \(e^x\), so</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(\frac{d}{dx}\ln x = \frac{1}{e^{\ln x}} = \frac{1}{x}, \quad x &gt; 0\)
+                </div>
+
+                <h4>1.4.3.8 Implicit Differentiation</h4>
+                <p>Some curves are given by a relation \(F(x, y) = c\) rather than by \(y = f(x)\). The circle \(x^2 + y^2 = 1\) is the usual example. Differentiate both sides with respect to \(x\), treating \(y\) as a function of \(x\) and applying the chain rule to every term that contains \(y\):</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(2x + 2y \frac{dy}{dx} = 0 \quad \Rightarrow \quad \frac{dy}{dx} = -\frac{x}{y}\)
+                </div>
+                <p>The slope depends on both coordinates, which matches the picture: the tangent is horizontal at the left and right extremes only if you are on the top or bottom, and the formula blows up where \(y = 0\), the left and right ends of the circle, where the tangent is vertical. Use this whenever the output you care about is defined by an equation you cannot solve for \(y\).</p>
+
+                <h4>1.4.3.9 Derivatives of Exponential and Logarithmic Functions</h4>
+                <p>The natural exponential is its own derivative. Every other exponential and logarithm reduces to that fact with the chain rule and the change-of-base formula \(\log_b x = \ln x / \ln b\).</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(\frac{d}{dx} e^{x} = e^{x}, \qquad \frac{d}{dx} a^{x} = a^{x} \ln a, \qquad \frac{d}{dx} \ln|x| = \frac{1}{x}, \qquad \frac{d}{dx} \log_b |x| = \frac{1}{x \ln b}\)
+                </div>
+                <p>Compositions are the form that shows up in a loss. If \(u\) depends on \(x\), then \(\frac{d}{dx} e^{u} = e^{u} u'\) and \(\frac{d}{dx} \ln u = u' / u\). The second of these is the derivative of a log-likelihood with respect to an unnormalized score.</p>
+
+                <h3>1.4.4 Applications of Derivatives</h3>
+                <p>The rules above are only useful once they answer a question: how fast is this changing, where is it largest, and what line best approximates it nearby. The rest of this section is those questions.</p>
+
+                <h4>1.4.4.1 Related Rates</h4>
+                <p>Related rates are the chain rule with time as the independent variable. Two quantities are tied by an equation, you know how fast one of them changes, and you want the other rate.</p>
+                <p>A balloon's volume and radius satisfy \(V = \frac{4}{3}\pi r^3\). Differentiate both sides with respect to \(t\):</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(\frac{dV}{dt} = 4\pi r^2 \frac{dr}{dt}\)
+                </div>
+                <p>If the radius is \(10\) cm and growing at \(2\) cm/s, the volume is growing at \(4\pi \cdot 100 \cdot 2 = 800\pi\) cubic centimeters per second. The same pattern covers every "how fast" word problem: write the relation, differentiate in \(t\), then substitute the known values.</p>
+
+                <h4>1.4.4.2 Linear Approximations and Differentials</h4>
+                <p>Near a point \(a\), a differentiable function looks like its tangent line. The linear approximation is</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(L(x) = f(a) + f'(a)(x - a)\)
+                </div>
+                <p>Writing \(\Delta x = x - a\) and \(\Delta y \approx f'(a)\,\Delta x\) is the same statement in the language of differentials: \(dy = f'(x)\,dx\). The figure uses \(f(x) = e^{x-1}\) at \(a = 1\), where \(f(1) = 1\) and \(f'(1) = 1\), so the tangent is the line \(y = x\). Close to \(x = 1\) the curve and the line are hard to tell apart; farther away the approximation drifts.</p>
+                <img src="res/01/linear_approx.png" alt="Tangent line approximating an exponential" width="600">
+                <p style="text-align: center; color: #555555;">Figure 8 - The tangent line approximates the curve nearby</p>
+                <p>One gradient step is exactly this idea used in reverse. The loss is replaced by its linear approximation, and the weight is moved a small distance downhill. The step has to stay small because the approximation is only trustworthy near the current point.</p>
+
+                <h4>1.4.4.3 Maxima and Minima</h4>
+                <p>A number \(c\) in the domain is a critical point when \(f'(c) = 0\) or \(f'(c)\) does not exist. Local maxima and minima occur at critical points (or at endpoints, if the domain is a closed interval). The first-derivative test looks at the sign of \(f'\) on either side: increasing then decreasing means a local max, decreasing then increasing means a local min. The second-derivative test is shorter when \(f''(c)\) exists: \(f''(c) &gt; 0\) is a local min, \(f''(c) &lt; 0\) is a local max, and \(f''(c) = 0\) says nothing.</p>
+                <p>For \(f(x) = x^3 - 3x^2 + 1\), the derivative is \(f'(x) = 3x^2 - 6x = 3x(x-2)\). The critical points are \(x = 0\) and \(x = 2\). Then \(f''(x) = 6x - 6\), so \(f''(0) = -6\) and the point \((0, 1)\) is a local max, while \(f''(2) = 6\) and \((2, -3)\) is a local min.</p>
+                <img src="res/01/maxima_minima.png" alt="Cubic with a local max and a local min" width="600">
+                <p style="text-align: center; color: #555555;">Figure 9 - Critical points of \(x^3 - 3x^2 + 1\)</p>
+
+                <h4>1.4.4.4 The Mean Value Theorem</h4>
+                <p>If \(f\) is continuous on the closed interval \([a, b]\) and differentiable on the open interval \((a, b)\), then there is at least one \(c\) strictly between \(a\) and \(b\) such that</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(f'(c) = \frac{f(b) - f(a)}{b - a}\)
+                </div>
+                <p>The right-hand side is the slope of the secant through the endpoints. The theorem says some tangent in the middle is parallel to that secant. Rolle's theorem is the special case \(f(a) = f(b)\): then some \(c\) has \(f'(c) = 0\). One consequence used everywhere in error estimates: if \(f'(x) = 0\) throughout an interval, then \(f\) is constant there.</p>
+
+                <h4>1.4.4.5 Derivatives and the Shape of a Graph</h4>
+                <p>The first derivative controls direction. \(f' &gt; 0\) on an interval means \(f\) is increasing there; \(f' &lt; 0\) means \(f\) is decreasing. The second derivative controls bending. \(f'' &gt; 0\) means the slope itself is increasing, so the graph is concave up (it holds water). \(f'' &lt; 0\) means concave down. An inflection point is where the concavity changes and \(f\) is continuous.</p>
+                <p>On the cubic above, \(f''(x) = 6x - 6\) changes sign at \(x = 1\). The curve is concave down on \((-\infty, 1)\) and concave up on \((1, \infty)\), so \(x = 1\) is an inflection point, sitting between the local max and the local min.</p>
+
+                <h4>1.4.4.6 Limits at Infinity and Asymptotes</h4>
+                <p>A limit at infinity asks what happens as \(x\) grows without bound. \(\lim_{x \to \infty} f(x) = L\) means the graph flattens toward the horizontal line \(y = L\), a horizontal asymptote. A vertical asymptote at \(x = a\) is the other kind of blow-up: \(|f(x)|\) grows without bound as \(x\) approaches \(a\).</p>
+                <p>For a rational function, compare the degrees. If the denominator has higher degree, the limit at infinity is \(0\). If the degrees match, the limit is the ratio of the leading coefficients. If the numerator has higher degree, the limit is infinite and there is no horizontal asymptote. \(\lim_{x \to \infty} (3x^2 + 1)/(x^2 - 4) = 3\).</p>
+                <p>Training curves are a practical version of the same picture. A loss that falls and then levels off is approaching a horizontal asymptote. The asymptote is the best loss this model and this data will reach, not necessarily zero.</p>
+
+                <h4>1.4.4.7 Applied optimization Problems</h4>
+                <p>On a closed interval the extreme value theorem says a continuous function attains its maximum and minimum. The candidates are the critical points inside the interval and the two endpoints. Evaluate \(f\) at each candidate and pick the best.</p>
+                <p>The version you will actually run is unconstrained and high-dimensional: minimize a loss \(L(w)\). The calculus fact underneath is unchanged. At a local minimum that the derivative can see, \(\nabla L = 0\). For a one-dimensional rehearsal, \(L(w) = (w - 2)^2 + 1\) has \(L'(w) = 2(w-2)\), so the only critical point is \(w = 2\), and \(L''(w) = 2 &gt; 0\) confirms a minimum. The value there is \(1\). Gradient descent is the algorithm that searches for that kind of point when you cannot solve \(L'(w) = 0\) by hand.</p>
+
+                <h4>1.4.4.8 L'Hopital's Rules</h4>
+                <p>When a quotient approaches the indeterminate form \(0/0\) or \(\infty/\infty\), and \(f'\) and \(g'\) exist near the point (except possibly at the point itself), with \(g' \ne 0\), then</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(\lim_{x \to a} \frac{f(x)}{g(x)} = \lim_{x \to a} \frac{f'(x)}{g'(x)}\)
+                </div>
+                <p>provided the limit on the right exists or is infinite. The same statement holds for \(x \to \infty\). The standard check is \(\lim_{x \to 0} \sin x / x\). Both numerator and denominator approach \(0\), and the ratio of derivatives is \(\cos x / 1\), which approaches \(1\). So the original limit is \(1\). Apply the rule once per indeterminate form; do not differentiate the quotient by the quotient rule.</p>
+
+                <h4>1.4.4.9 Newton's Method</h4>
+                <p>Newton's method finds a root of \(f(x) = 0\). Start at a guess \(x_0\) and replace it by the place where the tangent line crosses zero:</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(x_{n+1} = x_n - \frac{f(x_n)}{f'(x_n)}\)
+                </div>
+                <p>For \(f(x) = x^2 - 2\), starting at \(x_0 = 1\), six iterations land on \(\sqrt{2}\) to well under \(10^{-4}\). The script that draws the figures in this chapter asserts that. The method needs \(f'(x_n) \ne 0\) and a guess that is not too far from a simple root; otherwise it can diverge or cycle.</p>
+                <p>Minimizing a loss is the related problem of finding a root of the derivative. Replacing \(f\) by \(f'\) in the formula above is Newton's method as an optimizer. It converges quickly near a minimum and costs a second derivative, which is why deep learning usually prefers the cheaper first-order step.</p>
+
+                <h4>1.4.4.10 Antiderivatives</h4>
+                <p>An antiderivative of \(f\) is any function \(F\) with \(F' = f\). Antiderivatives are not unique: if \(F\) works, so does \(F + C\) for any constant \(C\), and the mean value theorem says those are all of them on an interval. The power rule reverses as</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(\int x^{n}\, dx = \frac{x^{n+1}}{n+1} + C, \quad n \ne -1, \qquad \int \frac{1}{x}\, dx = \ln|x| + C\)
+                </div>
+                <p>Also \(\int e^{x}\, dx = e^{x} + C\), \(\int \cos x\, dx = \sin x + C\), and \(\int \sin x\, dx = -\cos x + C\). Checking an antiderivative is differentiating it. That check is the whole of the next section's fundamental theorem.</p>
+
+                <h3>1.4.5 Integration</h3>
+                <p>The definite integral \(\int_a^b f(x)\, dx\) is the signed area between the curve and the \(x\)-axis from \(a\) to \(b\). Area above the axis counts positive, area below counts negative. Define it as a limit of Riemann sums. Split \([a, b]\) into \(n\) pieces of width \(\Delta x = (b-a)/n\), pick a sample point \(x_i^*\) in each piece, and add the rectangle areas:</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(\int_a^b f(x)\, dx = \lim_{n \to \infty} \sum_{i=1}^{n} f(x_i^*)\, \Delta x\)
+                </div>
+                <p>The figure uses the left endpoint of each piece under \(f(x) = x^2\) on \([0, 2]\). Eight rectangles already follow the curve; more rectangles close the gap. The exact area is \(8/3\).</p>
+                <img src="res/01/riemann_sum.png" alt="Riemann rectangles under a parabola" width="600">
+                <p style="text-align: center; color: #555555;">Figure 10 - A left Riemann sum for \(x^2\) on \([0, 2]\)</p>
+                <p>The fundamental theorem ties the area back to antiderivatives. If \(f\) is continuous and \(F' = f\), then</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(\int_a^b f(x)\, dx = F(b) - F(a)\)
+                </div>
+                <p>The other half says the area function \(A(x) = \int_a^x f(t)\, dt\) satisfies \(A'(x) = f(x)\). Differentiation and integration are inverse operations. For \(x^2\) on \([0, 2]\), an antiderivative is \(x^3/3\), and \(8/3 - 0 = 8/3\).</p>
+
+                <h3>1.4.6 Applications of Integration</h3>
+                <p>The area between two curves \(f\) and \(g\), with \(f \ge g\) on \([a, b]\), is \(\int_a^b (f(x) - g(x))\, dx\). The average value of a continuous function on that interval is</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(f_{\text{avg}} = \frac{1}{b-a} \int_a^b f(x)\, dx\)
+                </div>
+                <p>The mean value theorem for integrals says the continuous function actually attains this average somewhere in the interval. Volumes of solids of revolution are the same idea with disk or shell areas in place of \(f(x)\); the OpenStax volumes work several of them.</p>
+                <p>The application that this book needs is probability. A density \(p(x)\) is a nonnegative function whose integral over the whole line is \(1\). The probability of an interval is the area under \(p\) on that interval, and the expected value of \(X\) is \(\int x\, p(x)\, dx\). Section 6.1 writes the normal density and plots it; the integral underneath that plot is the definition just given.</p>
+
+                <h3>1.4.7 Techniques of Integration</h3>
+                <p>Most integrals that show up by hand yield to one of two reversals of a differentiation rule.</p>
+                <p>Substitution reverses the chain rule. If \(u = g(x)\), then \(du = g'(x)\, dx\) and</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(\int f(g(x))\, g'(x)\, dx = \int f(u)\, du\)
+                </div>
+                <p>For \(\int 2x \cos(x^2)\, dx\), take \(u = x^2\), so \(du = 2x\, dx\), and the integral becomes \(\int \cos u\, du = \sin(x^2) + C\). Differentiate \(\sin(x^2)\) and the chain rule returns \(2x\cos(x^2)\), which is the check.</p>
+                <p>Integration by parts reverses the product rule. From \((uv)' = u'v + uv'\) you rearrange to</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(\int u\, dv = uv - \int v\, du\)
+                </div>
+                <p>For \(\int x e^{x}\, dx\), choose \(u = x\) and \(dv = e^{x}\, dx\), so \(du = dx\) and \(v = e^{x}\). Then \(x e^{x} - \int e^{x}\, dx = e^{x}(x - 1) + C\).</p>
+                <p>Two further tools cover the integrals those two miss. Partial fractions splits a rational function into a sum of simpler fractions, one per factor of the denominator. Trigonometric substitution uses a right triangle to turn \(\sqrt{a^2 - x^2}\), \(\sqrt{a^2 + x^2}\), or \(\sqrt{x^2 - a^2}\) into a sine, tangent, or secant. Both are worked in detail in <a href="https://openstax.org/details/books/calculus-volume-2">Calculus Volume 2</a>. In this book, when an integral is not one of the forms above, it is computed numerically or left inside a probability identity.</p>
+
+                <div class="navigation">
+                    <a href="principle_learn.html">Prev: 1.4 Principles of Deep Learning</a>
+                    <a href="gradient_descent.html">Next: 1.6 Gradient Descent</a>
+                </div>
+            </main>
+
+            <aside class="col-md-2 right-sidebar">
+                <h5><a href="index.html#section1">Tensor and Gradient Basics</a></h5>
+                <ul id="dynamic-sidebar" class="nav flex-column">
+                </ul>
+            </aside>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script type="text/javascript" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="article_script.js"></script>
+    <script>
+        hljs.highlightAll();
+    </script>
+</body>
+
+</html>

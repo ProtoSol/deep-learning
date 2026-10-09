@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="laptop_coding_48.png" type="image/png">
+    <title>DeepFaceLab</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" rel="stylesheet">
+    <link href="article_style.css" rel="stylesheet">
+</head>
+
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <nav class="col-md-2 left-sidebar">
+
+            </nav>
+
+            <main class="col-md-8 content">
+                <h2 class="custom-title">9.5 DeepFaceLab</h2>
+                <p class="title-subtext"></p>
+                <p style="color: #a0a0a0;">Created Date: 2025-07-10</p>
+
+                <p>Deepfake defense not only requires the research of detection but also requires the efforts of generation methods. However, current deepfake methods suffer the effects of obscure workflow and poor performance.</p>
+                <p>To solve this problem, we present DeepFaceLab, the current dominant deepfake framework for face-swapping. It provides the necessary tools as well as an easy-to-use way to conduct high-quality face-swapping. It also offers a flexible and loose coupling structure for people who need to strengthen their pipeline with other features without writing complicated boilerplate code.</p>
+                <p>We detail the principles that drive the implementation of DeepFaceLab and introduce its pipeline, through which every aspect of the pipeline can be modified painlessly by users to achieve their customization purpose.</p>
+                <p>It is noteworthy that DeepFaceLab could achieve cinema-quality results with high fidelity. We demonstrate the advantage of our system by comparing our approach with other face-swapping methods.</p>
+
+                <h3>9.5.1 Introduction</h3>
+
+                <p>Since deep learning has empowered the realm of computer vision in recent years, manipulating digital images, especially the manipulation of human portrait images, has improved rapidly and achieved photorealistic results in most cases. Face swapping is an eye-catching task in generating fake content by transferring a source face to the destination while maintaining the destination’s facial movements and expression deformations.</p>
+
+                <p>The fundamental motivation behind face manipulation techniques is Generative Adversarial Networks (GANs). More and more faces synthesized by StyleGAN, Style-GAN2 are becoming more and more realistic and entirely indistinguishable for the human vision system.</p>
+
+                <p>This paper introduces DeepFaceLab, an integrated open-source system with a clean-state design of the pipeline, achieving photorealistic face-swapping results without painful tuning. DFL has turned out to be very popular with the public. For instance, many artists create DFL-based videos and publish them on their YouTube channels. These videos made by DFL have more than 100 million hits.</p>
+                <p>The contributions of DeepFaceLab can be summarized as three-folds:</p>
+                <ul>
+                    <li><p>A state-of-the-art framework consists of a maturity pipeline is proposed, aiming to achieve photorealistic face-swapping results.</p></li>
+                    <li><p>DeepFaceLab open-sourced the code in 2018 and always kept up to the progress in the computer vision area, making a positive contribution for defending deepfake, which has drawn broad attention in the open-source community and VFX areas.</p></li>
+                    <li><p>A series of high-efficiency components and tools are introduced in DeepFaceLab to build better face-swapping videos.</p></li>
+                </ul>
+
+                <h3>9.5.2 Characteristics of DeepFaceLab</h3>
+                <p>DeepFaceLab is a toolkit with a loose boundary between stages. Extraction, training, and conversion can be replaced one at a time. The face detector is the example already given in the pipeline section: S3FD is the default, and RetinaFace can take its place. The same split applies to the landmark model, the face-set editor, and the merge step, so a change in one stage leaves the others in place.</p>
+                <p>The workflow is a one-to-one swap. One source identity is trained against one destination video. Temporal stability is treated as part of the method: landmarks can be smoothed over a configurable window, Umeyama’s similarity transform locks each crop to a shared template, and a segmentation mask limits which pixels are written back. Those controls are what make a shot hold together under playback.</p>
+                <p>Image quality comes from that alignment stack plus a face model trained on the aligned crops. Users raise fidelity by choosing a larger model and by cleaning the face sets by hand. The same concrete pipeline is why the project spread through visual-effects work and why it is a useful public target for detection research.</p>
+
+                <h3>9.5.3 Pipeline</h3>
+                <p>DeepFaceLab provides a set of workflow which form the flexible pipeline. In DeepFaceLab (DFL for short), we can abstract the pipeline into three phases: extraction, training, and conversion. These three parts are presented sequentially. Besides, it is noteworthy that DFL falls in a typical one-to-one face-swapping paradigm, which means thereare only two kinds of data: src and dst, the abbreviation for source and destination, are used in the following narrative.</p>
+
+                <h4>9.5.3.1 Extraction</h4>
+                <p>The extraction phase is the first phase in DFL, aiming to extract a face from src and dst data. This phase consists of many algorithms and processing parts, i.e., face detection, face alignment, and face segmentation. DFL provides many extraction modes (i.e, half-face, full-face, whole face), which represents the face coverage area of the extraction phase. Generally, we take full-face mode by default.</p>
+
+                <h5>Face Detection</h5>
+                <p>The first step in extraction phase is to find the target face in the given data: src and dst. DFL regards S3FD as its default face detector. S3FD can be replaced with other face detection algorithms painlessly, i.e RetinaFace.</p>
+
+                <h5>Face Alignment</h5>
+                <p>The second step is face alignment. After numerous experiments and failures, we realized that facial landmarks are the key to maintaining stability over time. We need to find an effective facial landmarks algorithm essential in producing an excellent successive footage shot and film.</p>
+                <p>DFL provides two canonical types of facial landmark extraction algorithms to solve this: (a) heatmap-based facial landmark algorithm 2DFAN (for faces with standard pose) and (b) PRNet with 3D face prior information (for faces with large Euler angle (yaw, pitch, roll), e.g., A face with a large yaw angle, means one side of the face is out of sight).</p>
+                <p>After facial landmarks are retrieved, we also provide an optional function with a configurable time step to smooth facial landmarks of consecutive frames in a single shot to ensure stability further.</p>
+
+                <p>Then we adopt a classical point pattern mapping and transformation method proposed by Umeyama to calculate a similarity transformation matrix used for face alignment.</p>
+                <p>As the method proposed by Umeyama et al. needs standard facial landmark templates in calculating similarity transformation matrix, DFL provides a canonical aligned facial landmark template. It is noteworthy that DFL could automatically predict the Euler angle by using the obtained facial landmarks.</p>
+
+                <h5>Face Segmentation</h5>
+                <p>After face alignment, a data folder with face of standard front/side-view (aligned src or aligned dst) is obtained. </p>
+                
+                <div class="navigation">
+                    <a href="fgsm_attack.html">Prev: 9.4 Spatial Transformer</a>
+                    <a href="deep_face_live.html">Next: 9.6 DeepFaceLive</a>
+                </div>
+            </main>
+
+            <aside class="col-md-2 right-sidebar">
+                <h5><a href="index.html#section9">Image and Video</a></h5>
+                <ul id="dynamic-sidebar" class="nav flex-column">
+                </ul>
+            </aside>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script type="text/javascript" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="article_script.js"></script>
+    <script>
+        hljs.highlightAll();
+    </script>
+</body>
+
+</html>

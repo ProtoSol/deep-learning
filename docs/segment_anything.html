@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="laptop_coding_48.png" type="image/png">
+    <title>Segment Anything</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" rel="stylesheet">
+    <link href="article_style.css" rel="stylesheet">
+</head>
+
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <nav class="col-md-2 left-sidebar">
+
+            </nav>
+
+            <main class="col-md-8 content">
+                <h2 class="custom-title">9.7 Segment Anything</h2>
+                <p class="title-subtext">SAM 2: Segment Anything in Images and Videos</p>
+                <p style="color: #a0a0a0;">Created Date: 2025-06-16</p>
+                <p>We present Segment Anything Model 2 (SAM 2), a foundation model towards solving promptable visual segmentation in images and videos. We build a data engine, which improves model and data via user interaction, to collect the largest video segmentation dataset to date.</p>
+                <p> Our model is a simple transformer architecture with streaming memory for real-time video processing. SAM 2 trained on our data provides strong performance across a wide range of tasks. In video segmentation, we observe better accuracy, using \(3\times\) fewer interactions than prior approaches. In image segmentation, our model is more accurate and \(6\times\) faster than the Segment Anything Model (SAM).</p>
+                <p>We believe that our data, model, and insights will serve as a significant milestone for video segmentation and related perception tasks. We are releasing our main model, dataset, as well as code for model training and our demo.</p>
+                <p>Demo: <a href="https://sam2.metademolab.com">https://sam2.metademolab.com</a></p>
+                <p>Code: <a href="https://github.com/facebookresearch/sam2">https://github.com/facebookresearch/sam2</a></p>
+                <p>Website: <a href="https://ai.meta.com/sam2">https://ai.meta.com/sam2</a></p>
+
+                <h3>9.7.1 Introduction</h3>
+
+                <p>Segment Anything (SA) introduced a foundation model for promptable segmentation in images (Kirillov et al., 2023). However an image is only a static snapshot of the real world in which visual segments can exhibit complex motion, and with the rapid growth of multimedia content, a significant portion is now recorded with a temporal dimension, particularly in video data. Many important applications in AR/VR, robotics, autonomous vehicles, and video editing require temporal localization beyond image-level segmentation. We believe a universal visual segmentation system should be applicable to both images and videos.</p>
+
+                <p>Segmentation in video aims to determine the spatio-temporal extent of entities, which presents unique challenges beyond those in images. Entities can undergo significant changes in appearance due to motion, deformation, occlusion, lighting changes, and other factors. Videos often have lower quality than images due to camera motion, blur, and lower resolution. Further, efficient processing of a large number of frames is a key challenge. While SA successfully addresses segmentation in images, existing video segmentation models and datasets fall short in providing a comparable capability to "segment anything in videos".</p>
+                <p>We introduce the Segment Anything Model 2 (SAM 2), a unified model for video and image segmentation (we consider an image as a single-frame video). Our work includes a task, model, and dataset (see Fig. 1).</p>
+
+                <p>We focus on the Promptable Visual Segmentation (PVS) task that generalizes image segmentation to the video domain. The task takes as input points, boxes, or masks on any frame of the video to define a segment of interest for which the spatio-temporal mask (i.e., a 'masklet') is to be predicted. Once a masklet is predicted, it can be iteratively refined by providing prompts in additional frames.</p>
+
+                <p>Our model (§4) produces segmentation masks of the object of interest, in single images and across video frames. SAM 2 is equipped with a memory that stores information about the object and previous interactions, which allows it to generate masklet predictions throughout the video, and also effectively correct these based on the stored memory context of the object from previously observed frames.</p>
+
+                <p>Our streaming architecture is a natural generalization of SAM to the video domain, processing video frames one at a time, equipped with a memory attention module to attend to the previous memories of the target object. When applied to images, the memory is empty and the model behaves like SAM.</p>
+
+                <p>We employ a data engine (§5) to generate training data by using our model in the loop with annotators to interactively annotate new and challenging data. Different from most existing video segmentation datasets, our data engine is not restricted to objects of specific categories, but instead targeted to provide training data for segmenting any object with a valid boundary, including parts and subparts.</p>
+
+                <p>Compared to existing model-assisted approaches, our data engine with SAM 2 in the loop is \(8.4 \times\) faster at comparable quality. Our final Segment Anything Video (SA-V) dataset (§5.2) consists of 35.5M masks across 50.9K videos, \(53 \times\) more masks than any existing video segmentation dataset. SA-V is challenging with small objects and parts that get occluded and re-appear throughout the video. Our SA-V dataset is geographically diverse, and a fairness evaluation of SAM 2 indicates minimal performance discrepancy in video segmentation based on perceived gender, and little variance among the three perceived age groups we evaluated.</p>
+
+                <p>Our experiments (§6) show that SAM 2 delivers a step-change in the video segmentation experience. SAM 2 can produce better segmentation accuracy while using \(3 \times\) fewer interactions than prior approaches. Further, SAM 2 outperforms prior work in established video object segmentation benchmarks, under multiple evaluation settings, and delivers better performance compared to SAM on image segmentation benchmarks, while being \(6 \times\) faster. SAM 2 is shown to be effective across a variety of video and image distributions as observed through numerous zero-shot benchmarks including 17 for video segmentation and 37 for single-image segmentation.</p>
+
+                <p>We are releasing our work under permissive open licences, including the SA-V dataset (CC by 4.0), the SAM 2 model checkpoints1, training code (Apache 2.0), and code for our interactive online demo (Apache 2.0).</p>
+
+                <h3>9.7.2 Related work</h3>
+                <p>The original Segment Anything model takes a prompt on one image and returns a mask. Video object segmentation grew up as a separate task. Semi-supervised methods receive a mask on the first frame and follow that object. Unsupervised methods receive no mask. Many of those models are trained on a closed set of categories, and a point or a box on a later frame is outside their interface.</p>
+                <p>SAM 2 keeps SAM’s promptable decoder for a single frame and adds a memory so the same object can be followed through a clip. Interactive video systems that predate it ask for a new click whenever the track slips. Memory attention, described with the model, is how earlier clicks and masks stay available to the decoder on later frames.</p>
+
+                <h3>9.7.3 Task: Promptable Visual Segmentation</h3>
+                <p>The task asks for a masklet: a mask on every frame, defined by prompts that may land on any frame. A prompt is a point, a box, or a mask. The model returns the object’s extent through time, and a further prompt on a later frame can correct the track. An image is the same task with one frame and an empty memory.</p>
+                <p>The target is any region with a boundary, including parts and subparts, which matches the data engine in the introduction. A result is judged by whether the masklet covers that region across occlusion and reappearance, and by how many extra prompts that coverage takes.</p>
+
+                <h3>9.7.4 Model</h3>
+                <p>SAM 2 can be seen as a generalization of SAM to the video (and image) domain, taking point, box, and mask prompts on individual frames to define the spatial extent of the object to be segmented spatio-temporally. Spatially, the model behaves similarly to SAM. A promptable and light-weight mask decoder takes an image embedding and prompts (if any) and outputs a segmentation mask for the frame. Prompts can be iteratively added on a frame in order to refine the masks.</p>
+
+                <h3>9.7.5 Data</h3>
+                <p>The data engine runs the model with annotators in the loop. People prompt frames the model gets wrong, the model fills in the rest of the clip, and the corrected masklets return to training. The introduction reports that this loop is \(8.4 \times\) faster than earlier model-assisted labeling at similar quality.</p>
+                <p>Three passes build the set. An early pass segments frames independently, in the style of the original SAM on still images. A middle pass uses the video model with mask prompts, so one correction can cover a whole track. A late pass switches to sparse point prompts on clips that are still wrong, which is where small and occluded parts accumulate. The SA-V figures in the introduction, 50.9K videos and 35.5M masks, are the output of that process, \(53 \times\) more masks than earlier video segmentation sets.</p>
+
+                <h3>9.7.6 Zero-shot Experiments</h3>
+                <p>Zero-shot evaluation runs the trained model on datasets held out of training. Prompts are supplied at test time, and the weights stay frozen. The introduction counts 17 video benchmarks and 37 image benchmarks in that sweep. On video the comparison is interactive: masklet quality after a given number of clicks. SAM 2 reaches higher accuracy at \(3 \times\) fewer interactions than earlier interactive video segmenters.</p>
+                <p>On images the memory is empty, so the model behaves as a SAM-style promptable segmenter. The same checkpoints are faster than the original SAM, by the \(6 \times\) factor in the introduction, and they match or beat it on the still-image suites. The remaining failures are the ones the task statement highlights: long occlusions, very thin parts, and shots whose important object never receives a prompt.</p>
+
+                <h3>9.7.7 Comparison to State-of-the-art in Semi-supervised VOS</h3>
+                <p>Semi-supervised video object segmentation gives the method a ground-truth mask on the first frame and then withholds further prompts. That protocol is promptable visual segmentation with a single mask at time zero. Standard benchmarks score how the predicted masklet overlaps the labeled object on the later frames.</p>
+                <p>SAM 2 stays competitive with methods trained for this first-frame setup, while its training objective is the broader interactive task. When annotators may click again, the memory absorbs the new prompt and repairs later frames. A first-frame-only tracker has no such update. The semi-supervised scores are the model’s result under the stricter prompt budget.</p>
+
+                <h3>9.7.8 From Scratch: a Promptable Mask</h3>
+                <p>SAM's decoder is a transformer. The idea is smaller than that: an image encoder, a prompt, and a mask head. <a href="https://github.com/artinte/deep-learning/blob/develop/09_image/7_segment/prompt_segment_scratch.py">prompt_segment_scratch.py</a> is that loop on a \(16 \times 16\) canvas. The object is a square. The prompt is one point at the centre of the square. The ground-truth mask is 1 inside the square and 0 outside.</p>
+                <p>The prompt becomes a second channel: a Gaussian blob peaked at the click. Concatenate it with the image, run two \(3 \times 3\) convolutions, and a \(1 \times 1\) convolution writes logits the same shape as the mask. Binary cross-entropy is the loss. The asserts check the square is labeled 1, the corner is labeled 0, the logits match the mask shape, and one <code>backward</code> produces a gradient on the head.</p>
+                <pre><code>def prompt_map(points, size=SIZE):
+    grid = torch.linspace(0, 1, size)
+    yy, xx = torch.meshgrid(grid, grid, indexing="ij")
+    row = points[:, 0].view(-1, 1, 1)
+    col = points[:, 1].view(-1, 1, 1)
+    dist2 = (yy - row) ** 2 + (xx - col) ** 2
+    return torch.exp(-dist2 / (2 * 0.04 ** 2)).unsqueeze(1)
+
+x = torch.cat([image, prompt_map(points)], dim=1)
+logits = self.decoder(self.encoder(x))</code></pre>
+                <p>A real SAM image encoder is a ViT, the prompt encoder also accepts boxes and masks, and the mask decoder is two-way attention between prompt tokens and the image embedding. Those pieces are the same three roles: visual encoder, prompt, mask head. The U-Net chapter is the dense, unprompted version of the mask head, trained on Oxford-IIIT Pet. This script is the prompted version with no dataset download.</p>
+
+                <h3>9.7.9 Conclusion</h3>
+                <p>SAM 2 carries promptable segmentation from a still image to a video stream. A memory of the object and of earlier prompts lets one lightweight decoder emit a masklet in real time. The same weights still serve still images when that memory is empty. The data engine that produced SA-V is part of the result: the model and the dataset improved together.</p>
+                <p>The practical outcome in the introduction is fewer corrections on video and a faster image segmenter than the original SAM. The release includes the checkpoints, the SA-V dataset, the training code, and the interactive demo, so the zero-shot protocol can be checked outside this summary.</p>
+
+                <div class="navigation">
+                    <a href="deep_face_live.html">Prev: 9.6 DeepFaceLive</a>
+                    <a href="intro_auto_encoder.html">Next: 9.8 Intro to Autoencoders</a>
+                </div>
+            </main>
+
+            <aside class="col-md-2 right-sidebar">
+                <h5><a href="index.html#section9">Image and Video</a></h5>
+                <ul id="dynamic-sidebar" class="nav flex-column">
+                </ul>
+            </aside>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script type="text/javascript" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="article_script.js"></script>
+    <script>
+        hljs.highlightAll();
+    </script>
+</body>
+
+</html>

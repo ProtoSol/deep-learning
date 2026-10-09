@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="laptop_coding_48.png" type="image/png">
+    <title>Neural Machine Translation</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" rel="stylesheet">
+    <link href="article_style.css" rel="stylesheet">
+</head>
+
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <nav class="col-md-2 left-sidebar">
+
+            </nav>
+
+            <main class="col-md-8 content">
+                <h2 class="custom-title">4.5 Neural Machine Translation</h2>
+                <p class="title-subtext">Neural Machine Translation by Jointly Learning to Align and Translate</p>
+                <p style="color: #a0a0a0;">Created Date: 2025-05-19</p>
+                <p>Neural machine translation is a recently proposed approach to machine translation.  Unlike the traditional statistical machine translation, the neural machine translation aims at building a single neural network that can be jointly tuned to maximize the translation performance. The models proposed recently for neural machine translation often belong to a family of encoder–decoders and encode a source sentence into a fixed-length vector from which a decoder generates a translation.</p>
+                <p>In <a href="https://arxiv.org/abs/1409.0473">this</a> paper, we conjecture that the use of a fixed-length vector is a bottleneck in improving the performance of this basic encoder–decoder architecture, and propose to extend this by allowing a model to automatically (soft-)search for parts of a source sentence that are relevant to predicting a target word, without having to form these parts as a hard segment explicitly. </p>
+                <p> With this new approach, we achieve a translation performance comparable to the existing state-of-the-art phrase-based system on the task of English-to-French translation. Furthermore, qualitative analysis reveals that the (soft-)alignments found by the model agree well with our intuition.</p>
+
+                <h3>4.5.1 Introduction</h3>
+                <p>Neural machine translation is a newly emerging approach to machine translation, recently proposed by Kalchbrenner and Blunsom (2013), Sutskever et al. (2014) and Cho et al. (2014b).  Unlike the traditional phrase-based translation system (see, e.g., Koehn et al., 2003) which consists of many small sub-components that are tuned separately, neural machine translation attempts to build and train a single, large neural network that reads a sentence and outputs a correct translation.</p>
+                <p>Most of the proposed neural machine translation models belong to a family of encoder–decoders (Sutskever et al., 2014; Cho et al., 2014a), with an encoder and a decoder for each lan</p>
+
+                <p>An encoder neural network reads and encodes a source sentence into a fixed-length vector. A decoder then outputs a translation from the encoded vector. The whole encoder–decoder system, which consists of the encoder and the decoder for a language pair, is jointly trained to maximize the probability of a correct translation given a source sentence.</p>
+                <p>A potential issue with this encoder–decoder approach is that a neural network needs to be able to compress all the necessary information of a source sentence into a fixed-length vector. This may make it difficult for the neural network to cope with long sentences, especially those that are longer than the sentences in the training corpus. Cho et al. (2014b) showed that indeed the performance of a basic encoder–decoder deteriorates rapidly as the length of an input sentence increases.</p>
+                <p>In order to address this issue, we introduce an extension to the encoder–decoder model which learns to align and translate jointly. Each time the proposed model generates a word in a translation, it (soft-)searches for a set of positions in a source sentence where the most relevant information is concentrated. The model then predicts a target word based on the context vectors associated with these source positions and all the previous generated target words.</p>
+
+                <p>The most important distinguishing feature of this approach from the basic encoder–decoder is that it does not attempt to encode a whole input sentence into a single fixed-length vector. Instead, it encodes the input sentence into a sequence of vectors and chooses a subset of these vectors adaptively while decoding the translation. This frees a neural translation model from having to squash all the information of a source sentence, regardless of its length, into a fixed-length vector. We show this allows a model to cope better with long sentences.</p>
+                <p>In this paper, we show that the proposed approach of jointly learning to align and translate achieves significantly improved translation performance over the basic encoder–decoder approach.  The improvement is more apparent with longer sentences, but can be observed with sentences of any length.</p>
+                <p>On the task of English-to-French translation, the proposed approach achieves, with a single model, a translation performance comparable, or close, to the conventional phrase-based system. Furthermore, qualitative analysis reveals that the proposed model finds a linguistically plausible (soft-)alignment between a source sentence and the corresponding target sentence.</p>
+
+                <h3>4.5.2 Background: Neural Machine Translation</h3>
+                <p>From a probabilistic perspective, translation is equivalent to finding a target sentence \(y\) that maximizes the conditional probability of \(y\) given a source sentence \(x\), i.e., arg \(max_y p(y|x)\). In neural machine translation, we fit a parameterized model to maximize the conditional probability of sentence pairs using a parallel training corpus. Once the conditional distribution is learned by a translation model, given a source sentence a corresponding translation can be generated by searching for the sentence that maximizes the conditional probability.</p>
+                <p>Recently, a number of papers have proposed the use of neural networks to directly learn this conditional distribution (see, e.g., Kalchbrenner and Blunsom, 2013; Cho et al., 2014a; Sutskever et al., 2014; Cho et al., 2014b; Forcada and Neco, 1997). This neural machine translation approach typically consists of two components, the first of which encodes a source sentence \(x\) and the second decodes to a target sentence \(y\).  For instance, two recurrent neural networks (RNN) were used by (Cho et al., 2014a) and (Sutskever et al., 2014) to encode a variable-length source sentence into a fixed-length vector and to decode the vector into a variable-length target sentence.</p>
+                <p>Despite being a quite new approach, neural machine translation has already shown promising results. Sutskever et al. (2014) reported that the neural machine translation based on RNNs with long short term memory (LSTM) units achieves close to the state-of-the-art performance of the conventional phrase-based machine translation system on an English-to-French translation task. Adding neural components to existing translation systems, for instance, to score the phrase pairs in the phrase table (Cho et al., 2014a) or to re-rank candidate translations (Sutskever et al., 2014), has allowed to surpass the previous state-of-the-art performance level.</p>
+                
+                <h5 id="rnn-encoder-decoder">RNN Encoder-Decoder</h5>
+                <p>Here, we describe briefly the underlying framework, called <strong>RNN Encoder–Decoder</strong>, proposed by Cho et al. (2014a) and Sutskever et al. (2014) upon which we build a novel architecture that learns to align and translate simultaneously.</p>
+                <p>In the Encoder–Decoder framework, an encoder reads the input sentence, a sequence of vectors \(x = (x_1, \cdots, x_{T_x})\), into a vector \(c\). The most common approach is to use an RNN such that:</p>
+
+                <p>where \(h_t \in \mathbb{R}^n\) is a hidden state at time \(t\), and \(c\) is a vector generated from the sequence of the hidden states. \(f\) and \(q\) are some nonlinear functions. Sutskever et al. (2014) used an LSTM as \(f\) and</p>
+
+                <h3>4.5.3 Learning to Align And Translate</h3>
+                <p>In this section, we propose a novel architecture for neural machine translation. The new architecture consists of a bidirectional RNN as an encoder (Sec. 3.2) and a decoder that emulates searching through a source sentence during decoding a translation (Sec. 3.1)</p>
+
+                <h4>4.5.3.1 Decoder: General Description</h4>
+                <p>In a new model architecture, we define each conditional probabilit</p>
+                <p>Each next-word probability is conditioned on the previous target word, a decoder state, and a context vector. The context is a fresh weighted sum of source annotations, so the decoder never has to recover the whole sentence from one fixed vector. The state update consumes that context before the word is emitted:</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(p(y_i \mid y_{1},\ldots,y_{i-1}, x) = g(y_{i-1}, s_i, c_i)\)
+                </div>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(s_i = f(s_{i-1}, y_{i-1}, c_i), \quad c_i = \sum_{j=1}^{T_x} \alpha_{ij} h_j\)
+                </div>
+                <p>The weights \(\alpha_{ij}\) are a softmax over alignment energies \(e_{ij} = a(s_{i-1}, h_j)\). The energy \(a\) is a small feed-forward network, so the search over source positions stays soft and differentiable. <a href="https://github.com/artinte/deep-learning/blob/develop/04_rnn/5_nmt/bahdanau.py">Seq2SeqAttentionDecoder</a> is that step. The query is the top GRU state. <a href="https://github.com/artinte/deep-learning/blob/develop/04_rnn/5_nmt/add_attention.py">AdditiveAttention</a> scores it against every encoder output and masks pad positions. The context is concatenated with the current target embedding, passed through the GRU, and projected to the target vocabulary.</p>
+
+                <h4>4.5.3.2 Encoder: Bidirectional RNN for Annotating Sequences</h4>
+                <p>A forward-only recurrent net writes a state at position \(j\) that has read \(x_1, \ldots, x_j\) and has not yet seen the words to the right. The encoder in this paper annotates each position with both directions. A forward RNN reads the source left to right. A backward RNN reads it right to left. The annotation is their concatenation, and that sequence of annotations is what the decoder attends over:</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(h_j = \left[ \overrightarrow{h}_j ; \overleftarrow{h}_j \right]\)
+                </div>
+                <p><code>Seq2SeqEncoder</code> in <a href="https://github.com/artinte/deep-learning/blob/develop/04_rnn/5_nmt/bahdanau.py">bahdanau.py</a> returns the full GRU sequence, and <code>init_state</code> keeps that sequence as the keys and values for additive attention. That file's encoder is a unidirectional stack. The bidirectional version of the same idea is <code>Encoder</code> in <a href="https://github.com/artinte/deep-learning/blob/develop/04_rnn/6_nmt/attention_nmt.py">attention_nmt.py</a>: an LSTM with <code>bidirectional=True</code> whose two final directions are concatenated before they are handed to the decoder.</p>
+
+                <h3>4.5.4 Experiment Settings</h3>
+                <p>The paper's English-to-French systems are trained on WMT parallel text. Frequent word types form the shortlist, and sentences are clipped to a maximum length. The systems under comparison differ by that length cap and by whether the decoder is allowed to search the source annotations. Training maximizes the conditional log-likelihood of the reference tokens given the source.</p>
+                <p>The script is a small English–French run of the same layout. <code>MTFraEng</code> downloads the <code>fra-eng</code> pairs, lowercases them, and splits punctuation away from words. It keeps <code>num_train</code> 512 and <code>num_val</code> 128 sequences of length <code>num_steps</code> 9, with <code>&lt;bos&gt;</code>, <code>&lt;eos&gt;</code>, and <code>&lt;pad&gt;</code>. The network uses embedding size 256, 256 hidden units, 2 GRU layers, and dropout 0.2. <code>Trainer</code> runs Adam at learning rate 0.005 for 30 epochs and clips the gradient norm to 1. Token cross-entropy is <code>EncoderDecoder.loss</code>.</p>
+
+                <h3>4.5.5 Results</h3>
+                <p>On the full English-to-French task, the model that recomputes \(c_i\) at every target word holds up as sentences get longer. The encoder–decoder that compresses the source into one vector does not: once the sentence exceeds the lengths seen in training, that vector runs out of room. The learned weights line up with the links a reader would draw. When the decoder is about to emit a French word, \(\alpha_{ij}\) puts its mass on the English positions that justify it.</p>
+                <p><code>predict_step</code> checks the same loop on four short pairs: <code>go .</code>, <code>i lost .</code>, <code>he's calm .</code>, and <code>i'm home .</code>. It encodes the source, then appends the argmax of the decoder for <code>num_steps</code> positions and stops the printed string at <code>&lt;eos&gt;</code>. <code>bleu</code> scores that string against the French reference with clipped n-gram counts up to \(k = 2\) and a brevity penalty. With <code>save_attention_weights=True</code>, the additive-attention matrices are stacked and drawn with query positions on one axis and key positions on the other.</p>
+                
+                <div class="navigation">
+                    <a href="text_generate_rnn.html">Prev: 4.4 Text Generation with RNN</a>
+                    <a href="attention_nmt.html">Next: 4.6 Attention-based NMT</a>
+                </div>
+            </main>
+
+            <aside class="col-md-2 right-sidebar">
+                <h5><a href="index.html#section4">Recurrent Network</a></h5>
+                <ul id="dynamic-sidebar" class="nav flex-column">
+                </ul>
+            </aside>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script type="text/javascript" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="article_script.js"></script>
+    <script>
+        hljs.highlightAll();
+    </script>
+</body>
+
+</html>

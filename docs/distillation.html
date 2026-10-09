@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="laptop_coding_48.png" type="image/png">
+    <title>Distillation</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" rel="stylesheet">
+    <link href="article_style.css" rel="stylesheet">
+    <style>
+        td.cifar-class-name {
+            width:100px;
+            font-weight:bold;
+        }
+        img.cifar-sample {
+            width:32px;
+            height:32px;
+            border-radius: 0;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <nav class="col-md-2 left-sidebar">
+
+            </nav>
+
+            <main class="col-md-8 content">
+                <h2 class="custom-title">13.4 Distillation</h2>
+                <p class="title-subtext">Knowledge Distillation Tutorial</p>
+                <p style="color: #a0a0a0;">Created Date: 2025-06-23</p>
+                <p><strong>Knowledge distillation</strong> is a technique that enables knowledge transfer from large, computationally expensive models to smaller ones without losing validity. This allows for deployment on less powerful hardware, making evaluation faster and more efficient.</p>
+                <p>In this tutorial, we will run a number of experiments focused at improving the accuracy of a lightweight neural network, using a more powerful network as a teacher. The computational cost and the speed of the lightweight network will remain unaffected, our intervention only focuses on its weights, not on its forward pass. Applications of this technology can be found in devices such as drones or mobile phones. In this tutorial, we do not use any external packages as everything we need is available in <code>torch</code> and <code>torchvision</code>.</p>
+                <p>You will learn:</p>
+                <ul class="with-bullets">
+                    <li><p>How to modify model classes to extract hidden representations and use them for further calculations;</p></li>
+                    <li><p>How to modify regular train loops in PyTorch to include additional losses on top of, for example, cross-entropy for classification;</p></li>
+                    <li><p>How to improve the performance of lightweight models by using more complex models as teachers.</p></li>
+                </ul>
+
+                <h3>13.4.1 Prerequisites</h3>
+                <p><a href="https://github.com/artinte/deep-learning/blob/develop/13_optimize/4_distillation/simple_distillation.py">simple_distillation.py</a> starts by choosing a device the same way the PyTorch quickstart does. If <code>torch.accelerator.is_available()</code> is true it uses that accelerator type, otherwise CPU. Both networks and both CIFAR-10 loaders later in the file are moved onto this device.</p>
+
+                <pre><code># Check if the current `accelerator &lt;https://pytorch.org/docs/stable/torch.html#accelerators&gt;`
+# is available, and if not, use the CPU
+device = torch.accelerator.current_accelerator(
+).type if torch.accelerator.is_available() else "cpu"
+print(f'Using {device} device')</code></pre>
+                
+                <pre><samp>Using mps device</samp></pre>
+
+                <h3>13.4.2 Loading CIFAR-10</h3>
+
+                <p>CIFAR-10 is a popular image dataset with ten classes. Our objective is to predict one of the following classes for each input image.</p>
+
+                <table style="margin: 20px auto;">
+                    <tr>
+                        <td class="cifar-class-name">airplane</td>
+                        <td><img src="res/03/cifar-10-sample/airplane1.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/airplane2.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/airplane3.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/airplane4.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/airplane5.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/airplane6.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/airplane7.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/airplane8.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/airplane9.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/airplane10.png" class="cifar-sample"/></td>
+                    </tr>
+                    <tr>
+                        <td class="cifar-class-name">automobile</td>
+                        <td><img src="res/03/cifar-10-sample/automobile1.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/automobile2.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/automobile3.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/automobile4.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/automobile5.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/automobile6.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/automobile7.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/automobile8.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/automobile9.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/automobile10.png" class="cifar-sample"/></td>
+                    </tr>
+                    <tr>
+                        <td class="cifar-class-name">bird</td>
+                        <td><img src="res/03/cifar-10-sample/bird1.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/bird2.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/bird3.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/bird4.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/bird5.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/bird6.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/bird7.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/bird8.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/bird9.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/bird10.png" class="cifar-sample"/></td>
+                    </tr>
+                    <tr>
+                        <td class="cifar-class-name">cat</td>
+                        <td><img src="res/03/cifar-10-sample/cat1.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/cat2.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/cat3.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/cat4.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/cat5.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/cat6.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/cat7.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/cat8.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/cat9.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/cat10.png" class="cifar-sample"/></td>
+                    </tr>
+                    <tr>
+                        <td class="cifar-class-name">deer</td>
+                        <td><img src="res/03/cifar-10-sample/deer1.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/deer2.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/deer3.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/deer4.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/deer5.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/deer6.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/deer7.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/deer8.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/deer9.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/deer10.png" class="cifar-sample"/></td>
+                    </tr>
+                    <tr>
+                        <td class="cifar-class-name">dog</td>
+                        <td><img src="res/03/cifar-10-sample/dog1.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/dog2.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/dog3.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/dog4.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/dog5.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/dog6.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/dog7.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/dog8.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/dog9.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/dog10.png" class="cifar-sample"/></td>
+                    </tr>
+                    <tr>
+                        <td class="cifar-class-name">frog</td>
+                        <td><img src="res/03/cifar-10-sample/frog1.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/frog2.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/frog3.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/frog4.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/frog5.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/frog6.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/frog7.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/frog8.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/frog9.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/frog10.png" class="cifar-sample"/></td>
+                    </tr>
+                    <tr>
+                        <td class="cifar-class-name">horse</td>
+                        <td><img src="res/03/cifar-10-sample/horse1.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/horse2.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/horse3.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/horse4.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/horse5.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/horse6.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/horse7.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/horse8.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/horse9.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/horse10.png" class="cifar-sample"/></td>
+                    </tr>
+                    <tr>
+                        <td class="cifar-class-name">ship</td>
+                        <td><img src="res/03/cifar-10-sample/ship1.png" class="cifar-sample" /></td>
+                        <td><img src="res/03/cifar-10-sample/ship2.png" class="cifar-sample" /></td>
+                        <td><img src="res/03/cifar-10-sample/ship3.png" class="cifar-sample" /></td>
+                        <td><img src="res/03/cifar-10-sample/ship4.png" class="cifar-sample" /></td>
+                        <td><img src="res/03/cifar-10-sample/ship5.png" class="cifar-sample" /></td>
+                        <td><img src="res/03/cifar-10-sample/ship6.png" class="cifar-sample" /></td>
+                        <td><img src="res/03/cifar-10-sample/ship7.png" class="cifar-sample" /></td>
+                        <td><img src="res/03/cifar-10-sample/ship8.png" class="cifar-sample" /></td>
+                        <td><img src="res/03/cifar-10-sample/ship9.png" class="cifar-sample" /></td>
+                        <td><img src="res/03/cifar-10-sample/ship10.png" class="cifar-sample" /></td>
+                    </tr>
+                    <tr>
+                        <td class="cifar-class-name">truck</td>
+                        <td><img src="res/03/cifar-10-sample/truck1.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/truck2.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/truck3.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/truck4.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/truck5.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/truck6.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/truck7.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/truck8.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/truck9.png" class="cifar-sample"/></td>
+                        <td><img src="res/03/cifar-10-sample/truck10.png" class="cifar-sample"/></td>
+                    </tr>
+                </table>
+                <p style="text-align: center; color: #555555;">Figure 1 - The CIFAR-10 Dataset</p>
+
+                <p>The input images are RGB, so they have 3 channels and are 32x32 pixels. Basically, each image is described by 3 x 32 x 32 = 3072 numbers ranging from 0 to 255. A common practice in neural networks is to normalize the input, which is done for multiple reasons, including avoiding saturation in commonly used activation functions and increasing numerical stability. Our normalization process consists of subtracting the mean and dividing by the standard deviation along each channel.</p>
+
+                <p>The tensors \(mean=[0.485, 0.456, 0.406]\) and \(std=[0.229, 0.224, 0.225]\) were already computed, and they represent the mean and standard deviation of each channel in the predefined subset of CIFAR-10 intended to be the training set. Notice how we use these values for the test set as well, without recomputing the mean and standard deviation from scratch.</p>
+
+                <p>This is because the network was trained on features produced by subtracting and dividing the numbers above, and we want to maintain consistency. Furthermore, in real life, we would not be able to compute the mean and standard deviation of the test set since, under our assumptions, this data would not be accessible at that point.</p>
+
+                <p>As a closing point, we often refer to this held-out set as the validation set, and we use a separate set, called the test set, after optimizing a model’s performance on the validation set. This is done to avoid selecting a model based on the greedy and biased optimization of a single metric.</p>
+
+                <pre><code># Below we are preprocessing data for CIFAR-10. We use an arbitrary batch size of 128.
+transforms_cifar = torchvision.transforms.Compose([
+    torchvision.transforms.ToTensor(),
+    torchvision.transforms.Normalize(
+        mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+])
+
+# Loading the CIFAR-10 dataset:
+train_dataset = torchvision.datasets.CIFAR10(
+    root='./data', train=True, download=True, transform=transforms_cifar)
+test_dataset = torchvision.datasets.CIFAR10(
+    root='./data', train=False, download=True, transform=transforms_cifar)</code></pre>
+
+                <h3>13.4.3 Defining Model Classes and Utility Functions</h3>
+                <p>We employ 2 functions to help us produce and evaluate the results on our original classification task. One function is called \(train\) and takes the following arguments:</p>
+                <ul class="with-bullets">
+                    <li><p><code>model</code>: A model instance to train (update its weights) via this function.</p></li>
+                    <li><p><code>train_loader</code>: We defined our <code>train_loader</code> above, and its job is to feed the data into the model.</p></li>
+                    <li><p><code>epochs</code>: How many times we loop over the dataset.</p></li>
+                    <li><p><code>learning_rate</code>: The learning rate determines how large our steps towards convergence should be. Too large or too small steps can be detrimental.</p></li>
+                    <li><p><code>device</code>: Determines the device to run the workload on. Can be either CPU or GPU depending on availability.</p></li>
+                </ul>
+                <p>Our test function is similar, but it will be invoked with <code>test_loader</code> to load images from the test set.</p>
+                <img src="res/13/train_separate.png" alt="Train Separately" width="600">
+                
+                <p>Train both networks with Cross-Entropy. The student will be used as a baseline:</p>
+                <p>For reproducibility, we need to set the torch manual seed. We train networks using different methods, so to compare them fairly, it makes sense to initialize the networks with the same weights. Start by training the teacher network using cross-entropy:</p>
+                <pre><code>torch.manual_seed(42)
+nn_deep = DeepNN(num_classes=10).to(device)
+train(nn_deep, train_loader, epochs=10, learning_rate=0.001, device=device)
+test_accuracy_deep = test(nn_deep, test_loader, device)
+
+# Instantiate the lightweight network:
+torch.manual_seed(42)
+nn_light = LightNN(num_classes=10).to(device)</code></pre>
+                
+                <pre><samp>Epoch [1/10], Loss: 1.3524
+Epoch [2/10], Loss: 0.8909
+Epoch [3/10], Loss: 0.6941
+Epoch [4/10], Loss: 0.5536
+Epoch [5/10], Loss: 0.4357
+Epoch [6/10], Loss: 0.3340
+Epoch [8/10], Loss: 0.1819
+Epoch [9/10], Loss: 0.1522
+Epoch [10/10], Loss: 0.1241
+Accuracy of the model on the test set: 75.55%</samp></pre>
+    
+
+                <h3>13.4.4 Cross-Entropy Runs</h3>
+                <p>Cross-entropy against the CIFAR-10 label is the only loss <a href="https://github.com/artinte/deep-learning/blob/develop/13_optimize/4_distillation/simple_distillation.py">simple_distillation.py</a> trains. <code>train</code> uses <code>CrossEntropyLoss</code> and Adam at learning rate 0.001 for 10 epochs. It first fits <code>DeepNN</code>, four convolutions plus a 512-unit classifier, then fits a fresh <code>LightNN</code>, two convolutions plus a 256-unit classifier, on the same integer labels.</p>
+                <p>The script prints the norm of the first convolution for two <code>LightNN</code> copies, the parameter counts of both architectures, and test accuracy from the argmax of the logits. The teacher's outputs never enter the student's loss. The second copy, <code>new_nn_light</code>, is constructed and measured, and <code>train</code> is not called on it.</p>
+
+                <h3>14.4.5 Distillation Principle</h3>
+                <p>The teacher already maps an image to 10 logits. Distillation asks the student to match that distribution, along with the hard class id. Raising the temperature \(T\) above 1 keeps the runner-up classes visible in the probabilities:</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(p_i = \frac{\exp(z_i / T)}{\sum_j \exp(z_j / T)}\)
+                </div>
+                <p>A usual total is cross-entropy against the true label plus a divergence between the student probabilities and the teacher probabilities. <a href="https://github.com/artinte/deep-learning/blob/develop/13_optimize/4_distillation/simple_distillation.py">simple_distillation.py</a> implements the hard-label term and leaves the teacher-matching term out.</p>
+
+                <h3>13.4.5 Knowledge Distillation Run</h3>
+                <p>A knowledge-distillation step would freeze <code>DeepNN</code>, train <code>LightNN</code>, and add a divergence between the two softmax outputs, scaled by a temperature. The figure is that output-side loss. In the script, <code>train</code> compares <code>LightNN</code> only with the CIFAR-10 class ids.</p>
+                <p>What the file does report is the gap such a run is meant to close. After the two separate cross-entropy trainings it prints teacher accuracy, student accuracy, and both parameter counts.</p>
+
+                <img src="res/13/output_loss.png" alt="Distillation Output Loss" width="600">
+
+                <h3>13.4.6 Cosine Loss Minimization Run</h3>
+                <p>Cosine distillation matches the direction of hidden vectors rather than class probabilities. For a teacher feature \(t\) and a student feature \(s\), minimizing \(1 - \cos(s, t)\) pulls them onto the same line and leaves their magnitudes free.</p>
+                <p>The figure sketches that penalty. <a href="https://github.com/artinte/deep-learning/blob/develop/13_optimize/4_distillation/simple_distillation.py">simple_distillation.py</a> has no cosine term. Both <code>forward</code> methods return only the 10 class logits, so intermediate activations are never read.</p>
+
+                <img src="res/13/cosine_loss.png" alt="Consine Loss Distillation" width="600">
+
+                <h3>13.4.7 Intermediate Regressor Run</h3>
+                <p>An intermediate regressor is a small linear map from a student feature to the width of a teacher feature. Training pushes the mapped student tensor toward the teacher's hidden tensor, which is the hint-loss pattern in the figure. The regressor is dropped at inference, so the deployed net is still <code>LightNN</code>.</p>
+                <p>The modules in <a href="https://github.com/artinte/deep-learning/blob/develop/13_optimize/4_distillation/simple_distillation.py">simple_distillation.py</a> return logits only. There is no extra linear layer tying the student's 16-channel map to the teacher's wider feature map. The implemented loops are the two cross-entropy runs.</p>
+
+                <img src="res/13/fitnets_knowledge.png" alt="Fitnets Knowledge Distillation" width="600">
+
+                <h3>13.4.8 Conclusion</h3>
+                <p>None of the methods above increases the number of parameters for the network or inference time, so the performance increase comes at the little cost of calculating gradients during training. In ML applications, we mostly care about inference time because training happens before the model deployment. If our lightweight model is still too heavy for deployment, we can apply different ideas, such as post-training quantization.</p>
+                <p>Additional losses can be applied in many tasks, not just classification, and you can experiment with quantities like coefficients, temperature, or number of neurons. Feel free to tune any numbers in the tutorial above, but keep in mind, if you change the number of neurons / filters chances are a shape mismatch might occur.</p>
+                
+
+                <div class="navigation">
+                    <a href="quantization.html">Prev: 13.3 Quantization</a>
+                    <a href="distrib_parallel.html">Next: 14.1 Distributed Data Parallel</a>
+                </div>
+            </main>
+
+            <aside class="col-md-2 right-sidebar">
+                <h5><a href="index.html#section13">Model Optimization</a></h5>
+                <ul id="dynamic-sidebar" class="nav flex-column">
+                </ul>
+            </aside>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script type="text/javascript" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="article_script.js"></script>
+    <script>
+        hljs.highlightAll();
+    </script>
+</body>
+
+</html>

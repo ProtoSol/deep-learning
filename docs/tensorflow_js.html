@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="laptop_coding_48.png" type="image/png">
+    <title>TensorFlow.js</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" rel="stylesheet">
+    <link href="article_style.css" rel="stylesheet">
+    <style>
+        #results-container {
+            margin-top: 30px;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            background-color: #9cd8cc;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            text-align: left;
+            min-width: 300px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <nav class="col-md-2 left-sidebar">
+
+            </nav>
+
+            <main class="col-md-8 content">
+                <h2 class="custom-title">12.4 TensorFlow.js</h2>
+                <p class="title-subtext">TensorFlow.js is a library for machine learning in JavaScript</p>
+                <p style="color: #a0a0a0;">Created Date: 2025-07-25</p>
+
+                <p><span class="highlight">TensorFlow.js</span> is a JavaScript library for training and deploying machine learning models in the web browser and in Node.js. This tutorial shows you how to get started with <a href="https://www.tensorflow.org/js">TensorFlow.js</a> by training a minimal model in the browser and using the model to make a prediction.</p>
+
+                <h3>12.4.1 Simple Demo</h3>
+                <p>This demo trains a simple linear regression model \(y = 2x - 1\) and predicts a value.</p>
+                <div class="d-flex justify-content-center mt-4">
+                    <button id="predictButton" class="btn btn-primary">Run Prediction</button>
+                </div>
+                <div id="results-container">
+                    <p>Training Progress:</p>
+                    <p>Epoch: <strong id="epochCount">0</strong> / 500</p>
+                    <p>Current Loss: <strong id="currentLoss">N/A</strong></p>
+                    <p>Learned Weight (w): <strong id="learnedWeight">N/A</strong></p>
+                    <p>Learned Bias (b): <strong id="learnedBias">N/A</strong></p>
+                    <p>Prediction Result: <span id="result"></span></p>
+                </div>
+
+                <p>Click the button above to train the model and make a prediction. The training will run for 500 epochs, and you will see the progress in real-time.</p>
+
+                <pre><code>model = tf.sequential();
+const numEpochs = 500;
+model.add(tf.layers.dense({ units: 1, inputShape: [1] }));
+
+// Prepare the model for training: Specify the loss and the optimizer.
+model.compile({ loss: 'meanSquaredError', optimizer: 'sgd' });
+
+// Generate some synthetic data for training.
+// y = 2x - 1
+const xs = tf.tensor2d([1, 2, 3, 4, 5, 6, 7], [7, 1]);
+const ys = tf.tensor2d([1, 3, 5, 7, 9, 10, 13], [7, 1]);
+
+// await model.fit(xs, ys, { epochs: 500 });
+// Train the model using the data with a real-time callback.
+await model.fit(xs, ys, {
+    epochs: numEpochs,
+    callbacks: {
+        onEpochEnd: async (epoch, logs) => {
+            // Get the current weights and biases
+            const weights = model.getWeights();
+            const learnedWeight = weights[0].dataSync()[0]; // The 'w' value
+            const learnedBias = weights[1].dataSync()[0];   // The 'b' value
+
+            // Update HTML elements in real-time
+            document.getElementById('epochCount').innerText = epoch + 1; // Epochs are 0-indexed
+            document.getElementById('currentLoss').innerText = logs.loss.toFixed(5); // Display loss
+            document.getElementById('learnedWeight').innerText = learnedWeight.toFixed(5);
+            document.getElementById('learnedBias').innerText = learnedBias.toFixed(5);
+        }
+    }
+});
+
+// Use the model to do inference on a data point the model hasn't seen before:
+const predictionTensor = model.predict(tf.tensor2d([5], [1, 1]));</code></pre>
+
+                <h3>12.4.2 MNIST</h3>
+                <p>TensorFlow.js also supports more complex models like the MNIST digit classification model.</p>
+                <p>Draw a digit</p>
+                <canvas id="canvas" width="28" height="28" style="border:1px solid black;"></canvas><br/>
+                <button onclick="mnistPredict()">Predict</button>
+                <button onclick="clearCanvas()">Clear</button>
+                <p id="loading-status">Loading...</p>
+                <p id="mnist-result">Prediction: </p>
+                <p>Click the button above to predict the digit you drew on the canvas. The model will classify the digit and display the result.</p>
+
+                <h3>12.4.3 Piano Demo</h3>
+                <p>The linear model and the MNIST canvas above both run in the page. A piano demo applies the same pattern to a sequence model. TensorFlow.js loads a pretrained music network, and the browser turns note events into sound. Magenta’s piano models are the usual weights: a recurrent or attention-based net predicts the next note from the notes already played, and the Web Audio API schedules those notes on a sampled piano.</p>
+                <p>A button can start an unconditional performance, or the last few notes on an on-screen keyboard can be the prefix the model continues. Pitch, timing, and velocity are all part of each event, which is why the result is a performance. The weights stay in the browser. Latency is the local forward pass plus the audio scheduler, and the checkpoint is cached after the first load in the same way the MNIST <code>model.json</code> is.</p>
+
+
+                <div class="navigation">
+                    <a href="litert.html">Prev: 12.3 LiteRT</a>
+                    <a href="lora.html">Next: 13.1 LoRA</a>
+                </div>
+            </main>
+
+            <aside class="col-md-2 right-sidebar">
+                <h5><a href="index.html#section12">Deploying Models</a></h5>
+                <ul id="dynamic-sidebar" class="nav flex-column">
+                </ul>
+            </aside>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script type="text/javascript" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="article_script.js"></script>
+    <script>
+        hljs.highlightAll();
+    </script>
+    <!-- Load TensorFlow.js -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs/dist/tf.min.js"> </script>
+    <script>
+        // Declare model in a broader scope.
+        let model;
+        async function trainAndPredict() {
+            model = tf.sequential();
+            const numEpochs = 500;
+            model.add(tf.layers.dense({ units: 1, inputShape: [1] }));
+
+            // Prepare the model for training: Specify the loss and the optimizer.
+            model.compile({ loss: 'meanSquaredError', optimizer: 'sgd' });
+
+            // Generate some synthetic data for training.
+            // y = 2x - 1
+            const xs = tf.tensor2d([1, 2, 3, 4, 5, 6, 7], [7, 1]);
+            const ys = tf.tensor2d([1, 3, 5, 7, 9, 10, 13], [7, 1]);
+
+            // await model.fit(xs, ys, { epochs: 500 });
+            // Train the model using the data with a real-time callback.
+            await model.fit(xs, ys, {
+                epochs: numEpochs,
+                callbacks: {
+                    onEpochEnd: async (epoch, logs) => {
+                        // Get the current weights and biases
+                        const weights = model.getWeights();
+                        const learnedWeight = weights[0].dataSync()[0]; // The 'w' value
+                        const learnedBias = weights[1].dataSync()[0];   // The 'b' value
+
+                        // Update HTML elements in real-time
+                        document.getElementById('epochCount').innerText = epoch + 1; // Epochs are 0-indexed
+                        document.getElementById('currentLoss').innerText = logs.loss.toFixed(5); // Display loss
+                        document.getElementById('learnedWeight').innerText = learnedWeight.toFixed(5);
+                        document.getElementById('learnedBias').innerText = learnedBias.toFixed(5);
+                    }
+                }
+            });
+
+            // Use the model to do inference on a data point the model hasn't seen before:
+            const predictionTensor = model.predict(tf.tensor2d([5], [1, 1]));
+
+            // Get the value from the tensor and display it
+            const predictionValue = predictionTensor.dataSync()[0];
+            document.getElementById('result').innerText = predictionValue.toFixed(5); // Format to 2 decimal places
+
+            // Clean up the tensors from memory
+            xs.dispose();
+            ys.dispose();
+            predictionTensor.dispose();
+        }
+
+        // Add an event listener to the button to trigger the prediction
+        document.getElementById('predictButton').addEventListener('click', trainAndPredict);
+    </script>
+
+    <script>
+        let mnistModel;
+
+        tf.loadLayersModel('https://storage.googleapis.com/tfjs-models/tfjs/mnist_transfer_cnn_v1/model.json',
+           {
+                onProgress: (fraction) => {
+                const percent = Math.round(fraction * 100);
+                console.log(`Loading model: ${percent}%`);
+                document.getElementById('loading-status').innerText = `Loading: ${percent}%`;
+            }
+        })
+        .then(m => {
+            mnistModel = m;
+            console.log("Model loaded.");
+        }).catch(err => {
+            console.error("Failed to load model:", err);
+            document.getElementById('loading-status').innerText = "Model loading failed!";
+        });
+
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = 'black';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        let drawing = false;
+        canvas.onmousedown = () => (drawing = true);
+        canvas.onmouseup = () => (drawing = false);
+        canvas.onmousemove = e => {
+            if (drawing) {
+                const x = e.offsetX;
+                const y = e.offsetY;
+                ctx.fillStyle = 'white';
+                ctx.fillRect(x, y, 2, 2);
+            }
+        };
+
+        async function mnistPredict() {
+            const imageData = tf.browser.fromPixels(canvas, 1);
+            const input = imageData.toFloat().div(255).reshape([1, 28, 28, 1]);
+            const prediction = mnistModel.predict(input);
+            const result = prediction.argMax(-1);
+            result.print();
+            document.getElementById('mnist-result').innerText =
+                'Prediction: ' + (await result.data())[0];
+        }
+
+         function clearCanvas() {
+            ctx.fillStyle = 'black';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            document.getElementById('mnist-result').innerText = 'Prediction: ';
+        }
+    </script>
+</body>
+
+</html>

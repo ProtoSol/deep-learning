@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="laptop_coding_48.png" type="image/png">
+    <title>Diffusion Probability Model</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" rel="stylesheet">
+    <link href="article_style.css" rel="stylesheet">
+</head>
+
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <nav class="col-md-2 left-sidebar">
+
+            </nav>
+
+            <main class="col-md-8 content">
+                <h2 class="custom-title">6.6 Diffusion Probability Model</h2>
+                <p class="title-subtext">Denoising Diffusion Probabilistic Models</p>
+                <p style="color: #a0a0a0;">Created Date: 2025-06-16</p>
+                <p>We present high quality image synthesis results using diffusion probabilistic models, a class of latent variable models inspired by considerations from nonequilibrium thermodynamics. Our best results are obtained by training on a weighted variational bound designed according to a novel connection between diffusion probabilistic models and denoising score matching with Langevin dynamics, and our models naturally admit a progressive lossy decompression scheme that can be interpreted as a generalization of autoregressive decoding.</p>
+                <p>On the unconditional CIFAR10 dataset, we obtain an Inception score of 9.46 and a state-of-the-art FID score of 3.17. On 256x256 LSUN, we obtain sample quality similar to ProgressiveGAN.</p>
+
+                <h3>6.6.1 Introduction</h3>
+                <p>Deep generative models of all kinds have recently exhibited high quality samples in a wide variety of data modalities. Generative adversarial networks (GANs), autoregressive models, flows, and variational autoencoders (VAEs) have synthesized striking image and audio samples, and there have been remarkable advances in energy-based modeling and score matching that have produced images comparable to those of GANs.</p>
+                <p>This paper presents progress in diffusion probabilistic models. A diffusion probabilistic model (which we will call a "diffusion model" for brevity) is a parameterized Markov chain trained using variational inference to produce samples matching the data after finite time.</p>
+                <p>Transitions of this chain are learned to reverse a diffusion process, which is a Markov chain that gradually adds noise to the data in the opposite direction of sampling until signal is destroyed. When the diffusion consists of small amounts of Gaussian noise, it is sufficient to set the sampling chain transitions to conditional Gaussians too, allowing for a particularly simple neural network parameterization.</p>
+                
+                <h3>6.6.2 Background</h3>
+                <p>A diffusion model here is a fixed Markov chain that corrupts data, paired with a learned chain that tries to undo it. The forward transitions are small Gaussians,</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(q(x_t \mid x_{t-1}) = \mathcal{N}\!\left(\sqrt{1 - \beta_t}\, x_{t-1},\, \beta_t I\right)\)
+                </div>
+                <p>with a variance schedule \(\beta_t\) small enough that the signal dies only after hundreds of steps. Because every step is linear and Gaussian, the marginal at any \(t\) is also Gaussian and can be sampled in one shot from \(x_0\), with mean \(\sqrt{\bar\alpha_t}\, x_0\) and variance \((1 - \bar\alpha_t) I\). The training signal is a variational bound: a sum of KL divergences between the true one-step posterior \(q(x_{t-1} \mid x_t, x_0)\), which is Gaussian and known, and a learned Gaussian reverse step.</p>
+
+                <h3>6.6.3 Diffusion models and denoising autoencoders</h3>
+                <p>The mean of that true posterior is an affine function of \(x_t\) and of the noise \(\epsilon\) that produced \(x_t\). Predicting the mean, predicting \(x_0\), and predicting \(\epsilon\) are the same Gaussian family written three ways. Predicting \(\epsilon\) makes each KL term a squared error,</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(L = \mathbb{E}_{x_0, \epsilon, t}\,\lVert \epsilon - \epsilon_\theta(x_t, t) \rVert^2\)
+                </div>
+                <p>which is a denoising autoencoder at a random noise level. The same residual is the score of the noisy marginal up to a scale that depends only on \(t\), so the bound is also denoising score matching. Ancestral sampling then subtracts the predicted noise and adds back a scheduled amount of fresh Gaussian noise, a discrete Langevin step along the learned score.</p>
+
+                <h3>6.6.4 Experiments</h3>
+                <p>The reported runs are unconditional. On CIFAR-10 the noise-prediction loss, with a uniform draw of \(t\), reaches an Inception score of 9.46 and an FID of 3.17. Optimizing the full weighted bound instead of this simplified loss tracks likelihood more closely and produces worse samples, which is why the sampling models use the simplified objective. On 256×256 LSUN the same recipe yields pictures in the same visual range as Progressive GAN, without an adversarial game.</p>
+                <p>Stopping the chain before \(t = 0\) is a lossy code: the remaining noise level is the distortion, and the number of denoising steps still to run is the rate. That is the progressive decompression view. Intermediate latents are coarse reconstructions of the same image, not a different generative process.</p>
+
+                <h3>6.6.5 Related Work</h3>
+                <p>The Markov-chain construction follows the thermodynamic diffusion models of Sohl-Dickstein and coauthors. Score matching and noise-conditional score networks learn \(\nabla \log p\) and draw samples with Langevin dynamics; the noise-prediction loss above is that idea with a variational derivation and a fixed inference budget. GANs, normalizing flows, and autoregressive models are the sample-quality and likelihood baselines. Diffusion keeps the mode-covering behavior of a likelihood model and a training step that looks like a denoising autoencoder.</p>
+
+                <h3>6.6.6 Conclusion</h3>
+                <p>A long chain of conditional Gaussians, trained only to name the noise the forward process added, is enough for GAN-level unconditional samples on CIFAR-10 and LSUN. The same chain doubles as a lossy compressor when it is stopped early. What remains expensive is the sampler itself: every new image pays for hundreds of network evaluations, which is the gap later deterministic and latent-space samplers close.</p>
+                <div class="navigation">
+                    <a href="estimate_gradients.html">Prev: 6.5 Estimating Gradients</a>
+                    <a href="latent_diffusion.html">Next: 6.7 Latent Diffusion</a>
+                </div>
+            </main>
+
+            <aside class="col-md-2 right-sidebar">
+                <h5><a href="index.html#section6">Diffusion Model</a></h5>
+                <ul id="dynamic-sidebar" class="nav flex-column">
+                </ul>
+            </aside>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script type="text/javascript" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="article_script.js"></script>
+    <script>
+        hljs.highlightAll();
+    </script>
+</body>
+
+</html>

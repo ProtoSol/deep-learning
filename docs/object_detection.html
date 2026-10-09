@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="laptop_coding_48.png" type="image/png">
+    <title>Object Detection</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" rel="stylesheet">
+    <link href="article_style.css" rel="stylesheet">
+    <style>
+        .image-container img {
+            display: inline-block;
+            width: 300px;
+            margin-right: 10px;
+            vertical-align: middle;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <nav class="col-md-2 left-sidebar">
+
+            </nav>
+
+            <main class="col-md-8 content">
+                <h2 class="custom-title">9.1 Object Detection</h2>
+                <p class="title-subtext">TorchVision Object Detection Finetuning Tutorial</p>
+                <p style="color: #a0a0a0;">Created Date: 2025-06-20</p>
+                <p>For this tutorial, we will be finetuning a pre-trained <a href="https://arxiv.org/abs/1703.06870">Mask R-CNN</a> model on the <a href="https://www.cis.upenn.edu/~jshi/ped_html/">Penn-Fudan Database for Pedestrian Detection and Segmentation</a> . It contains 170 images with 345 instances of pedestrians, and we will use it to illustrate how to use the new features in torchvision in order to train an object detection and instance segmentation model on a custom dataset.</p>
+                <div class="image-container" style="text-align: center;">
+                    <img src="res/09/fudan_ped_sample.jpg" alt="FudanPen Sample Image">
+                    <img src="res/09/fudan_ped_mask.png" alt="FudanPen Labeled Mask">
+                </div>
+                <p style="text-align: center; color: #555555;">Figure 1 - Sample Image and Labeded Mask</p>
+
+                <h3>9.1.1 Defining the Dataset</h3>
+                <p>The reference scripts for training object detection, instance segmentation and person keypoint detection allows for easily supporting adding new custom datasets. The dataset should inherit from the standard <a href="https://docs.pytorch.org/docs/stable/data.html#torch.utils.data.Dataset">torch.utils.data.Dataset</a> class, and implement <code>__len__</code> and <code>__getitem__</code> .</p>
+                <p>The only specificity that we require is that the dataset <code>__getitem__</code> should return a tuple:</p>
+                <ul class="with-bullets">
+                    <li><p><strong>image</strong>: <a>torchvision.tv_tensors.Image</a> of shape <code>[3, H, W]</code> , a pure tensor, or a PIL Image of size <code>(H, W)</code> .</p></li>
+                    <li><p><strong>target</strong>: a dict containing the following fields - boxes, labels, image_id, area, iscrowd and masks.</p></li>
+                </ul>
+                <p>First, <a href="https://github.com/artinte/deep-learning/blob/develop/09_image/1_object_detect/finetunning.py">finetunning.py</a> download the dataset and extract the zip file:</p>
+                <pre><code>file_path = download.download(url,
+                              sha1_hash='88474aa75cc41dbb8d3c76d2f3c818e79fa0438d')
+print(file_path)
+
+base_name = os.path.splitext(os.path.basename(file_path))[0]
+extract_dir = os.path.join(os.path.dirname(file_path), base_name)
+
+with zipfile.ZipFile(file_path, 'r') as zip_ref:
+    names = zip_ref.namelist()
+    top_level_dirs = {name.split('/')[0] for name in names if '/' in name}
+    if len(top_level_dirs) == 1 and base_name in top_level_dirs:
+        zip_ref.extractall(os.path.dirname(file_path))
+        os.rename(os.path.join(os.path.dirname(file_path), base_name), extract_dir)
+    else:
+        os.makedirs(extract_dir, exist_ok=True)
+        zip_ref.extractall(extract_dir)</code></pre>
+
+                <p>We have the following folder structure:</p>
+                <pre><samp>PennFudanPed/
+  PedMasks/
+    FudanPed00001_mask.png
+    FudanPed00002_mask.png
+    FudanPed00003_mask.png
+    FudanPed00004_mask.png
+    ...
+  PNGImages/
+    FudanPed00001.png
+    FudanPed00002.png
+    FudanPed00003.png
+    FudanPed00004.png</samp></pre>
+
+                <p>Here is one example of a pair of images and segmentation masks:</p>
+                <pre><code>image = torchvision.io.read_image(os.path.join(extract_dir, 'PNGImages/FudanPed00046.png'))
+mask = torchvision.io.read_image(os.path.join(extract_dir, 'PedMasks/FudanPed00046_mask.png'))
+
+pyplot.figure(figsize=(8, 4))
+pyplot.subplot(121)
+pyplot.title('Image')
+pyplot.imshow(image.permute(1, 2, 0))
+pyplot.subplot(122)
+pyplot.title('Mask')
+pyplot.imshow(mask.permute(1, 2, 0))
+pyplot.show()</code></pre>
+
+                <img src="res/09/fudan_ped_data.jpg" alt="FudanPed Random Sample" width="600">
+                <p style="text-align: center; color: #555555;">Figure 2 - FudanPed Random Sample</p>
+
+                <p>So each image has a corresponding segmentation mask, where each color correspond to a different instance. File <a href="https://github.com/artinte/deep-learning/blob/develop/09_image/1_object_detect/penn_fundan_dataset.py">penn_fundan_dataset.py</a> write a torch.utils.data.Dataset class for this dataset. In the code below, we are wrapping images, bounding boxes and masks into torchvision.tv_tensors.TVTensor classes so that we will be able to apply torchvision built-in transformations (new Transforms API) for the given object detection and segmentation task.</p>
+                <p>Namely, image tensors will be wrapped by torchvision.tv_tensors.Image, bounding boxes into torchvision.tv_tensors.BoundingBoxes and masks into torchvision.tv_tensors.Mask. As torchvision.tv_tensors.TVTensor are torch.Tensor subclasses, wrapped objects are also tensors and inherit the plain torch.Tensor API. For more information about torchvision tv_tensors see <a href="https://pytorch.org/vision/main/auto_examples/transforms/plot_transforms_getting_started.html#what-are-tvtensors">this documentation</a> .</p>
+
+                <pre><code class="language-python">import os
+import torch
+
+from torchvision.io import read_image
+from torchvision.ops.boxes import masks_to_boxes
+from torchvision import tv_tensors
+from torchvision.transforms.v2 import functional as F
+
+
+class PennFudanDataset(torch.utils.data.Dataset):
+    def __init__(self, root, transforms):
+        self.root = root
+        self.transforms = transforms
+        # load all image files, sorting them to
+        # ensure that they are aligned
+        self.imgs = list(sorted(os.listdir(os.path.join(root, "PNGImages"))))
+        self.masks = list(sorted(os.listdir(os.path.join(root, "PedMasks"))))
+
+    def __getitem__(self, idx):
+        # load images and masks
+        img_path = os.path.join(self.root, "PNGImages", self.imgs[idx])
+        mask_path = os.path.join(self.root, "PedMasks", self.masks[idx])
+        img = read_image(img_path)
+        mask = read_image(mask_path)
+        # instances are encoded as different colors
+        obj_ids = torch.unique(mask)
+        # first id is the background, so remove it
+        obj_ids = obj_ids[1:]
+        num_objs = len(obj_ids)
+
+        # split the color-encoded mask into a set
+        # of binary masks
+        masks = (mask == obj_ids[:, None, None]).to(dtype=torch.uint8)
+
+        # get bounding box coordinates for each mask
+        boxes = masks_to_boxes(masks)
+
+        # there is only one class
+        labels = torch.ones((num_objs,), dtype=torch.int64)
+
+        image_id = idx
+        area = (boxes[:, 3] - boxes[:, 1]) * (boxes[:, 2] - boxes[:, 0])
+        # suppose all instances are not crowd
+        iscrowd = torch.zeros((num_objs,), dtype=torch.int64)
+
+        # Wrap sample and targets into torchvision tv_tensors:
+        img = tv_tensors.Image(img)
+
+        target = {}
+        target["boxes"] = tv_tensors.BoundingBoxes(boxes, format="XYXY", canvas_size=F.get_size(img))
+        target["masks"] = tv_tensors.Mask(masks)
+        target["labels"] = labels
+        target["image_id"] = image_id
+        target["area"] = area
+        target["iscrowd"] = iscrowd
+
+        if self.transforms is not None:
+            img, target = self.transforms(img, target)
+
+        return img, target
+
+    def __len__(self):
+        return len(self.imgs)</code></pre>
+                <p>That’s all for the dataset. Now let’s define a model that can perform predictions on this dataset.</p>
+
+
+                <h3>9.1.2 Defining your model</h3>
+                <p>In this tutorial, we will be using Mask R-CNN, which is based on top of Faster R-CNN. <a href="https://arxiv.org/abs/1506.01497">Faster R-CNN</a> is a model that predicts both bounding boxes and class scores for potential objects in the image.</p>
+                <img src="res/09/faster_r_cnn.jpg" alt="Faster R-CNN" width="600">
+                <p style="text-align: center; color: #555555;">Figure 3 - Faster R-CNN Architecture</p>
+
+                <p>Mask R-CNN adds an extra branch into Faster R-CNN , which also predicts segmentation masks for each instance.</p>
+
+                <img src="res/09/mask_r_cnn.jpg" alt="Mask R-CNN Architecture" width="600">
+                <p style="text-align: center; color: #555555;">Figure 4 - Mask R-CNN Architecture</p>
+
+                <p>There are two common situations where one might want to modify one of the available models in TorchVision Model Zoo. The first is when we want to start from a pre-trained model, and just finetune the last layer. The other is when we want to replace the backbone of the model with a different one (for faster predictions, for example).</p>
+                <p>Let’s go see how we would do one or another in the following sections.</p>
+
+                <h4>9.1.2.1 Finetuning from a Pretrained Model</h4>
+                <p>Let’s suppose that you want to start from a model pre-trained on COCO and want to finetune it for your particular classes. Here is a possible way of doing it:</p>
+
+                <pre><code># load a model pre-trained on COCO
+model = torchvision.models.detection.fasterrcnn_resnet50_fpn(weights="DEFAULT")
+
+# replace the classifier with a new one, that has
+# num_classes which is user-defined
+num_classes = 2  # 1 class (person) + background
+# get number of input features for the classifier
+in_features = model.roi_heads.box_predictor.cls_score.in_features
+# replace the pre-trained head with a new one
+model.roi_heads.box_predictor = torchvision.models.detection.faster_rcnn.FastRCNNPredictor(in_features, num_classes)</code></pre>
+
+                <h4>9.1.2.2 Modifying the Model to Add a Different Backbone</h4>
+                <p>Finetuning replaces the box predictor and leaves the trunk in place. Swapping the backbone replaces the network that builds the feature map, which is the change to make when the ResNet-50 FPN trunk is heavier than the runtime budget. <a href="https://github.com/artinte/deep-learning/blob/develop/09_image/1_object_detect/finetunning.py">finetunning.py</a> takes <code>mobilenet_v2(weights="DEFAULT").features</code> and sets <code>backbone.out_channels = 1280</code>, the channel count Faster R-CNN uses to size the region proposal network.</p>
+                <p>The proposal stage still needs anchors and a pooled feature size. The script builds an <code>AnchorGenerator</code> with sizes <code>(32, 64, 128, 256, 512)</code> and aspect ratios <code>(0.5, 1.0, 2.0)</code>, and a <code>MultiScaleRoIAlign</code> on the feature map named <code>'0'</code> with a 7×7 crop. Those pieces go into <code>FasterRCNN</code> with <code>num_classes=2</code>. A backbone that returns one tensor uses <code>featmap_names=['0']</code>, a single level, where a feature pyramid would list several maps.</p>
+
+                <h4>9.1.2.3 Model for PennFudan Dataset</h4>
+                <p>Penn-Fudan pedestrians is a small instance-segmentation set. Each photo contains people, and the mask file paints each person in a different color. <a href="https://github.com/artinte/deep-learning/blob/develop/09_image/1_object_detect/penn_fundan_dataset.py">penn_fundan_dataset.py</a> reads <code>PNGImages</code> and <code>PedMasks</code>, drops the background id, and turns the remaining colors into binary masks, boxes from <code>masks_to_boxes</code>, and a label tensor of ones. One foreground class means the detector is built with two classes, person and background.</p>
+                <p><code>get_model_instance_segmentation</code> starts from <code>maskrcnn_resnet50_fpn</code> pretrained on COCO and replaces both heads. The box predictor becomes a <code>FastRCNNPredictor</code> with <code>num_classes</code> outputs. The mask predictor becomes a <code>MaskRCNNPredictor</code> with hidden width 256. The pretrained trunk stays, and the new heads are what two epochs on this set are meant to adapt.</p>
+
+                <h3>9.1.3 Putting Everything Together</h3>
+                <p>The training loop in <a href="https://github.com/artinte/deep-learning/blob/develop/09_image/1_object_detect/finetunning.py">finetunning.py</a> connects the dataset to that model. Training images get a horizontal flip with probability 0.5, a cast to float, and <code>ToPureTensor</code>. <code>collate_fn</code> zips a batch into a tuple of images and a tuple of target dicts, because the images have different sizes and will not stack. A random permutation holds out the last 50 images for evaluation.</p>
+                <p>The optimizer is SGD at learning rate 0.005, momentum 0.9, and weight decay 0.0005, over parameters that require gradients. A <code>StepLR</code> scheduler uses step size 3 and gamma 0.1. Each of <code>num_epochs = 2</code> calls <code>train_one_epoch</code>, steps the scheduler, then calls <code>evaluate</code> on the held-out loader. The model runs on CUDA when it is available, and on CPU otherwise.</p>
+
+                <h3>9.1.4 Testing forward() method (Optional)</h3>
+                <p>Before that loop, the same file checks that <code>forward</code> accepts a batch from the loader. It takes two images, keeps each target dict as it is, and calls <code>model(images, targets)</code> in training mode. The return value is a dict of losses. A second call switches the model to <code>eval</code> and passes two random tensors with different heights, 300 and 500, both width 400. <code>predictions[0]</code> is the dict of boxes, labels, and scores for the first image.</p>
+                <p>A later block runs the trained Mask R-CNN on <code>FudanPed00046.png</code>. It keeps the first three channels, moves them to <code>device</code>, and calls the model under <code>torch.no_grad()</code>. Boxes are drawn with the score in the label text, and masks are drawn where the predicted probability is above 0.7. That is the inference path of the same <code>forward</code>.</p>
+
+                <h3>9.1.5 Wrapping up</h3>
+
+                <p>In this tutorial, we have learned how to create own training pipeline for object detection models on a custom dataset. For that, we wrote a torch.utils.data.Dataset class that returns the images and the ground truth boxes and segmentation masks. we also leveraged a Mask R-CNN model pre-trained on COCO train2017 in order to perform transfer learning on this new dataset.</p>
+
+                <div class="navigation">
+                    <a href="music_synthesis.html">Prev: 8.5 Music Synthesis</a>
+                    <a href="transfer_learning.html">Next: 9.2 Transfer Learning</a>
+                </div>
+            </main>
+
+            <aside class="col-md-2 right-sidebar">
+                <h5><a href="index.html#section9">Image and Video</a></h5>
+                <ul id="dynamic-sidebar" class="nav flex-column">
+                </ul>
+            </aside>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script type="text/javascript" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="article_script.js"></script>
+    <script>
+        hljs.highlightAll();
+    </script>
+</body>
+
+</html>

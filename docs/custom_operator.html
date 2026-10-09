@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="laptop_coding_48.png" type="image/png">
+    <title>Custom Operators</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" rel="stylesheet">
+    <link href="article_style.css" rel="stylesheet">
+</head>
+
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <nav class="col-md-2 left-sidebar">
+
+            </nav>
+
+            <main class="col-md-8 content">
+                <h2 class="custom-title">11.1 Custom Operators</h2>
+                <p class="title-subtext"></p>
+                <p style="color: #a0a0a0;">Created Date: 2025-07-03</p>
+
+                <p>PyTorch offers a large library of operators that work on Tensors (e.g. <code>torch.add</code>, <code>torch.sum</code>, etc). However, you might wish to use a new customized operator with PyTorch, perhaps written by a third-party library. This tutorial shows how to wrap Python functions so that they behave like PyTorch native operators. Reasons why you may wish to create a custom operator in PyTorch include:</p>
+                <ul class="with-bullets">
+                    <li><p>Treating an arbitrary Python function as an opaque callable with respect to <code>torch.compile</code> (that is, prevent <code>torch.compile</code> from tracing into the function).</p></li>
+                    <li><p>Adding training support to an arbitrary Python function.</p></li>
+                </ul>
+
+                <p>Use <code>torch.library.custom_op()</code> to create Python custom operators. Use the C++ TORCH_LIBRARY APIs to create C++ custom operators (these work in Python-less environments). See the Custom Operators Landing Page for more details.</p>
+                <p>Please note that if your operation can be expressed as a composition of existing PyTorch operators, then there is usually no need to use the custom operator API – everything (for example torch.compile, training support) should just work.</p>
+
+                <h3>11.1.1 Example: Wrapping PIL's <code>crop</code> Into a Custom Operator</h3>
+                <p>Let’s say that we are using PIL’s <code>crop</code> operation</p>
+
+                <p><code>crop</code> is not handled effectively out-of-the-box by <code>torch.compile</code>: <code>torch.compile</code> induces a "graph break" on functions it is unable to handle and graph breaks are bad for performance. The following code demonstrates this by raising an error (torch.compile with fullgraph=True raises an error if a graph break occurs).</p>
+
+                <p>In order to black-box <code>crop</code> for use with <code>torch.compile</code>, we need to do two things:</p>
+                <ol>
+                    <li><p>wrap the function into a PyTorch custom operator.</p></li>
+                    <li><p>add a "FakeTensor kernel" (aka "meta kernel") to the operator. Given some FakeTensors inputs (dummy Tensors that don’t have storage), this function should return dummy Tensors of your choice with the correct Tensor metadata (shape/strides/dtype/device).</p></li>
+                </ol>
+
+                <p>After this, <code>crop</code> now works without graph breaks:</p>
+
+               
+
+                <h3>11.1.2 Adding training support for crop</h3>
+
+                <p>Use <code>torch.library.register_autograd</code> to add training support for an operator. Prefer this over directly using <code>torch.autograd.Function</code>; some compositions of <code>autograd.Function</code> with PyTorch operator registration APIs can lead to (and has led to) silent incorrectness when composed with <code>torch.compile</code>.</p>
+
+                <p>If you don't need training support, there is no need to use torch.library.register_autograd. If you end up training with a custom_op that doesn’t have an autograd registration, we’ll raise an error message.</p>
+
+                <p>The gradient formula for crop is essentially PIL.paste (we’ll leave the derivation as an exercise to the reader). Let’s first wrap paste into a custom operator:</p>
+                
+                
+
+                <h3>11.1.3 Testing Python Custom operators</h3>
+
+                <p>Use <code>torch.library.opcheck</code> to test that the custom operator was registered correctly. This does not test that the gradients are mathematically correct; please write separate tests for that (either manual ones or torch.autograd.gradcheck).</p>
+
+                <p>To use <code>opcheck</code>, pass it a set of example inputs to test against. If your operator supports training, then the examples should include Tensors that require grad. If your operator supports multiple devices, then the examples should include Tensors from each device.</p>
+
+                <h3>11.1.4 Mutable Python Custom operators</h3>
+
+                <p>You can also wrap a Python function that mutates its inputs into a custom operator. Functions that mutate inputs are common because that is how many low-level kernels are written; for example, a kernel that computes sin may take in the input and an output tensor and write input.sin() to the output tensor.</p>
+
+                <h3>11.1.5 Conclusion</h3>
+                <p>In this tutorial, we learned how to use torch.library.custom_op to create a custom operator in Python that works with PyTorch subsystems such as torch.compile and autograd.</p>
+
+                <p>This tutorial provides a basic introduction to custom operators. For more detailed information, see:</p>
+                <ul class="with-bullets">
+                    <li><p>the torch.library documentation</p></li>
+                    <li><p>the Custom Operators Manual</p></li>
+                </ul>
+                
+                <div class="navigation">
+                    <a href="function_appro.html">Prev: 10.5 Function Approximation</a>
+                    <a href="custom_function.html">Next: 11.2 Custom Functions</a>
+                </div>
+            </main>
+
+            <aside class="col-md-2 right-sidebar">
+                <h5><a href="index.html#section11">Reinforcement Learning</a></h5>
+                <ul id="dynamic-sidebar" class="nav flex-column">
+                </ul>
+            </aside>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script type="text/javascript" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="article_script.js"></script>
+    <script>
+        hljs.highlightAll();
+    </script>
+</body>
+
+</html>

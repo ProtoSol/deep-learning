@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="laptop_coding_48.png" type="image/png">
+    <title>Pruning</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" rel="stylesheet">
+    <link href="article_style.css" rel="stylesheet">
+</head>
+
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <nav class="col-md-2 left-sidebar">
+
+            </nav>
+
+            <main class="col-md-8 content">
+                <h2 class="custom-title">13.2 Pruning</h2>
+                <p class="title-subtext">Pruning Tutorial</p>
+                <p style="color: #a0a0a0;">Created Date: 2025-06-26</p>
+
+                <p>State-of-the-art deep learning techniques rely on over-parametrized models that are hard to deploy. On the contrary, biological neural networks are known to use efficient sparse connectivity. Identifying optimal techniques to compress models by reducing the number of parameters in them is important in order to reduce memory, battery, and hardware consumption without sacrificing accuracy. This in turn allows you to deploy lightweight models on device, and guarantee privacy with private on-device computation.</p>
+                <p>On the research front, pruning is used to investigate the differences in learning dynamics between over-parametrized and under-parametrized networks, to study the role of lucky sparse subnetworks and initializations (“lottery tickets”) as a destructive neural architecture search technique, and more.</p>
+
+                <p>In this tutorial, you will learn how to use <a href="https://docs.pytorch.org/docs/stable/generated/torch.nn.utils.prune.ln_structured.html">torch.nn.utils.prune</a> to sparsify your neural networks, and how to extend it to implement your own custom pruning technique.</p>
+
+                <h3>13.2.1 Create a Model</h3>
+                <p>In this tutorial, we use the LeNet architecture from LeCun et al., 1998.</p>
+                <p><a href="https://github.com/artinte/deep-learning/blob/develop/13_optimize/2_prune/simple_prune.py">simple_prune.py</a> builds that net as two convolutions and three linear layers. <code>conv1</code> is <code>Conv2d(1, 6, 5)</code>, <code>conv2</code> is <code>Conv2d(6, 16, 5)</code>, then <code>fc1</code> maps <code>16 * 5 * 5</code> units to 120, <code>fc2</code> maps 120 to 84, and <code>fc3</code> maps 84 to 10. <code>forward</code> applies ReLU and 2×2 max-pooling after each convolution, flattens, and ends at the 10-way linear layer. The module is sent to CUDA when that device exists, and to CPU otherwise.</p>
+
+                <h3>13.2.2 Inspect a Module</h3>
+                <p>Let’s inspect the (unpruned) conv1 layer in our LeNet model. It will contain two parameters weight and bias, and no buffers, for now.</p>
+                <p><a href="https://github.com/artinte/deep-learning/blob/develop/13_optimize/2_prune/simple_prune.py">simple_prune.py</a> prints <code>list(model.conv1.named_parameters())</code> before calling prune. <code>weight</code> has shape <code>(6, 1, 5, 5)</code> and <code>bias</code> has shape <code>(6,)</code>. The buffer list is empty until a pruning method attaches a mask.</p>
+
+                <h3>13.2.3 Pruning a Module</h3>
+                <p>To prune a module (in this example, the conv1 layer of our LeNet architecture), first select a pruning technique among those available in torch.nn.utils.prune (or implement your own by subclassing BasePruningMethod). Then, specify the module and the name of the parameter to prune within that module. Finally, using the adequate keyword arguments required by the selected pruning technique, specify the pruning parameters.</p>
+
+                <p>In this example, we will prune at random 30% of the connections in the parameter named weight in the conv1 layer. The module is passed as the first argument to the function; name identifies the parameter within that module using its string identifier; and amount indicates either the percentage of connections to prune (if it is a float between 0. and 1.), or the absolute number of connections to prune (if it is a non-negative integer).</p>
+
+                <p></p>
+                
+                <h3>13.2.4 Iterative Pruning</h3>
+                <p>Iterative pruning calls a prune function again on a parameter that already carries a mask. Each call updates the mask. Entries zeroed by an earlier call stay zero, because the new mask is combined with the old one and only the surviving weights are eligible.</p>
+                <p><a href="https://github.com/artinte/deep-learning/blob/develop/13_optimize/2_prune/simple_prune.py">simple_prune.py</a> makes a single call: <code>random_unstructured</code> on <code>conv1</code>'s <code>weight</code> with <code>amount=0.3</code>, which drops 30% of those connections at random. It then prints <code>named_parameters</code> again. That second print is where <code>weight_orig</code> shows up and <code>weight</code> is no longer a plain parameter. The file stops after that one shot.</p>
+
+                <h3>13.2.5 Serializing a Pruned Model</h3>
+                <p>While the reparametrization is in place, <code>state_dict</code> stores the unmasked weights under <code>weight_orig</code> and the mask as a buffer. Saving that dict and loading it into a module that has the same pruning applied restores both pieces, so the forward pass still multiplies by the mask.</p>
+                <p><a href="https://github.com/artinte/deep-learning/blob/develop/13_optimize/2_prune/simple_prune.py">simple_prune.py</a> never calls <code>torch.save</code>. After the one prune it only prints parameters, so this tutorial leaves no <code>.pth</code> to reload.</p>
+
+                <h3>13.2.6 Remove Pruning Re-parametrization</h3>
+                <p><code>torch.nn.utils.prune.remove</code> writes the masked values back into an ordinary <code>weight</code> parameter and drops <code>weight_orig</code> together with the mask buffer. The <code>state_dict</code> then looks like any other LeNet. Further iterative pruning on that tensor needs a fresh prune call, because the mask history is gone.</p>
+                <p><a href="https://github.com/artinte/deep-learning/blob/develop/13_optimize/2_prune/simple_prune.py">simple_prune.py</a> leaves the reparametrization in place. The second <code>named_parameters</code> print is the end of the file.</p>
+
+                <h3>13.2.7 Pruning Multiple Parameters in a Model</h3>
+                <p>By specifying the desired pruning technique and parameters, we can easily prune multiple tensors in a network, perhaps according to their type, as we will see in this example.</p>
+
+                <h3>13.2.8 Global pruning</h3>
+                <p>So far, we only looked at what is usually referred to as “local” pruning, i.e. the practice of pruning tensors in a model one by one, by comparing the statistics (weight magnitude, activation, gradient, etc.) of each entry exclusively to the other entries in that tensor. However, a common and perhaps more powerful technique is to prune the model all at once, by removing (for example) the lowest 20% of connections across the whole model, instead of removing the lowest 20% of connections in each layer. This is likely to result in different pruning percentages per layer. Let’s see how to do that using global_unstructured from <code>torch.nn.utils.prune</code> .</p>
+
+                <p>Now we can check the sparsity induced in every pruned parameter, which will not be equal to 20% in each layer. However, the global sparsity will be (approximately) 20% .</p>
+
+                
+                <h3>13.2.9 Extending <code>torch.nn.utils.prune</code></h3>
+
+                <p>To implement your own pruning function, you can extend the nn.utils.prune module by subclassing the BasePruningMethod base class, the same way all other pruning methods do. The base class implements the following methods for you: __call__, apply_mask, apply, prune, and remove.</p>
+
+                <p>Beyond some special cases, you shouldn’t have to reimplement these methods for your new pruning technique. You will, however, have to implement __init__ (the constructor), and compute_mask (the instructions on how to compute the mask for the given tensor according to the logic of your pruning technique). </p>
+
+                <p>In addition, you will have to specify which type of pruning this technique implements (supported options are global, structured, and unstructured). This is needed to determine how to combine masks in the case in which pruning is applied iteratively. In other words, when pruning a prepruned parameter, the current pruning technique is expected to act on the unpruned portion of the parameter. Specifying the PRUNING_TYPE will enable the PruningContainer (which handles the iterative application of pruning masks) to correctly identify the slice of the parameter to prune.</p>
+
+                <p>Let’s assume, for example, that you want to implement a pruning technique that prunes every other entry in a tensor (or – if the tensor has previously been pruned – in the remaining unpruned portion of the tensor). This will be of PRUNING_TYPE='unstructured' because it acts on individual connections in a layer and not on entire units/channels ('structured'), or across different parameters ('global').</p>
+
+                
+                
+                
+                <div class="navigation">
+                    <a href="lora.html">Prev: 13.1 LoRA</a>
+                    <a href="quantization.html">Next: 13.3 Quantization</a>
+                </div>
+            </main>
+
+            <aside class="col-md-2 right-sidebar">
+                <h5><a href="index.html#section13">Model Optimization</a></h5>
+                <ul id="dynamic-sidebar" class="nav flex-column">
+                </ul>
+            </aside>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script type="text/javascript" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="article_script.js"></script>
+    <script>
+        hljs.highlightAll();
+    </script>
+</body>
+
+</html>

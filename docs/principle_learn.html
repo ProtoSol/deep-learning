@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="laptop_coding_48.png" type="image/png">
+    <title>Principles of Deep Learning</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" rel="stylesheet">
+    <link href="article_style.css" rel="stylesheet">
+</head>
+
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <nav class="col-md-2 left-sidebar">
+
+            </nav>
+
+            <main class="col-md-8 content">
+                <h2 class="custom-title">1.4 Principles of Deep Learning</h2>
+                <p class="title-subtext"></p>
+                <p style="color: #a0a0a0;">Created Date: 2025-05-10</p>
+
+                <p>In this tutorial, we will explore the fundamental principles of deep learning, including the concepts of machine learning, rules and representations, neural networks, and optimization techniques such as gradient descent. Understanding these principles is crucial for building and training effective deep learning models.</p>
+                <p>Grant Sanderson's <a href="https://www.youtube.com/watch?v=aircAruvnKk">But what is a neural network?</a> is the picture for this page: a stack of weighted sums and a squish, trained by nudging those weights.</p>
+            
+                <h3>1.4.1 Machine learning</h3>
+                <p>The usual way to make a computer do useful work is to have a human programmer write down rules — a computer program — to be followed to turn input data into appropriate answers.</p>
+                <p>File <a href="https://github.com/artinte/deep-learning/blob/develop/01_basic/4_principle/classical_program.py">classical_program.py</a> can enter the user's age and income to determine whether to lend him a loan.</p>
+                <pre><code>def check_loan_eligibility(age, income):
+    if age &lt; 18 or age > 65:
+        return 'NO'
+    if income &lt; 30000:
+        return 'NO'
+    return 'YES'
+
+age = int(input('Please enter age: '))
+income = float(input('Please enter income: '))
+eligibility = check_loan_eligibility(age, income)
+print(eligibility)</code></pre>
+                <pre><samp>Please enter age: 30
+Please enter income: 23000
+NO</samp></pre>
+                <p>Machine learning turns this around: the machine looks at the input data and the corresponding answers, and figures out what the rules should be:</p>
+                <a href="https://drive.google.com/file/d/1vVVEHNSx9SIUQyMvndkg_LveToTBBCxm/view?usp=sharing">
+                    <img src="res/01/paradigm_ml.png" alt="Paradigm of Machine Learning">
+                </a>
+                <p style="text-align: center; color: #555555;">Figure 1 - Paradigm of Machine Learning</p>
+
+                <p>A machine learning system is trained rather than explicitly programmed. It’s presented with many examples relevant to a task, and it finds statistical structure in these examples that eventually allows the system to come up with rules for automating the task. For instance, if you wished to automate the task of tagging your vacation pictures, you could present a machine learning system with many examples of pictures already tagged by humans, and the system would learn statistical rules for associating specific pictures to specific tags.</p>
+                
+                <p>Although machine learning only started to flourish in the 1990s, it has quickly become the most popular and most successful subfield of AI, a trend driven by the  availability of faster hardware and larger datasets. Machine learning is related to mathematical statistics, but it differs from statistics in several important ways, in the same sense that medicine is related to chemistry but cannot be reduced to chemistry, as  medicine deals with its own distinct systems with their own distinct properties.</p>
+
+                <p>Unlike statistics, machine learning tends to deal with large, complex datasets (such as a dataset of millions of images, each consisting of tens of thousands of pixels) for which classical statistical analysis such as Bayesian analysis would be impractical. As a result,  machine learning, and especially deep learning, exhibits comparatively little mathematical theory—maybe too little—and is fundamentally an engineering discipline.</p>
+
+                <p>Unlike theoretical physics or mathematics, machine learning is a very hands-on field  driven by empirical findings and deeply reliant on advances in software and hardware.</p>
+
+                
+                <h3>1.4.2 Learning Rules and Representations from Data</h3>
+                <p>To define deep learning and understand the difference between deep learning and other machine learning approaches, first we need some idea of what machine learning algorithms do. We just stated that machine learning discovers rules for executing a data processing task, given examples of what’s expected. So, to do machine learning, we need three things:</p>
+                <ul class="with-bullets">
+                    <li><p><strong>Input data points</strong> - For instance, if the task is speech recognition, these data points could be sound files of people speaking. If the task is image tagging, they could be pictures.</p></li>
+                    <li><p><strong>Examples of the expected output</strong> - In a speech-recognition task, these could be human-generated transcripts of sound files. In an image task, expected outputs could be tags such as "dog", "cat" and so on.</p></li>
+                    <li><p><strong>A way to measure whether the algorithm is doing a good job</strong> - This is necessary in order to determine the distance between the algorithm’s current output and its expected output. The measurement is used as a feedback signal to adjust the  way the algorithm works. This adjustment step is what we call <strong>learning</strong> .</p></li>
+                </ul>
+
+                <p> A machine learning model transforms its input data into meaningful outputs, a process that is "learned" from exposure to known examples of inputs and outputs. Therefore, the central problem in machine learning and deep learning is to meaningfully transform data: in other words, to learn useful representations of the input data at hand—representations that get us closer to the expected output.</p>
+   
+                <p>Before we go any further: what’s a representation? At its core, it’s a different way to  look at data—to represent or encode data. For instance, a color image can be encoded  in the RGB format (red-green-blue) or in the HSV format (hue-saturation-value):  these are two different representations of the same data.</p>
+                <p>Some tasks that may be difficult with one representation can become easy with another. For example, the task "select all red pixels in the image" is simpler in the RGB format, whereas "make the image less saturated” is simpler in the HSV format. Machine learning models are all  about finding appropriate representations for their input data—transformations of  the data that make it more amenable to the task at hand.</p>
+
+
+                <h3>1.4.3 The "Deep" in Deep Learning</h3>
+
+                <p>Deep learning is a specific subfield of machine learning: a new take on learning representations from data that puts an emphasis on learning successive layers of increaingly meaningful representations. The "deep" in "deep learning" isn't a reference to  any kind of deeper understanding achieved by the approach; rather, it stands for  this idea of successive layers of representations.</p>
+                <p>How many layers contribute to a model of the data is called the depth of the model. Other appropriate names for the field could have been layered representations learning or hierarchical representations learning. Modern deep learning often involves tens or even hundreds of successive layers of representations, and they’re all learned automatically from exposure to training  data.</p>
+                <p>Meanwhile, other approaches to machine learning tend to focus on learning  only one or two layers of representations of the data (say, taking a pixel histogram  and then applying a classification rule); hence, they’re sometimes called shallow  learning.</p>
+
+                <p>In deep learning, these layered representations are learned via models called neural networks, structured in literal layers stacked on top of each other. The term "neural  network" refers to neurobiology, but although some of the central concepts in deep  learning were developed in part by drawing inspiration from our understanding of  the brain (in particular, the visual cortex), deep learning models are not models of  the brain.</p>
+                <p>There’s no evidence that the brain implements anything like the learning mechanisms used in modern deep learning models. You may come across pop-science articles proclaiming that deep learning works like the brain or was modeled after the  brain, but that isn’t the case.</p>
+                <p>It would be confusing and counterproductive for newcomers to the field to think of deep learning as being in any way related to neurobiology; you don’t need that shroud of "just like our minds" mystique and mystery, and you may as well forget anything you may have read about hypothetical links between deep learning and biology. For our purposes, deep learning is a mathematical framework for learning representations from data.</p>
+
+                <p>What do the representations learned by a deep learning algorithm look like? At the end of 2015, the paper <a href="res_net.html">Deep Residual Learning for Image Recognition</a> proposed a residual network, which achieved an error of 3.57% on the ImageNet test set. Let's see how the model recognizes a cat. Consider a photo of a cat, 224 x 224 pixels in size, as shown below:</p>
+                <img src="res/01/sample_cat.jpg" alt="Cat Image">
+                <p style="text-align: center; color: #555555;">Figure 2 - Cat Image</p>
+
+                <p>File <a href="https://github.com/artinte/deep-learning/blob/develop/01_basic/4_principle/cnn_activation_visual.py">cnn_activation_visual.py</a> quickly introduce trained models:</p>
+                <pre><code># Build a ResNet50V2 model loaded with pre-trained ImageNet weights
+model = keras.applications.ResNet50V2(weights="imagenet")
+model.summary()</code></pre>
+
+                <p>The network has 192 layers and 25,613,800 parameters. Run <span class="highlight">python cnn_activation_visual.py</span> will show all of them:</p>
+                <div class="d-flex justify-content-center align-items-center" style="overflow-x: auto; width: 100%;">
+                    <table class="table table-light text-center" style="width: 80%;">
+                        <thead>
+                            <tr>
+                                <th>Layer (type)</th>
+                                <th>Output Shape</th>
+                                <th>Param #</th>
+                                <th>Connected to</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>input_layer (InputLayer)</td>
+                                <td>(None, 224, 224, 3)</td>
+                                <td>0</td>
+                                <td>-</td>
+                            </tr>
+                            <tr>
+                                <td>conv1_pad (ZeroPadding2D)</td>
+                                <td>(None, 230, 230, 3)</td>
+                                <td>0</td>
+                                <td>input_layer[0][0]</td>
+                            </tr>
+                            <tr>
+                                <td>conv1_conv (Conv2D)</td>
+                                <td>(None, 230, 230, 3)</td>
+                                <td>9,472</td>
+                                <td>conv1_pad[0][0]</td>
+                            </tr>
+                            <tr>
+                                <td>pool1_pad (ZeroPadding2D)</td>
+                                <td>(None, 114, 114, 64)</td>
+                                <td>0</td>
+                                <td>conv1_conv[0][0]</td>
+                            </tr>
+                            <tr>
+                                <td>pool1_pool (MaxPooling2D)</td>
+                                <td>(None, 56, 56, 64) </td>
+                                <td>pool1_pad[0][0] </td>
+                            </tr>
+                            <tr>
+                                <td>conv2_block1_preact_bn</td>
+                                <td>(None, 56, 56, 64)</td>
+                                <td>256</td>
+                                <td>pool1_pool[0][0]</td>
+                            </tr>
+                            <tr>
+                                <td>conv2_block1_preact_relu</td>
+                                <td>(None, 56, 56, 64)</td>
+                                <td>0</td>
+                                <td>conv2_block1_preact_bn[0]…</td>
+                            </tr>
+                            <tr>
+                                <td>...</td>
+                                <td>...</td>
+                                <td>...</td>
+                                <td>...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <p>When the neural network is given the image above, it predicts with a 93% probability that it is a Siamese cat.</p>
+                <pre><samp>1: Siamese_cat (0.93)
+2: lynx (0.05)
+3: Egyptian_cat (0.02)</samp></pre>
+
+                <p>Looking at the intermediate output process of the neural network, we can clearly see that as the number of layers increases, the output becomes increasingly difficult to recognize, and outputs abstract information that is difficult for humans to understand.</p>
+
+                <pre><code># visual hidden layer
+layer_outputs = []
+layer_names = []
+for index, layer in enumerate(model.layers):
+    if isinstance(layer, keras.layers.Conv2D) and index % 5 == 0:
+        layer_outputs.append(layer.output)
+        layer_names.append(f"Layer {index+1} - {layer.name}")
+
+activation_model = keras.Model(inputs=model.input, outputs=layer_outputs)
+activations = activation_model.predict(img_tensor)
+
+os.makedirs("temp", exist_ok=True)
+for layer_name, activation in zip(layer_names, activations):
+    print(activation.shape)
+    pyplot.matshow(activation[0, :, :, 0])
+    pyplot.title(layer_name)
+    pyplot.axis("off")
+    pyplot.savefig(os.path.join("temp", layer_name + ".png"))
+    # pyplot.show()
+    pyplot.close()</code></pre>
+
+                <p>So that’s what deep learning is, technically: a multistage way to learn data representations. It’s a simple idea—but, as it turns out, very simple mechanisms, sufficiently scaled, can end up looking like magic.</p>
+
+                <h3>1.4.4 Understanding How Deep Learning Works</h3>
+
+                <p>At this point, you know that machine learning is about mapping inputs (such as  images) to targets (such as the label "cat"), which is done by observing many examples  of input and targets. You also know that deep neural networks do this input-to-target  mapping via a deep sequence of simple data transformations (layers) and that these data transformations are learned by exposure to examples. Now let’s look at how this  learning happens, concretely.</p>
+
+                <p>The specification of what a layer does to its input data is stored in the layer's weights, which in essence are a bunch of numbers. In technical terms, we’d say that the transformation implemented by a layer is parameterized by its weights.  (Weights are also sometimes called the parameters of a layer.)</p>
+                <p>In this context, learning  means finding a set of values for the weights of all layers in a network, such that the  network will correctly map example inputs to their associated targets. But here’s the  thing: a deep neural network can contain tens of millions of parameters. Finding the  correct values for all of them may seem like a daunting task, especially given that modifying the value of one parameter will affect the behavior of all the others!</p>
+                
+                <p>To control something, first you need to be able to observe it. To control the output of  a neural network, you need to be able to measure how far this output is from what you  expected. This is the job of the loss function of the network, also sometimes called the  objective function or cost function.</p>
+                <p>The loss function takes the predictions of the network and the true target (what you wanted the network to output) and computes a distance  score, capturing how well the network has done on this specific example.</p>
+
+                <a href="https://drive.google.com/file/d/10vsogu9y0Rfo6fiCp6AFNdUhgFBL8SDT/view?usp=sharing">
+                    <img src="res/01/relation_deep_learn.png" alt="Relationship between the Network">
+                </a>
+                <p style="text-align: center; color: #555555;">Figure 3 - Relationship between the Network</p>
+
+                <p>The fundamental trick in deep learning is to use this score as a feedback signal to  adjust the value of the weights a little, in a direction that will lower the loss score for the current example.</p>
+                <p>This adjustment is the job of the optimizer, which implements what’s called the <a href="gradient_descent.html">Backpropagation</a> algorithm: the central algorithm in deep learning. </p>
+
+                <p>Initially, the weights of the network are assigned random values, so the network  merely implements a series of random transformations. Naturally, its output is far  from what it should ideally be, and the loss score is accordingly very high. But with every example the network processes, the weights are adjusted a little in the correct  direction, and the loss score decreases.</p>
+                <p>This is the training loop, which, repeated a sufficient number of times (typically tens of iterations over thousands of examples), yields weight values that minimize the loss function. A network with a minimal loss is one for which the outputs are as close as they can be to the targets: a trained network. Once  again, it’s a simple mechanism that, once scaled, ends up looking like magic.</p>
+
+                <h3>1.4.5 Simple Example</h3>
+                <p>Now that we have introduced the principles of neural networks, we can look at a very simple example. It is to find the best fitting curve for some randomly distributed points. The file <a href="https://github.com/artinte/deep-learning/blob/develop/01_basic/4_principle/simple_train_anim.py">simple_train_anim.py</a> plots the distribution of points, as shown below:</p>
+                
+                <pre><code>LEARN_RATE = 0.01
+EPOCHS = 5
+rng = numpy.random.default_rng(seed=0)
+random_numbers = rng.standard_normal(size=100)
+x_input_array = numpy.linspace(0, 4, 100)
+y_true_array = 3 * x_input_array + 4 + random_numbers</code></pre>
+
+                <p>Using traditional methods, we calculate the distance from each point to the line, convert it into a function of the slope, and find the minimum value of the function to get the fitted line. However, this calculation process is complicated. We can use deep learning to find an approximate line. The steps are as follows:</p>
+                <ul class="with-bullets">
+                    <li><p>Set the line \(y = param * x + 4\) , the initial value of param is 1.0;</p></li>
+                    <li><p>For each input point \((x, y)\), using \(y = param * x + 4\) , calculate the predicted value \(y'\);</p></li>
+                    <li><p>Compared \(y'\) with true value \(y\), if \(y' \gt y\), \(param = param - 0.01\) ; else if \(y' \lt y\), then \(param = param + 0.01\) ;</p></li>
+                    <li><p>Repeat process 2 and 3 until param becomes stable (the random points can be traversed for multiple rounds).</p></li>
+                </ul>
+
+                <p>Convert the above process into executable code:</p>
+                <pre><code>param = 1.0
+history = []
+
+for _ in range(EPOCHS):
+    for index, x_input in enumerate(x_input_array):
+        y_pred = param * x_input + 4
+        if y_pred &lt; y_true_array[index]:
+            param += LEARN_RATE
+        else:
+            param -= LEARN_RATE
+        history.append(param)</code></pre>
+
+                <p>The final calculated param value is 3.02, and the drawn image is shown below:</p>
+                <img src="res/01/simple_train_anim.gif" alt="Simple Training Animation" width="600">
+                <p style="text-align: center; color: #555555;">Figure 4 - Simple Training Animation</p>
+
+                <p>The following figure shows the slope changes throughout the entire process. When the slope reaches 3, it gradually stabilizes. During training, we can use this signal to determine whether to end training:</p>
+                <img src="res/01/simple_train_param.png" alt="Simple Training Param" width="600">
+                <p style="text-align: center; color: #555555;">Figure 5 - Simple Training Parameter</p>
+
+                <h3>1.4.6 Implementation with PyTorch</h3>
+                <p>The loop above nudges one slope by a fixed step of 0.01. <a href="https://github.com/artinte/deep-learning/blob/develop/01_basic/4_principle/demo_simple_linear_torch.py">demo_simple_linear_torch.py</a> hands the same job to autograd for a line \(y = wx + b\).</p>
+                <p>The script builds <code>torch.nn.Linear(1, 1)</code>, mean squared error, and SGD with learning rate 0.01. The inputs are the ten values \(x = 1, \ldots, 10\), and the targets are \(3x + 2\) plus Gaussian noise with scale 0.5. Each of the ten epochs clears the gradient, predicts, backpropagates the MSE, and steps the two parameters.</p>
+                <p>Every epoch prints the weight, the bias, and the loss. The weight is heading toward 3 and the bias toward 2. Ten epochs are a short run, so the printed pair lands nearby, and a new noise draw moves it.</p>
+
+                <div class="navigation">
+                    <a href="data_represent.html">Prev: 1.3 Data Representation</a>
+                    <a href="calculus.html">Next: 1.5 Calculus</a>
+                </div>
+            </main>
+
+            <aside class="col-md-2 right-sidebar">
+                <h5><a href="index.html#section1">Tensor and Gradient Basics</a></h5>
+                <ul id="dynamic-sidebar" class="nav flex-column">
+                </ul>
+            </aside>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script type="text/javascript" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="article_script.js"></script>
+    <script>
+        hljs.highlightAll();
+    </script>
+</body>
+
+</html>

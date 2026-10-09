@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="laptop_coding_48.png" type="image/png">
+    <title>Diffusion from Scratch</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" rel="stylesheet">
+    <link href="article_style.css" rel="stylesheet">
+</head>
+
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <nav class="col-md-2 left-sidebar">
+
+            </nav>
+
+            <main class="col-md-8 content">
+                <h2 class="custom-title">6.4 Diffusion from Scratch</h2>
+                <p class="title-subtext">Understanding Stable Diffusion from "Scratch"</p>
+                <p style="color: #a0a0a0;">Created Date: 2025-06-15</p>
+                <p>In <a href="https://binxuw.scholars.harvard.edu/class/machine-learning-scratch">this tutorial</a> , we walked through all the building blocks of Stable Diffusion, including:</p>
+                <ul class="with-bullets">
+                    <li><p>Principle of Diffusion models.</p></li>
+                    <li><p>Model score function of images with UNet model.</p></li>
+                    <li><p>Understanding prompt through contextualized word embedding.</p></li>
+                    <li><p>Let text influence image through cross attention.</p></li>
+                    <li><p>Improve efficiency by adding an autoencoder.</p></li>
+                    <li><p>Large scale training.</p></li>
+                </ul>
+
+                <h3>6.4.0 MNIST Diffusion from Scratch</h3>
+                <p>Before loading a pretrained pipeline, add noise to a tiny image and train a UNet to take it off. <a href="https://github.com/artinte/deep-learning/blob/develop/06_diffusion/4_scratch/mnist_diffusion_scratch.py">mnist_diffusion_scratch.py</a> does that on \(8 \times 8\) canvases with a white square in the middle. The amount of noise is a scalar in \([0, 1]\) per example:</p>
+                <pre><code>def corrupt(clean, amount):
+    noise = torch.randn_like(clean)
+    amount = amount.view(-1, 1, 1, 1)
+    return clean * (1 - amount) + noise * amount, noise</code></pre>
+                <p>Amount 0 leaves the square untouched. Amount 1 replaces it with Gaussian noise. Those two limits are the asserts. A four-layer hourglass predicts the clean image from the noisy one: down \(1 \to 8\), pool, another \(8\)-channel convolution, upsample, add the skip, then a \(1 \times 1\) head. The loss is MSE against the clean square. One backward pass is enough to check the graph.</p>
+                <p><a href="https://github.com/artinte/deep-learning/blob/develop/06_diffusion/4_scratch/demo_mnist_diffusion.py">demo_mnist_diffusion.py</a> is the same idea on real MNIST with a slightly wider <code>BasicUNet</code>. The rest of this chapter replaces the scratch UNet with the Stable Diffusion stack: a text encoder, a latent autoencoder, and a UNet that also sees a timestep and a prompt through cross-attention.</p>
+
+                <h3>6.4.1 Playing with Stable Diffusion</h3>
+                <p>It has many sections with loose order between them. You can:</p>
+                <ul class="with-bullets">
+                    <li><p>Play with generating art from prompt.</p></li>
+                    <li><p>See the effect of the parameters for generating process.</p></li>
+                    <li><p>Visualizing the diffusion process and latents.</p></li>
+                    <li><p>Looking under the hood of the sampling function.</p></li>
+                    <li><p>Inspect the internal network architecture of the components of Stable Diffusion.</p></li>
+                </ul>
+
+                <h4>6.4.1.1 Loading Stable Diffusion</h4>
+
+                <p>To run the code below, you need to install the <code>diffusers</code> library. You can do this by running:</p>
+                <pre><samp>pip install diffusers</samp></pre>
+
+                <pre><code>import os
+import numpy
+import torch
+import torch
+from diffusers import StableDiffusionPipeline
+from matplotlib import pyplot</code></pre>
+
+                <p>Make sure you have a GPU available, as Stable Diffusion requires significant computational resources. You can check if CUDA is available with:</p>
+                <pre><code>assert torch.cuda.is_available(), "CUDA is not available. Please run on a machine with a GPU."</code></pre>
+
+                <p>Now, file <a href="https://github.com/artinte/deep-learning/blob/develop/06_diffusion/4_scratch/loading_diffusion.py">loading_diffusion.py</a> load the Stable Diffusion model. You will need to authenticate with the Hugging Face Hub to access the model weights. If you don't have an account, you can create one at <a href="https://huggingface.co/join">Hugging Face</a> .</p>
+                <p>Here <span class="highlight">fp16</span> checkpoint is loaded just to save memory and compute time. if you have a great gpu, you can remove the line <code>revision="fp16", torch_dtype=torch.float16</code> :</p>
+                <pre><code>pipe = StableDiffusionPipeline.from_pretrained(
+    "CompVis/stable-diffusion-v1-4",
+    revision="fp16",
+    torch_dtype=torch.float16,
+    use_auth_token=True
+).to("cuda")
+
+# Disable the safety checker for this example
+def dummy_checker(images, **kwargs):
+    return images, [False] * len(images)
+pipe.safety_checker = dummy_checker</code></pre>
+
+
+                <h4>6.4.1.2 Generative Playground</h4>
+
+                <p>Once the model is loaded, you can generate images from text prompts. The following code generates an image of a "lovely cat running in the desert in Van Gogh style, trending art." and displays it.</p>
+
+                <h5>Generating an Image</h5>
+                <pre><code>prompt = "a lovely cat running in the desert in Van Gogh style, trending art."
+image = pipe(prompt).images[0]  # image here is in [PIL format](https://pillow.readthedocs.io/en/stable/)
+
+# Now to display an image you can do either save it such as
+os.makedirs("temp", exist_ok=True)
+image.save(f"temp/lovely_cat.png")
+
+pyplot.imshow(numpy.array(image))  # Convert PIL image to numpy array for display
+pyplot.axis('off')  # Hide axes
+pyplot.show()  # Display the image</code></pre>
+
+                <img src="res/06/lovely_cat.jpg" alt="Lovely Cat">
+                <p style="text-align: center; color: #555555;">Figure 1 - A Lovely Cat Generated by Stable Diffusion</p>
+
+                <h5>Fixing the Random Seed</h5>
+                <p>By creating a <code>torch.Generator</code> object and setting its seed with <code>.manual_seed(42)</code> , you ensure that the same sequence of random numbers is used each time the pipeline is run with this generator. This results in the same image being generated from the same prompt and other parameters:</p>
+                <pre><code>generator = torch.Generator("cuda").manual_seed(42)
+prompt = 'a sleeping cat enjoying the sunshine.'
+image = pipe(prompt, generator=generator).images[0]  # Generate image with a fixed seed
+image.save(f"temp/sleeping_cat_seed.png")
+pyplot.imshow(numpy.array(image))  # Convert PIL image to numpy array for display
+pyplot.axis('off')  # Hide axes
+pyplot.show()  # Display the image</code></pre>
+
+                <img src="res/06/sleeping_cat_seed.jpg" alt="Sleeping Cat with Seed">
+                <p style="text-align: center; color: #555555;">Figure 2 - A Sleeping Cat with Fixed Seed</p>
+
+                <h5>Changing (Denoising) Diffusion Steps</h5>
+
+                <p>To generate images with different levels of detail, you can adjust the <code>num_inference_steps</code> parameter. This parameter controls how many steps the diffusion model takes to generate the image. More steps generally lead to higher quality images but take longer to compute:</p>
+                <pre><code>prompt = 'a sleeping cat enjoing the sunshine.'
+image = pipe(prompt, num_inference_steps=25).images[0]
+image.save(f"temp/sleeping_cat_25.png")
+pyplot.imshow(numpy.array(image))  # Convert PIL image to numpy array for display
+pyplot.axis('off')  # Hide axes
+pyplot.show()  # Display the image</code></pre>
+
+                <img src="res/06/sleeping_cat_25.jpg" alt="Sleeping Cat with 25 Steps">
+                <p style="text-align: center; color: #555555;">Figure 3 - A Sleeping Cat with 25 Inference Steps</p>
+
+                <h5>Adding Negative prompt</h5>
+                <p>Adding negative prompt can control what you do not want.</p>
+
+                <pre><code>prompt = "a sleeping cat enjoying the sunshine."
+image = pipe(prompt, negative_prompt="tree and leaves").images[0]
+image.save(f"temp/sleeping_cat_negative.png")
+pyplot.imshow(numpy.array(image))
+pyplot.axis("off")
+pyplot.show()</code></pre>
+
+                <img src="res/06/sleeping_cat_neg.jpg" alt="Sleeping Cat with Negative Prompt">
+                <p style="text-align: center; color: #555555;">Figure 4 - A Sleeping Cat with Negative Prompt</p>
+
+
+                <h4>6.4.1.3 Visualizing the Diffusion in Action</h4>
+
+                <p>To visualize the diffusion process, you can use a callback function that saves intermediate images at each step of the diffusion process. File <a href="https://github.com/artinte/deep-learning/blob/develop/06_diffusion/4_scratch/diffusion_visualize.py">diffusion_visualize.py</a> is an example of how to implement such a callback function and use it during the image generation process:</p>
+                <pre><code>image_reservoir = []
+latents_reservoir = []
+
+
+@torch.no_grad()
+def saveimg_callback(pipe, step_index, timestep, callback_kwargs, frequency=10):
+    # You can get the latents from the kwargs
+    latents = callback_kwargs["latents"]
+
+    # Add your existing logic here, perhaps with a frequency check
+    if step_index % frequency == 0:
+        # Example of how to access and save the image
+        image = pipe.vae.decode(1 / 0.18215 * latents).sample
+        image = (image / 2 + 0.5).clamp(0, 1)
+        image_np = image.cpu().permute(0, 2, 3, 1).float().numpy()[0]
+        pil_image = pipe.numpy_to_pil(image_np)[0]
+        pil_image.save(f"temp/diffprocess/step_{step_index:04d}_{timestep}.png")
+        image_reservoir.append(image_np)
+        latents_reservoir.append(latents.detach().cpu())
+    # Important: The function must return the callback_kwargs
+    return callback_kwargs</code></pre>
+
+                <p>Now, you can use this callback function during the image generation process. The following code generates an image while saving intermediate steps:</p>
+                <pre><code>image_reservoir = []
+latents_reservoir = []
+prompt = "a lovely cat running in the desert in Van Gogh style, trending art."
+with torch.no_grad():
+    image = pipe(
+        prompt,
+        callback_on_step_end=functools.partial(saveimg_callback, frequency=1),
+        callback_on_step_end_tensor_inputs=["latents"],
+    ).images[0]
+image.save(f"temp/lovely_cat_vangogh.png")
+mediapy.write_video("temp/lavely_cat_vangopy.mp4", image_reservoir, fps=10)
+print("Lantents shape:", latents_reservoir[0].shape)
+latents_np_seq = [
+    tsr[0, [0, 1, 2]].permute(1, 2, 0).numpy() for tsr in latents_reservoir
+]
+mediapy.write_video("temp/latents_seq.mp4", latents_np_seq, fps=10)</code></pre>
+
+                <img src="res/06/lovely_cat_vangogh.jpg" alt="Lovely Cat in Van Gogh Style">
+                <p style="text-align: center; color: #555555;">Figure 5 - A Lovely Cat in Van Gogh Style</p>
+
+                <pre><samp>Lantents shape: torch.Size([1, 4, 64, 64])</samp></pre>
+
+                <h4>6.4.1.4 Write a Simple text2img Sampling Function</h4>
+
+                <p>File <a href="https://github.com/artinte/deep-learning/blob/develop/06_diffusion/4_scratch/pipe_simplified.py">pipe_simplified.py</a> provide a simplified version of the sampling function! See what happened under the hood when you run <code>pipe(prompt)</code> we define a <code>pipe_simplified</code> function. Feel free to print out tensors and record their shape within this function!</p>
+                <pre><code>def pipe_simplified(
+    prompt=["a lovely cat"],
+    negative_prompt=[""],
+    # `num_inference_steps` is the number of denoising steps. More denoising steps usually lead to a higher quality image at the expense of slower inference.
+    # It is recommended to use between 50 and 150 denoising steps, with 50 being a good default.
+    num_inference_steps=50,
+    # here `guidance_scale` is defined analog to the guidance weight `w` of equation (2)
+    # of the Imagen paper: https://arxiv.org/pdf/2205.11487.pdf . `guidance_scale = 1`
+    # corresponds to doing no classifier free guidance.
+    # Higher guidance scale encourages to generate images closely linked to the text `prompt`,
+    # usually at the expense of lower image quality.
+    # Guidance scale of 7.5 is a good default value.
+    # Guidance scale of 1.0 is equivalent to doing no classifier free guidance.
+    guidance_scale=7.5,
+):</code></pre>
+
+                <p>The following code snippet shows how to get the text embeddings from the prompt using the tokenizer and text encoder of the Stable Diffusion pipeline:</p>
+                <pre><code># get prompt text embeddings
+text_inputs = pipe.tokenizer(
+    prompt,
+    padding="max_length",
+    max_length=pipe.tokenizer.model_max_length,
+    return_tensors="pt",
+)
+text_input_ids = text_inputs.input_ids
+text_embeddings = pipe.text_encoder(text_input_ids.to(pipe.device))[0]
+bs_embed, seq_len, _ = text_embeddings.shape
+print(f"Text embeddings shape: {text_embeddings.shape}")</code></pre>
+
+                <pre><samp>Text embeddings shape: torch.Size([1, 77, 768])</samp></pre>
+
+                <pre><code># get negative prompts  text embedding
+max_length = text_input_ids.shape[-1]
+uncond_input = pipe.tokenizer(
+    negative_prompt,
+    padding="max_length",
+    max_length=max_length,
+    truncation=True,
+    return_tensors="pt",
+)
+uncond_embeddings = pipe.text_encoder(uncond_input.input_ids.to(pipe.device))[0]
+print(f"Unconditional text embeddings shape: {uncond_embeddings.shape}")</code></pre>
+
+                <pre><samp>Unconditional text embeddings shape: torch.Size([1, 77, 768])</samp></pre>
+
+
+                <p>For classifier free guidance, we need to do two forward passes. Here we concatenate the unconditional and text embeddings into a single batch to avoid doing two forward passes:</p>
+                <pre><code># duplicate unconditional embeddings for each generation per prompt, using mps friendly method
+seq_len = uncond_embeddings.shape[1]
+uncond_embeddings = uncond_embeddings.repeat(batch_size, 1, 1)
+uncond_embeddings = uncond_embeddings.view(batch_size, seq_len, -1)
+
+text_embeddings = torch.cat([uncond_embeddings, text_embeddings])
+print(f"Concatenated text embeddings shape: {text_embeddings.shape}")</code></pre>
+
+                <p>Unlike in other pipelines, latents need to be generated in the target device for 1-to-1 results reproducibility with the CompVis implementation:</p>
+                <pre><code>latents_shape = (batch_size, pipe.unet.in_channels, height // 8, width // 8)
+latents_dtype = text_embeddings.dtype
+latents = torch.randn(
+    latents_shape, generator=generator, device=pipe.device, dtype=latents_dtype
+)</code></pre>
+
+                <p>Now we can scale the initial noise by the standard deviation required by the scheduler. This is important for the diffusion process to work correctly:</p>
+                <pre><code># set timesteps
+pipe.scheduler.set_timesteps(num_inference_steps)
+# Some schedulers like PNDM have timesteps as arrays
+# It's more optimized to move all timesteps to correct device beforehand
+timesteps_tensor = pipe.scheduler.timesteps.to(pipe.device)
+# scale the initial noise by the standard deviation required by the scheduler
+latents = latents * pipe.scheduler.init_noise_sigma</code></pre>
+
+                <p>Finally, we can run the main diffusion process. The following code iterates over the timesteps and performs the denoising steps:</p>
+                <pre><code># Main diffusion process
+for i, t in enumerate(pipe.progress_bar(timesteps_tensor)):
+    # expand the latents if we are doing classifier free guidance
+    latent_model_input = torch.cat([latents] * 2)
+    latent_model_input = pipe.scheduler.scale_model_input(latent_model_input, t)
+    # predict the noise residual
+    noise_pred = pipe.unet(
+        latent_model_input, t, encoder_hidden_states=text_embeddings
+    ).sample
+    # perform guidance
+    noise_pred_uncond, noise_pred_text = noise_pred.chunk(2)
+    noise_pred = noise_pred_uncond + guidance_scale * (
+        noise_pred_text - noise_pred_uncond
+    )
+    # compute the previous noisy sample x_t -> x_t-1
+    latents = pipe.scheduler.step(
+        noise_pred,
+        t,
+        latents,
+    ).prev_sample
+
+latents = 1 / 0.18215 * latents
+image = pipe.vae.decode(latents).sample
+image = (image / 2 + 0.5).clamp(0, 1)
+# we always cast to float32 as this does not cause significant overhead and is compatible with bfloa16
+image = image.detect().cpu().permute(0, 2, 3, 1).float().numpy()
+return image</code></pre>
+
+                <p class="comment">We need GPU over 8 GB, otherwise you will get the error like below:</p>
+                <pre><code>RuntimeError: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.</code></pre>
+
+                <pre><code>image = pipe_simplified(
+    prompt=["a lovely cat"],
+    negative_prompt=["Sunshine"],
+)
+# The two lines below are the problem. Remove them.
+image = pipe.numpy_to_pil(image)[0]
+image.save(f"temp/lovely_cat_simplified.png")
+pyplot.imshow(numpy.array(image))
+pyplot.axis("off")
+pyplot.show()</code></pre>
+
+                <img src="res/06/lovely_cat_simplified.jpg" alt="Lovely Cat Simplified" width="600">
+                <p style="text-align: center; color: #555555;">Figure 6 - A Lovely Cat Generated by Simplified Sampling Function</p>
+
+                <pre><code>image = pipe_simplified(
+    prompt = ["a cat dressed like a ballerina"],
+    negative_prompt = [""],)
+# The two lines below are the problem. Remove them.
+image = pipe.numpy_to_pil(image)[0]
+image.save(f"temp/dressed_car_simplified.png")
+pyplot.imshow(numpy.array(image))
+pyplot.axis("off")
+pyplot.show()</code></pre>
+
+                <img src="res/06/dressed_cat_simplified.jpg" alt="Dressed Cat Simplified" width="600">
+                <p style="text-align: center; color: #555555;">Figure 7 - A Dressed Cat Generated by Simplified Sampling Function</p>
+
+
+                <h4>6.4.1.5 Image to Image Translation Playground</h4>
+
+                <p>Stable Diffusion also supports image-to-image translation, where you can provide an initial image and a prompt to guide the generation process. This is useful for tasks like style transfer or enhancing existing images.</p>
+
+                <pre><code>model_path = "CompVis/stable-diffusion-v1-4"
+device = "cuda" if torch.cuda.is_available() else "cpu"
+
+pipe = StableDiffusionImg2ImgPipeline.from_pretrained(
+    model_path, revision="fp16", torch_dtype=torch.float16, use_auth_token=True
+)
+pipe = pipe.to(device)</code></pre>
+
+                <p>To use the image-to-image functionality, you need to provide an initial image. The following code fetches an image from a URL, resizes it, and saves it locally:</p>
+
+                <pre><code>os.makedirs("temp", exist_ok=True)
+response = requests.get(url)
+init_img = Image.open(BytesIO(response.content)).convert("RGB")
+init_img = init_img.resize((768, 512))
+init_img.save("temp/sketch-mountains-input.jpg")
+pyplot.imshow(init_img)
+pyplot.axis("off")
+pyplot.show()</code></pre>
+
+                <img src="res/06/sketch_mountains.jpg" alt="Sketch Mountains Input" width="600">
+                <p style="text-align: center; color: #555555;">Figure 8 - Sketch Mountains Input</p>
+
+                <p>Now, you can use the image-to-image pipeline to generate a new image based on the initial image and a text prompt. The <code>strength</code> parameter controls how much the initial image influences the final output. A value of 0 means the output is entirely based on the prompt, while a value of 1 means the output is entirely based on the initial image.</p>
+
+                <pre><code>prompt = "A fantasy landscape, trending on artstation"
+generator = torch.Generator(device=device).manual_seed(1024)
+image = pipe(
+    prompt=prompt,
+    image=init_img,
+    strength=0.75,
+    num_inference_steps=50,
+    guidance_scale=7.5,
+    generator=generator,
+).images[0]
+
+image.save("temp/fantasy_landscape.png")
+pyplot.imshow(image)
+pyplot.axis("off")
+pyplot.show()</code></pre>
+
+                <img src="res/06/fantasy_landscape.jpg" alt="Fantasy Landscape Output" width="600">
+                <p style="text-align: center; color: #555555;">Figure 9 - Fantasy Landscape Output</p>
+
+
+                <h4>6.4.1.6 Write a Simple img2img Sampling Function</h4>
+                <p><a href="https://github.com/artinte/deep-learning/blob/develop/06_diffusion/4_scratch/pipe_simplified.py">pipe_simplified.py</a> always starts from Gaussian latents. Image-to-image sampling starts from a picture. <a href="https://github.com/artinte/deep-learning/blob/develop/06_diffusion/4_scratch/img2img_sample.py">img2img_sample.py</a> downloads a sketch, resizes it to 768×512, and calls <code>StableDiffusionImg2ImgPipeline</code> with <code>strength=0.75</code>, 50 steps, and <code>guidance_scale=7.5</code>.</p>
+                <p>Strength chooses how far up the noise schedule that picture is pushed before denoising begins. The VAE encodes the sketch, the scheduler noises the latent to a timestep near <code>strength</code> times the horizon, and the same classifier-free loop as <code>pipe_simplified</code> walks back down. A strength near 0 leaves the encoded image almost intact. A strength near 1 discards the sketch and behaves like text-to-image. The prompt still arrives as <code>encoder_hidden_states</code>; only the initial latent and the first timestep change.</p>
+                <pre><code>image = pipe(
+    prompt=prompt,
+    image=init_img,
+    strength=0.75,
+    num_inference_steps=50,
+    guidance_scale=7.5,
+    generator=generator,
+).images[0]</code></pre>
+
+                <h4>6.4.1.7 The Internal Structure of Model</h4>
+                <p><code>pipe(prompt)</code> is five modules, and <a href="https://github.com/artinte/deep-learning/blob/develop/06_diffusion/4_scratch/pipe_simplified.py">pipe_simplified.py</a> calls them in order. The tokenizer turns the string into at most 77 token ids. The CLIP text encoder maps those ids to a tensor of shape <code>(1, 77, 768)</code>. The UNet reads a latent of shape <code>(1, 4, 64, 64)</code> together with the timestep and that text tensor. The scheduler turns the UNet's noise prediction into the previous latent. After the last step the latent is rescaled by <code>1 / 0.18215</code> and the VAE decoder maps it to RGB.</p>
+                <p>Classifier-free guidance doubles the batch: the unconditional embedding and the prompt embedding are concatenated, the UNet runs once, and the two noise halves are mixed with <code>guidance_scale</code>. <a href="https://github.com/artinte/deep-learning/blob/develop/06_diffusion/4_scratch/loading_diffusion.py">loading_diffusion.py</a> also replaces <code>safety_checker</code> with a function that returns every image unchanged, which is why the playground can save pictures the stock checker would have blanked.</p>
+
+                <h3>6.4.2 Build Stable Diffusion U-Net Model</h3>
+
+                <p>In previous section, we went over the various components necessary to make an effective diffusion generative model like Stable Diffusion.</p>
+                <p>As a reminder, they are:</p>
+                <ul class="with-bullets">
+                    <li><p>Method of learning to generate new stuff (forward/reverse diffusion);</p></li>
+                    <li><p>Way to link text and images (text-image representation model like CLIP);</p></li>
+                    <li><p>Way to compress images (autoencoder);</p></li>
+                    <li><p>Way to add in good inductive biases (U-net architecture + self/cross-attention);</p></li>
+                </ul>
+                <p>In this section, you will implement pieces of each of the above, and by the end have a working Stable-Diffusion-like model.</p>
+                <p>In particular, you will implement parts of:</p>
+                <ul class="with-bullets">
+                    <li><p>Basic 1D forward/reverse diffusion;</p></li>
+                    <li><p>A U-Net Architecture for Working with Images;</p></li>
+                    <li><p>The Loss Associated with Learning the Score Function;</p></li>
+                    <li><p>An Attention Model for Conditional Generation;</p></li>
+                    <li><p>An Autoencoder</p></li>
+                </ul>
+
+                <h4>6.4.2.1 Define our Unet Architecture</h4>
+                <p>A UNet is an encoder–decoder whose skips keep the high-resolution layout that downsampling would otherwise throw away. <a href="https://github.com/artinte/deep-learning/blob/develop/06_diffusion/4_scratch/demo_mnist_diffusion.py">demo_mnist_diffusion.py</a> defines the smallest one we train, <code>BasicUNet</code>. The down path is three convolutions, 1→32, 32→64, 64→64, each followed by SiLU, with <code>MaxPool2d</code> after the first two stages. The up path mirrors them with <code>Upsample</code>, and each up layer adds the saved map from the matching resolution before the convolution.</p>
+                <p>That skeleton is enough to predict a clean MNIST digit from a noisy one. The Stable Diffusion UNet in <a href="https://github.com/artinte/deep-learning/blob/develop/06_diffusion/4_scratch/net_models.py">net_models.py</a> keeps the same hourglass and adds what <code>BasicUNet</code> does not have: a Gaussian Fourier embedding of the timestep, added at every resolution through a <code>Dense</code> layer, GroupNorm before the activation, and <code>SpatialTransformer</code> blocks so a conditioning vector can enter the feature maps.</p>
+
+                <h4>6.4.2.2 Build Our ResBlock</h4>
+                <p>A residual block computes a small correction and adds it to its input, so a stage can start as the identity. In <a href="https://github.com/artinte/deep-learning/blob/develop/06_diffusion/4_scratch/net_models.py">net_models.py</a> the <code>ResBlock</code> constructor builds three 3×3 convolutions, each mapping <code>in_chan</code> to itself with padding 1 so the spatial size stays put:</p>
+                <pre><code>class ResBlock(nn.Module):
+    def __init__(self, in_chan, out_chan, stride=1, downsample=None):
+        super().__init__()
+        self.conv1 = nn.Conv2d(in_chan, in_chan, 3, stride=1, padding=1)
+        self.conv2 = nn.Conv2d(in_chan, in_chan, 3, stride=1, padding=1)
+        self.conv3 = nn.Conv2d(in_chan, in_chan, 3, stride=1, padding=1)</code></pre>
+                <p>The class has no <code>forward</code> yet, and <code>out_chan</code> and <code>downsample</code> are unused. A finished block still normalizes, applies SiLU, runs those convolutions, and returns their sum with the input. Time conditioning is the same side input <code>UNet_Tranformer_attrb</code> already uses: a <code>Dense(embed)</code> bias added after the first convolution.</p>
+
+                <h4>6.4.2.3 Build Our Attention / Transformer</h4>
+                <p><code>CrossAttention</code> is one module for self-attention and cross-attention. Leave <code>context_dim</code> unset and the key and value maps read the same tokens as the query. Pass a context width and they read the conditioning sequence instead, which is how a text or attribute vector gets into an image feature. Scores are the usual scaled dot product,</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(\mathrm{score}(Q, K) = \mathrm{softmax}\!\left(\frac{Q K^{\top}}{\sqrt{d}}\right)\)
+                </div>
+                <p>and the softmax weights mix the values. <code>TransformerBlock</code> stacks three pre-norm residuals on that primitive: self-attention, cross-attention against the context, and a feed-forward network that expands to <code>3 * hidden_dim</code>, applies GELU, and projects back. Each branch adds its input, so a zeroed block is a no-op.</p>
+
+                <h4>6.4.2.4 Container of ResBlock and Spatial Transformers</h4>
+                <p><code>SpatialTransformer</code> is the adapter between a convolutional map and that token block. It stores the input, flattens height and width into one token axis (<code>b c h w</code> becomes <code>b (h w) c</code>), runs <code>TransformerBlock</code>, scatters the tokens back onto a map, and adds the original map. The residual around the whole module is why it can sit inside a UNet stage without changing the channel count.</p>
+                <p><code>UNet_Tranformer_attrb</code> uses the pattern at the two lowest resolutions: after the stride-2 convolution, GroupNorm, and SiLU, <code>attn4</code> (and, when the commented lines are enabled, <code>attn3</code> and <code>attn5</code>) receives the map plus the embedded condition <code>y_embed</code>. There is no separate stack-of-blocks class. The stage is the convolution, the norm, and the spatial transformer written out in <code>forward</code>.</p>
+
+                <h4>6.4.2.5 Putting it Together into UNet!</h4>
+                <p><code>UNet_Tranformer_attrb.forward</code> wires the pieces. Time goes through <code>GaussianFourierProjection</code> and a linear layer, then SiLU. The condition index <code>y</code> is an embedding of width <code>text_dim</code>. Each encoder stage is a convolution plus a broadcast time bias, GroupNorm, and SiLU. Channels run 3, 32, 64, 128, 256, with stride 2 after the first stage. Only the bottleneck attention, <code>attn4</code>, is active.</p>
+                <p>The decoder is <code>ConvTranspose2d</code> with <code>output_padding=1</code> so the spatial size matches the skip. Before each transpose except the first, the up feature is added to the saved encoder map (<code>h3</code>, then <code>h2</code>, then <code>h1</code>). The last transpose emits 3 channels, and the network divides that tensor by <code>marginal_prob_std(t)</code> so the raw output is a score. <a href="https://github.com/artinte/deep-learning/blob/develop/06_diffusion/4_scratch/demo_diffusion_training.py">demo_diffusion_training.py</a> defines that standard deviation for the variance-preserving schedule:</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(\mathrm{std}(t) = \sqrt{ \dfrac{\sigma^{2t} - 1}{2 \ln \sigma} }\)
+                </div>
+
+                <h4>6.4.2.6 Unit Test the Components</h4>
+                <p>Before any training loop, a random tensor should survive the hourglass at the right shape. <a href="https://github.com/artinte/deep-learning/blob/develop/06_diffusion/4_scratch/demo_mnist_diffusion.py">demo_mnist_diffusion.py</a> checks <code>BasicUNet</code> with a batch of eight 28×28 maps:</p>
+                <pre><code>net = BasicUNet()
+x = torch.rand(8, 1, 28, 28)
+print(net(x).shape)
+print(sum(p.numel() for p in net.parameters()))</code></pre>
+                <p>The shape print should be <code>torch.Size([8, 1, 28, 28])</code>. The same check on <code>UNet_Tranformer_attrb</code> needs a time vector and a condition index <code>y</code>, and the spatial size must stay divisible by 8 because three stride-2 stages shrink the map. If a transpose and a skip disagree on height or width, this forward pass fails immediately, which is the failure you want before a training step.</p>
+
+                <h4>6.4.2.7 Load Weights into our UNet!</h4>
+                <p><a href="https://github.com/artinte/deep-learning/blob/develop/06_diffusion/4_scratch/loading_diffusion.py">loading_diffusion.py</a> does not copy tensors into the class above. It builds the stock pipeline with <code>StableDiffusionPipeline.from_pretrained("CompVis/stable-diffusion-v1-4", revision="fp16", torch_dtype=torch.float16)</code> and moves it to CUDA. That call fills the tokenizer, text encoder, VAE, UNet, and scheduler from the Hub checkpoint.</p>
+                <p><code>load_state_dict</code> will accept those UNet weights only when the parameter names and shapes match. <code>UNet_Tranformer_attrb</code> is a teaching subset: fewer residual stages, an attribute embedding in place of a 768-wide CLIP sequence, and a 3-channel image UNet rather than the 4-channel latent UNet. Use <code>pipe.unet</code> when you want samples from the checkpoint, and the class in <a href="https://github.com/artinte/deep-learning/blob/develop/06_diffusion/4_scratch/net_models.py">net_models.py</a> when you want to read how time, skips, and cross-attention share one forward pass.</p>
+
+                <h3>6.4.3 Build a Diffusion Model (U-Net + Cross Attention)</h3>
+                <p>The sampler calls a UNet that already knows how to denoise. Training is the step that teaches it. For the MNIST skeleton, <a href="https://github.com/artinte/deep-learning/blob/develop/06_diffusion/4_scratch/demo_mnist_diffusion.py">demo_mnist_diffusion.py</a> draws a noise scale per image, adds <code>torch.randn_like</code> noise, and regresses the network output toward the clean digit with MSE. Three epochs of Adam at <code>1e-3</code> are what that file runs; the loss curve it saves is the check that the hourglass is fitting.</p>
+                <p>The conditional score network has two inputs the MNIST net never sees. <code>marginal_prob_std(t)</code> both sets the scale of the denoising target and rescales the network output in <code>forward</code>. The attribute embedding <code>y_embed</code> is the context argument of <code>SpatialTransformer</code>, so the same weights denoise under different conditions. Classifier-free guidance at sample time is two evaluations of that UNet, one with a real index and one with the padding index, mixed by <code>guidance_scale</code> the way <a href="https://github.com/artinte/deep-learning/blob/develop/06_diffusion/4_scratch/pipe_simplified.py">pipe_simplified.py</a> mixes its two text embeddings.</p>
+
+                <div class="navigation">
+                    <a href="diffusion_math.html">Prev: 6.3 Mathematical Foundation</a>
+                    <a href="dd_prob_model.html">Next: 6.5 Diffusion Probability Model</a>
+                </div>
+            </main>
+
+            <aside class="col-md-2 right-sidebar">
+                <h5><a href="index.html#section6">Diffusion Model</a></h5>
+                <ul id="dynamic-sidebar" class="nav flex-column">
+                </ul>
+            </aside>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script type="text/javascript" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="article_script.js"></script>
+    <script>
+        hljs.highlightAll();
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="laptop_coding_48.png" type="image/png">
+    <title>ONNX</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" rel="stylesheet">
+    <link href="article_style.css" rel="stylesheet">
+</head>
+
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <nav class="col-md-2 left-sidebar">
+
+            </nav>
+
+            <main class="col-md-8 content">
+                <h2 class="custom-title">12.1 ONNX</h2>
+                <p class="title-subtext"><a href="https://onnx.ai/">ONNX</a> : Open Neural Network Exchange</p>
+                <p style="color: #a0a0a0;">Created Date: 2025-06-26</p>
+
+                <p>ONNX is an open format built to represent machine learning models. ONNX defines a common set of operators - the building blocks of machine learning and deep learning models - and a common file format to enable AI developers to use models with a variety of frameworks, tools, runtimes, and compilers.</p>
+
+                <h3>12.1.1 Build Model</h3>
+                <p>Building an ONNX model primarily involves defining a computational graph using ONNX operators and then serializing it into the ONNX format. While you typically train a model in a framework like PyTorch or TensorFlow and then export it to ONNX, you can also construct an ONNX graph directly using the onnx Python library.</p>
+
+                <h4>12.1.1.1 Construct Directly</h4>
+
+                <p>Here's how you can conceptualize building an ONNX model:</p>
+                <ol>
+                    <li>
+                        <p>Define the Computational Graph:</p>
+                        <ul class="with-bullets>
+                            <li><p>An ONNX model is essentially a graph of interconnected nodes, where each node represents an operation (e.g., Conv, Relu, MatMul, Add).</p></li>
+                            <li><p>You define the inputs and outputs of the graph using make_tensor_value_info, specifying their names, data types, and shapes.</p></li>
+                            <li><p>You create each operation node using make_node, providing the operator type, its input names, and its output names.</p></li>
+                        </ul>
+                    </li>
+                    <li>
+                        <p>Assemble the Graph:The individual nodes are then combined into a complete graph using make_graph. This function takes a list of nodes, the graph's name, and the input/output definitions.</p>
+                    </li>
+                    <li>
+                        <p>Create the Model: Finally, the graph is wrapped into an ONNX model object using make_model. This function also allows you to add metadata like the model's version, author, and documentation.</p>
+                    </li>
+                </ol>
+
+                <pre><code>import onnx
+from onnx import helper
+from onnx import TensorProto
+
+# 1. Define inputs and outputs
+X = helper.make_tensor_value_info('X', TensorProto.FLOAT, [None, 3, 224, 224]) # Input tensor
+Y = helper.make_tensor_value_info('Y', TensorProto.FLOAT, [None, 10]) # Output tensor
+
+# 2. Define nodes (example: a simple linear layer)
+# Node for matrix multiplication
+node_matmul = helper.make_node(
+    'MatMul',
+    inputs=['X', 'W'], # Assume 'W' is another input or an initializer
+    outputs=['Z']
+)
+# Node for addition (bias)
+node_add = helper.make_node(
+    'Add',
+    inputs=['Z', 'B'], # Assume 'B' is another input or an initializer
+    outputs=['Y']
+)
+
+# 3. Assemble the graph
+graph_def = helper.make_graph(
+    [node_matmul, node_add],
+    'simple_linear_model',
+    [X, helper.make_tensor_value_info('W', TensorProto.FLOAT, [3*224*224, 10]), helper.make_tensor_value_info('B', TensorProto.FLOAT, [10])], # Include weights/bias as inputs for simplicity
+    [Y]
+)
+
+# 4. Create the model
+model_def = helper.make_model(graph_def, producer_name='my_producer')
+
+# Save the model
+# onnx.save(model_def, "my_model.onnx")</code></pre>
+
+
+                <h3>12.1.2 Export to ONNX Format</h3>
+                <p>After the flower network finishes its 100 training epochs, <a href="https://github.com/artinte/deep-learning/blob/develop/12_deploy/1_onnx/flower_conv_mlp.py">flower_conv_mlp.py</a> moves <code>model_sm</code> to CPU and switches it to <code>eval</code>. <code>model_sm</code> is a <code>convmlp_s</code> classifier whose class count comes from <code>cat_to_name.json</code>.</p>
+                <p><code>torch.onnx.export</code> traces a dummy batch of shape <code>(1, 3, 150, 150)</code>, matching <code>img_size</code>. The file written is <code>flower_conv_mlp.onnx</code>, with input name <code>input</code>, output name <code>output</code>, constant folding on, parameters included, and opset 18.</p>
+                <p>A second export lives in <a href="https://github.com/artinte/deep-learning/blob/develop/05_transformer/3_transformer_api/language_model/project_word_language_model.py">project_word_language_model.py</a>. Passing <code>--onnx-export</code> traces that language model on a dummy token sequence plus its hidden state, which is a different graph from the flower conv net.</p>
+
+                <h3>12.1.3 Inference using ONNX</h3>
+                <p>The flower script scores images before the export, and it scores them with PyTorch. It <code>torch.save</code>s the whole module to <code>flower_conv_mlp.pth</code>, loads that file back, and runs three sample photos from class folders <code>54</code>, <code>43</code>, and <code>32</code> through <code>transform_val</code>.</p>
+                <p>ONNX inference would load <code>flower_conv_mlp.onnx</code> in a runtime, bind a float tensor to the name <code>input</code> with the traced shape, and read the logits named <code>output</code>. <a href="https://github.com/artinte/deep-learning/blob/develop/12_deploy/1_onnx/flower_conv_mlp.py">flower_conv_mlp.py</a> returns after <code>torch.onnx.export</code>. No <code>InferenceSession</code> appears anywhere in the repo, so there is no numeric comparison between the ONNX graph and the <code>.pth</code> module.</p>
+
+                <h3>12.1.4 Export to Another Framework</h3>
+                <p>An ONNX file is a graph of standard ops plus the trained initializers, so another framework can rebuild the same conv net from the file alone. The direct-construction listing above is that graph spelled by hand: tensor value infos, <code>MatMul</code> and <code>Add</code> nodes, <code>make_graph</code>, and <code>make_model</code>.</p>
+                <p><a href="https://github.com/artinte/deep-learning/blob/develop/12_deploy/1_onnx/flower_conv_mlp.py">flower_conv_mlp.py</a> produces the PyTorch side of the handoff and stops at <code>flower_conv_mlp.onnx</code>. It does not import that file into TensorFlow or any other training framework. The artifacts it does leave are the trained <code>convmlp_s</code> weights, the <code>.pth</code> snapshot, and one named-input ONNX graph.</p>
+
+                <div class="navigation">
+                    <a href="dispatcher.html">Prev: 11.5 Dispatcher</a>
+                    <a href="execu_torch.html">Next: 12.2 ExecuTorch</a>
+                </div>
+            </main>
+
+            <aside class="col-md-2 right-sidebar">
+                <h5><a href="index.html#section12">Deploying Models</a></h5>
+                <ul id="dynamic-sidebar" class="nav flex-column">
+                </ul>
+            </aside>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script type="text/javascript" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="article_script.js"></script>
+    <script>
+        hljs.highlightAll();
+    </script>
+</body>
+
+</html>

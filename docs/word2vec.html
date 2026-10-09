@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="laptop_coding_48.png" type="image/png">
+    <title>Word2Vec</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" rel="stylesheet">
+    <link href="article_style.css" rel="stylesheet">
+</head>
+
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <nav class="col-md-2 left-sidebar">
+
+            </nav>
+
+            <main class="col-md-8 content">
+                <h2 class="custom-title">4.3 Word2Vec</h2>
+                <p class="title-subtext">Implement a skip-gram <a href="https://www.tensorflow.org/text/tutorials/word2vec">word2vec</a> model with negative sampling from scratch!</p>
+                <p style="color: #a0a0a0;">Created Date: 2025-05-24</p>
+                <p><span class="highlight">word2vec</span> is not a singular algorithm, rather, it is a family of model architectures and optimizations that can be used to learn word embeddings from large datasets. Embeddings learned through <sapn class="highlight">word2vec</sapn> have proven to be successful on a variety of downstream natural language processing tasks.</p>
+                <p class="comment">Note: This tutorial is based on <a href="https://arxiv.org/abs/1301.3781">Efficient estimation of word representations in vector space</a> and <a href="https://arxiv.org/abs/1310.4546">Distributed representations of words and phrases and their compositionality</a>. It is not an exact implementation of the papers. Rather, it is intended to illustrate the key ideas.</p>
+                <p>These papers proposed two methods for learning representations of words:</p>
+                <ul class="with-bullets">
+                    <li><p><strong>Continuous bag-of-words model</strong>: predicts the middle word based on surrounding context words. The context consists of a few words before and after the current (middle) word. This architecture is called a bag-of-words model as the order of words in the context is not important.</p></li>
+                    <li><p><strong>Continuous skip-gram model</strong>: predicts words within a certain range before and after the current word in the same sentence. A worked example of this is given below.</p></li>
+                </ul>
+                <p>We'll use the skip-gram approach in this tutorial. First, we'll explore skip-grams and other concepts using a single sentence for illustration. Next, we'll train your own word2vec model on a small dataset. This tutorial also contains code to export the trained embeddings and visualize them in the <a href="https://projector.tensorflow.org/">TensorFlow Embedding Projector</a>.</p>
+                <h3>4.3.1 Skip-gram</h3>
+                <p>While a bag-of-words model predicts a word given the neighboring context, a skip-gram model predicts the context (or neighbors) of a word, given the word itself. The model is trained on skip-grams, which are n-grams that allow tokens to be skipped (see the diagram below for an example). The context of a word can be represented through a set of skip-gram pairs of <span class="highlight">(target_word, context_word)</span> where <span class="highlight">context_word</span> appears in the neighboring context of <span class="highlight">target_word</span>.</p>
+                <p>Consider the following sentence of eight words:</p>
+                <pre><samp>The wide road shimmered in the hot sun.</samp></pre>
+                <p>The context words for each of the 8 words of this sentence are defined by a window size. The window size determines the span of words on either side of a <span class="highlight">target_word</span> that can be consider a <span class="highlight">context_word</span>. Below is a table of skip-grams for target words based on different window sizes.</p>
+                <p class="comment">Note: For this tutorial, a window size of n implies n words on each side with a total window span of \(2n + 1\) words across a word.</p>
+                <img src="res/04/word2vec_skipgram.png" alt="Skip-gram" width="600">
+                <p>The training objective of the skip-gram model is to maximize the probability of predicting context words given the target word. For a sequence of words \(w_1, w_2, \cdots , w_T\), the objective can be written as the average log probability:</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(\frac{1}{T}\sum_{t=1}^T \sum_{-c \le j \le c, j \ne 0} log(p(w_{t+j}|w_t))\)
+                </div>
+                <p>where \(c\) is the size of the training context. The basic skip-gram formulation defines this probability using the softmax function:</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \( p(w_O \mid w_I) = \frac{exp({v_{w_O}'}^{\top} v_{w_I})}{\sum_{w=1}^W exp({v_w'}^{\top} v_{w_I})} \)
+                </div>
+                <p>where \(v_w\) and \(v_w'\) are the "input" and "output" vector representations of \(w\), and \(W\) is the number of words in the vacabulary. This formulation is impractical because the cost of computing \(\nabla log(p(w_O \mid w_I))\) is proportional to \(W\), which is often large \((10^5 - 10^7)\) terms.</p>
+                <p>The noise contrastive estimation (NCE) loss function is an efficient approximation for a full softmax. With an objective to learn word embeddings instead of modeling the word distribution, the NCE loss can be simplified to use negative sampling.</p>
+                <p>The simplified negative sampling objective for a target word is to distinguish the context word from <span class="highlight">num_ns</span> negative samples drawn from noise distribution \(P_n(w)\) of words. More precisely, an efficient approximation of full softmax over the vocabulary is, for a skip-gram pair, to pose the loss for a target word as a classification problem between the context word and num_ns negative samples.</p>
+                <p>A negative sample is defined as a <span class="highlight">(target_word, context_word)</span> pair such that the <span class="highlight">context_word</span> does not appear in the <span class="highlight">window_size</span> neighborhood of the <span class="highlight">target_word</span>. For the example sentence, these are a few potential negative samples (when <span class="highlight">window_size</span> is 2).</p>
+                <pre><samp>(hot, shimmered)
+(wide, hot)
+(wide, sun)</samp></pre>
+                <p>In the next section, you'll generate skip-grams and negative samples for a single sentence. You'll also learn about subsampling techniques and train a classification model for positive and negative training examples later in the tutorial.</p>
+
+                <h3>4.3.2 Setup</h3>
+                <p>The single-sentence walkthrough is <a href="https://github.com/artinte/deep-learning/blob/develop/04_rnn/3_word2vec/simple_vectorize.py">simple_vectorize.py</a>. It lowercases one sentence, builds a tiny vocabulary, and emits positive skip-gram pairs. The file ends after it unpacks the first pair and sets <code>num_ns = 4</code>. Noise samples, a training tensor, and an embedding module are later steps, and they are not in this script.</p>
+
+                <h4>4.3.2.1 Vectorize an Example Sentence</h4>
+
+                <p>Consider the following sentence:</p>
+                <pre><samp>The wide road shimmered in the hot sun.</samp></pre>
+
+                <p>Create a vocabulary to save mappings from tokens to integer indices:</p>
+
+                <p>Create an inverse vocabulary to save mappings from integer indices to tokens:</p>
+                <p>That sentence is the string hardcoded in <a href="https://github.com/artinte/deep-learning/blob/develop/04_rnn/3_word2vec/simple_vectorize.py">simple_vectorize.py</a>. The script lowercases it and splits on spaces, which yields the eight tokens <code>the wide road shimmered in the hot sun</code>.</p>
+                <p>Index 0 is reserved for <code>&lt;pad&gt;</code>. Each new token takes the next integer, so the first <code>the</code> is 1 and the second <code>the</code> reuses 1. <code>inverse_vocab</code> flips the dictionary. <code>example_sequence</code> is the sentence rewritten as those integers, and the script prints the vocab, the inverse map, and that sequence.</p>
+
+                <h4>4.3.2.2 Generate Skip-grams from One Sentence</h4>
+                <p><code>skipgrams_torch</code> walks each token as a target. With <code>window_size = 2</code> it takes up to two tokens on each side, skips the target itself, and appends <code>(target, context)</code> pairs of integer ids.</p>
+                <p>Tokens at the ends have a shorter window, because the slice is clamped to the sequence. The script prints every pair twice: once as ids and once through <code>inverse_vocab</code>, so a line can be read as both <code>(wide, road)</code> and the matching integers.</p>
+
+                <h4>4.3.2.3 Negative Sampling for One Skip-gram</h4>
+                <p>Negative sampling turns one positive pair into a small classification problem. The true context word is the positive class, and <code>num_ns</code> other vocabulary ids are the noise class. <a href="https://github.com/artinte/deep-learning/blob/develop/04_rnn/3_word2vec/simple_vectorize.py">simple_vectorize.py</a> sets <code>num_ns = 4</code> and unpacks <code>positive_skip_grams[0]</code> into <code>target_word</code> and <code>context_word</code>.</p>
+                <p>A draw of those four ids should skip the true context, and it usually samples more often from frequent tokens. The script sets the count and stops. The noise ids themselves are not sampled.</p>
+
+                <h4>4.3.2.4 Construct One Training Example</h4>
+                <p>One training row is the target id, a context vector of length <code>1 + num_ns</code> (the true context, then the noise ids), and a label vector that is 1 on the true context and 0 on the noise.</p>
+                <p>The pairs printed by <a href="https://github.com/artinte/deep-learning/blob/develop/04_rnn/3_word2vec/simple_vectorize.py">simple_vectorize.py</a> are only the positive half of that row. The file never stacks the three tensors. The compiled function described in the next section is where a full example would be assembled, and that function is not in the script.</p>
+                
+                <h3>4.3.3 Compile All Steps Into One Function</h3>
+
+                <p>A large dataset means larger vocabulary with higher number of more frequent words such as stopwords. Training examples obtained from sampling commonly occurring words (such as the, is, on) don't add much useful information for the model to learn from. Mikolov et al. suggest subsampling of frequent words as a helpful practice to improve embedding quality.</p>
+
+                <p>Compile all the steps described above into a function that can be called on a list of vectorized sentences obtained from any text dataset. Notice that the sampling table is built before sampling skip-gram word pairs. You will use this function in the later sections.</p>
+
+                <h3>4.3.4 Prepare Training Data For word2vec</h3>
+
+                <p>With an understanding of how to work with one sentence for a skip-gram negative sampling based word2vec model, you can proceed to generate training examples from a larger list of sentences!</p>
+
+                <h4>4.3.4.1 Download Text Corpus</h4>
+                <p><a href="https://github.com/artinte/deep-learning/blob/develop/04_rnn/3_word2vec/simple_vectorize.py">simple_vectorize.py</a> never leaves the eight-word sentence. There is no corpus path, checksum, or cached text file in <code>04_rnn/3_word2vec</code>.</p>
+                <p>A corpus for this model is a list of sentences. Raw text already sits elsewhere in the repo: <a href="https://github.com/artinte/deep-learning/blob/develop/01_basic/3_represent/demo_text_data.py">demo_text_data.py</a> reads the movie-review files. Those strings could be split into sentences and passed through the same tokenizer. This page does not connect the two.</p>
+
+                <h4>4.3.4.2 Vectorize Sentences from the Corpus</h4>
+                <p>Vectorizing a corpus repeats the one-sentence map: one shared vocabulary, then a list of integer sequences. The script builds that map for a single sentence, where the second <code>the</code> reuses the same id, and prints <code>example_sequence</code>.</p>
+                <p>On a larger corpus the usual extra steps are to count tokens, drop the rare ones, and keep index 0 for <code>&lt;pad&gt;</code> the way the example does. None of that counting is in the file. The only sequence it produces is the eight-token example.</p>
+
+                <h4>4.3.4.3 Generate Training Examples from Sequences</h4>
+                <p>Generating a training set means running the skip-gram window and the negative-sample step on every sequence, then concatenating targets, contexts, and labels into tensors a loader can batch.</p>
+                <p><code>skipgrams_torch</code> does the window for one sequence and returns a Python list of positive pairs. The script does not allocate the label tensor or stack a batch. Section 4.3.3 describes the function that would also subsample frequent words before that concatenation, and the function is not implemented in <a href="https://github.com/artinte/deep-learning/blob/develop/04_rnn/3_word2vec/simple_vectorize.py">simple_vectorize.py</a>.</p>
+
+                <h3>4.3.5 Model and Training</h3>
+
+                <p>The word2vec model can be implemented as a classifier to distinguish between true context words from skip-grams and false context words obtained through negative sampling. You can perform a dot product multiplication between the embeddings of target and context words to obtain predictions for labels and compute the loss function against true labels in the dataset.</p>
+
+                <h4>4.3.5.1 Subclassed word2vec Model</h4>
+                <p>A skip-gram model with negative sampling is two embedding tables, one for the target id and one for the context ids. The score of a pair is their dot product, and a sigmoid of that score is the probability the pair is a real context.</p>
+                <p>No <code>nn.Module</code> for those tables lives under <code>04_rnn/3_word2vec</code>. <a href="https://github.com/artinte/deep-learning/blob/develop/04_rnn/3_word2vec/simple_vectorize.py">simple_vectorize.py</a> produces integer ids only. The forward pass those ids are waiting for is a lookup in each table and a batched dot product against the positive and negative contexts.</p>
+
+                <h4>4.3.5.2 Define Loss Function and Compile Model</h4>
+                <p>The matching loss is binary cross-entropy on the sigmoid scores, with label 1 for the true context and 0 for each negative sample. That is the same <code>BCELoss</code> shape as in the fully connected chapter, applied to a dot product of embeddings.</p>
+                <p>The word2vec directory does not construct an optimizer or a loss module, so there is no training curve from this script. The concrete <code>BCELoss</code> call in the repo is the four-element demo in <a href="https://github.com/artinte/deep-learning/blob/develop/02_dnn/5_loss_function/demo_bce_loss.py">demo_bce_loss.py</a>.</p>
+
+                
+
+                <h3>4.3.6 Embedding Lookup and Analysis</h3>
+
+                <p>This tutorial has shown you how to implement a skip-gram word2vec model with negative sampling from scratch and visualize the obtained word embeddings.</p>
+
+                <div class="navigation">
+                    <a href="word_embed.html">Prev: 4.2 Word Embeddings</a>
+                    <a href="text_generate_rnn.html">Next: 4.4 Text Generation with RNN</a>
+                </div>
+            </main>
+
+            <aside class="col-md-2 right-sidebar">
+                <h5><a href="index.html#section4">Recurrent Network</a></h5>
+                <ul id="dynamic-sidebar" class="nav flex-column">
+                </ul>
+            </aside>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script type="text/javascript" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="article_script.js"></script>
+    <script>
+        hljs.highlightAll();
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="laptop_coding_48.png" type="image/png">
+    <title>Speech Feature Extraction</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" rel="stylesheet">
+    <link href="article_style.css" rel="stylesheet">
+</head>
+
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <nav class="col-md-2 left-sidebar">
+
+            </nav>
+
+            <main class="col-md-8 content">
+                <h2 class="custom-title">8.1 Speech Feature Extraction</h2>
+                <p class="title-subtext"></p>
+                <p style="color: #a0a0a0;">Created Date: 2025-05-31</p>
+
+                <h3>8.1.1 Digit Audio</h3>
+                <p>In physics, sound is a vibration that propagates as an acoustic wave through a transmission medium such as a gas, liquid or solid. In human physiology and psychology, sound is the reception of such waves and their perception by the brain. Only acoustic waves that have frequencies lying between about 20 Hz and 20 kHz, the audio frequency range, elicit an auditory percept in humans.</p>
+
+                <p>We can vividly experience sound waves here in <a href="https://musiclab.chromeexperiments.com/Sound-Waves/">SoundWaves</a> — they’re like ripples spreading across the surface of water when a stone is thrown in, propagating outward in waves through the air.</p>
+
+                <p>The main properties of sound waves are:</p>
+                <ul class="with-bullets">
+                    <li><p><strong>Frequency</strong> is the number of complete oscillations or cycles of a sound wave that occur in one second. It's measured in Hertz (Hz).</p></li>
+                    <li><p><strong>Amplitude</strong> is the maximum displacement or distance that the particles of a medium move from their rest position as the sound wave passes through. It's often related to the pressure variations in the medium.</p></li>
+                    <li><p><strong>Wavelength</strong> \(\lambda\) is the physical distance between two consecutive identical points on a wave, such as from one compression to the next compression, or from one rarefaction to the next rarefaction.</p></li>
+                </ul>
+                <img src="res/08/sound_properties.png" alt="Sound Properties" width="600">
+                <p style="text-align: center; color: #555555;">Figure 1 - Sound Properties</p>
+
+                <div style="text-align: center;">
+                    <button 
+                        onclick="playSine()" 
+                        style="padding: 12px 24px; font-size: 16px; background-color: #4CAF50; color: white; border: none; border-radius: 6px; cursor: pointer;">
+                        Play 440Hz Sine Wave
+                    </button>
+                </div>
+
+                <h3>8.1.2 Audio Format</h3>
+                <p>Audio formats are file formats used to store digital audio data on computers and other devices. They can be broadly categorized into uncompressed, lossless, and lossy formats:</p>
+                <ul class="with-bullets">
+                    <li><p>Uncompressed formats like WAV and AIFF retain all original audio data, resulting in high-quality audio but large file sizes.</p></li>
+                    <li><p>Lossless formats like FLAC and ALAC compress audio data without losing any quality, offering a good balance between file size and quality.</p></li>
+                    <li><p>Lossy formats like MP3 and AAC achieve smaller file sizes by discarding some audio data, which can impact sound quality, especially at lower bitrates. </p></li>
+                </ul>
+                <p>Waveform Audio File Format (WAVE, or WAV due to its filename extension) is an audio file format standard for storing an audio bitstream on personal computers.</p>
+
+                <h3>8.1.3 FFmpeg Tools</h3>
+                <p>FFmpeg is the leading multimedia framework, able to decode, encode, transcode, mux, demux, stream, filter and play pretty much anything that humans and machines have created. It supports the most obscure ancient formats up to the cutting edge.</p>
+                
+                <h3>8.1.4 Feature Extractions</h3>
+                <p><code>torchaudio</code> implements feature extractions commonly used in the audio domain. They are available in <code>torchaudio.functional</code> and <code>torchaudio.transforms</code> .</p>
+
+                <p><code>functional</code> implements features as standalone functions. They are stateless.</p>
+                <p><code>transforms</code> implements features as objects, using implementations from <code>functional</code> and <code>torch.nn.Module</code> . They can be serialized using TorchScript.</p>
+
+                <p>The following diagram shows the relationship between common audio features and torchaudio APIs to generate them.</p>
+                <img src="res/08/audio_extractions.png" alt="Audio Feature Extractions" width="600">
+                <p style="text-align: center; color: #555555;">Figure 1 - Audio Feature Extractions</p>
+
+                <p>For the complete list of available features, please refer to the documentation.</p>
+
+                <h4>8.1.4.1 FFT</h4>
+                <p>FFT helps us find out which frequencies are present in a signal, and how strong they are. You feed it a time-domain signal (e.g., a waveform), and it returns a frequency-domain representation (a spectrum).</p>
+                <p>File <a>simple_fft.py</a> show a example, create a signal with two frequencies: 50Hz and 120Hz, FFT is used to extract the hidden frequency components from the time domain.</p>
+
+                <pre><code>sample_rate = 1024
+duration = 1
+t = numpy.linspace(0, duration, sample_rate, endpoint=False)
+
+freq1 = 50
+freq2 = 200
+signal = numpy.sin(2 * numpy.pi * freq1 * t) + 0.5 * numpy.sin(2 * numpy.pi * freq2 * t)
+
+fft_result = numpy.fft.fft(signal)
+freqs = numpy.fft.fftfreq(len(t), 1 / sample_rate)
+
+positive_freqs = freqs[:sample_rate // 2]
+magnitude = numpy.abs(fft_result)[:sample_rate // 2]</code></pre>
+
+                <img src="res/08/simple_fft.png" alt="Simple FFT" width="600">
+                <p style="text-align: center; color: #555555;">Figure 2 - Simple FFT</p>
+
+
+                <h4>8.1.4.1 Spectrogram</h4>
+
+                <p>To get the frequency make-up of an audio signal as it varies with time, you can use <a href="https://docs.pytorch.org/audio/stable/generated/torchaudio.transforms.Spectrogram.html#torchaudio.transforms.Spectrogram">torchaudio.transforms.Spectrogram()</a> .</p>
+
+
+                <p>The core of spectrogram computation is <strong>(short-term) Fourier transform</strong>, and the <code>n_fft</code> parameter corresponds to the \(N\) in the following definition of descrete Fourier transform:</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(X_k = \sum_{n=0}^{N-1} x_n e^{- \frac{2 \pi i}{N} nk}\)
+                </div>
+
+                <p>The value of <code>n_fft</code> determines the resolution of frequency axis. However, with the higher <code>n_fft</code> value, the energy will be distributed among more bins, so when you visualize it, it might look more blurry, even thought they are higher resolution.</p>
+
+                <h4>8.1.4.2 GriffinLim</h4>
+                <p>To recover a waveform from a spectrogram, you can use <a href="https://docs.pytorch.org/audio/stable/generated/torchaudio.transforms.GriffinLim.html#torchaudio.transforms.GriffinLim">torchaudio.transforms.GriffinLim</a> .</p>
+                <p>The same set of parameters used for spectrogram must be used.</p>
+                <p>A magnitude spectrogram has thrown the phase away, so there is no single inverse FFT that restores the wave. Griffin–Lim guesses a phase, inverts the STFT, transforms again, and writes the target magnitude back over the new one while keeping the updated phase. Each round is a projection toward a waveform whose STFT magnitude matches the spectrogram.</p>
+                <p><a href="https://github.com/artinte/deep-learning/blob/develop/08_audio/1_feature/extractions.py">extractions.py</a> builds both transforms with <code>n_fft=1024</code> so the bins line up, then plots the original clip against <code>griffin_lim(spec)</code>. The reconstruction follows the envelope of the speech and is not a sample-accurate copy, because many phases share the same magnitudes.</p>
+                <pre><code>n_fft = 1024
+spectrogram = torchaudio.transforms.Spectrogram(n_fft=n_fft)
+griffin_lim = torchaudio.transforms.GriffinLim(n_fft=n_fft)
+spec = spectrogram(SPEECH_WAVEFORM)
+reconstructed_waveform = griffin_lim(spec)</code></pre>
+
+                <h4>8.1.4.3 Mel Filter Bank</h4>
+                <p>A linear FFT spends as many bins on the top octave as on the whole band below it. Pitch perception does not: equal steps in perceived pitch are closer to equal steps in the mel scale. <a href="https://github.com/artinte/deep-learning/blob/develop/08_audio/1_feature/simple_fft.py">simple_fft.py</a> converts Hertz with</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(m = 2595 \log_{10}\!\left(1 + \frac{f}{700}\right)\)
+                </div>
+                <p><code>create_mel_filters</code> lays <code>n_mels + 2</code> points evenly from 0 mel up to the Nyquist frequency, maps them back to FFT bin indices, and fills each of the <code>n_mels</code> rows with a triangle that rises from bin \(m-1\) to \(m\) and falls from \(m\) to \(m+1\). The bank has shape <code>(n_mels, n_fft // 2 + 1)</code>. Multiplying a power spectrogram by its transpose replaces frequency bins with mel bins.</p>
+
+                <h4>8.1.4.4 MelSpectrogram</h4>
+                <p><code>compute_mel_spectrogram</code> in the same file is the whole front end. It slices the wave into 25 ms frames with a 10 ms hop, applies a Hann window, takes the power of <code>rfft</code>, projects through the filter bank, and converts to decibels with <code>20 log10</code>. The demo signal is a sum of 440 Hz, 880 Hz, and 1320 Hz at 16 kHz, so the picture should show three stable ridges.</p>
+                <p>The library path is the same pipeline as a module. <code>torchaudio.transforms.MelSpectrogram</code> is built with <code>n_fft=512</code>, <code>win_length=400</code> (25 ms at 16 kHz), <code>hop_length=160</code> (10 ms), and <code>n_mels=40</code>, then <code>AmplitudeToDB</code> turns power into a log scale for the plot.</p>
+                <pre><code>mel_transform = torchaudio.transforms.MelSpectrogram(
+    sample_rate=sample_rate,
+    n_fft=512,
+    win_length=400,
+    hop_length=160,
+    n_mels=40,
+)
+mel_spec_db = torchaudio.transforms.AmplitudeToDB()(mel_transform(signal))</code></pre>
+
+                <h4>8.1.4.5 MFCC</h4>
+                <p>Mel-frequency cepstral coefficients compress a log mel spectrogram one step further. A discrete cosine transform along the mel axis treats the spectrum's smooth shape as a short signal. The low-order coefficients keep that shape, which is most of what distinguishes vowels, and the high-order ones track fine spectral ripple that a recognizer often does not need.</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(c_n = \sum_{m=0}^{M-1} \log S_m \cos\!\left(\frac{\pi n (m + 1/2)}{M}\right)\)
+                </div>
+                <p><code>torchaudio.transforms.MFCC</code> is that stack on a waveform: a mel spectrogram, a logarithm, and the DCT. <code>n_mfcc</code> is how many coefficients are kept, often 13 plus a lifter on the higher ones. The mel spectrogram they compress is the one computed in <a href="https://github.com/artinte/deep-learning/blob/develop/08_audio/1_feature/simple_fft.py">simple_fft.py</a>.</p>
+
+                <h4>8.1.4.6 LFCC</h4>
+                <p>Linear-frequency cepstral coefficients use the same logarithm and DCT, with a filter bank spaced uniformly in Hertz instead of in mel. High-frequency bands keep their width, rather than being folded into a few wide mel filters near Nyquist. That extra resolution is why LFCCs show up in spoofing detection and in some speaker tasks where energy above a few kilohertz still carries the cue.</p>
+                <p><code>torchaudio.transforms.LFCC</code> follows the MFCC module and swaps in the linear bank. The arguments you already set for the spectrogram, <code>n_fft</code>, <code>win_length</code>, and <code>hop_length</code>, mean the same thing here. What changes is only the frequency axis of \(S_m\) inside the cosine sum above.</p>
+
+
+
+                <div class="navigation">
+                    <a href="chatbots.html">Prev: 7.4 Chatbots</a>
+                    <a href="speech_recognition.html">Next: 8.2 Automatic Speech Recognition</a>
+                </div>
+            </main>
+
+            <aside class="col-md-2 right-sidebar">
+                <h5><a href="index.html#section8">Audio</a></h5>
+                <ul id="dynamic-sidebar" class="nav flex-column">
+                </ul>
+            </aside>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script type="text/javascript" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="article_script.js"></script>
+    <script>
+        hljs.highlightAll();
+    </script>
+    <script>
+        function playSine() {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = audioCtx.createOscillator();
+        oscillator.type = 'sine';
+        oscillator.frequency.setValueAtTime(440, audioCtx.currentTime); // 440Hz
+        oscillator.connect(audioCtx.destination);
+        oscillator.start();
+        oscillator.stop(audioCtx.currentTime + 2);
+    }
+    </script>
+</body>
+
+</html>

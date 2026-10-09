@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="laptop_coding_48.png" type="image/png">
+    <title>Other Models</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" rel="stylesheet">
+    <link href="article_style.css" rel="stylesheet">
+</head>
+
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <nav class="col-md-2 left-sidebar"></nav>
+
+            <main class="col-md-8 content">
+                <h2 class="custom-title">0.3 Other Models</h2>
+                <p class="title-subtext"></p>
+                <p style="color: #a0a0a0;">Created Date: 2026-10-09</p>
+
+                <p>Four more algorithms, then the split you use to tell whether any of them worked. The code is <a href="https://github.com/artinte/deep-learning/blob/develop/00_ml/other_models.py">other_models.py</a>. Run <code>python 00_ml/other_models.py</code>. Two blobs of twenty points, one near the origin and one near \((3, 3)\), are far enough apart that each method on this page gets them right. PCA is the SVD section of <a href="linear_algebra.html">2.1 Linear Algebra</a>, not a second implementation.</p>
+
+                <h3>0.3.1 k nearest neighbors</h3>
+                <p>Store the training rows. To label a new row, find the \(k\) stored rows closest to it and take their majority. There is no \(w\) to fit. With \(k = 3\) on a held-out half of the two blobs, every neighbor vote is correct. Patrick Winston's <a href="https://www.youtube.com/watch?v=09mb78oiPkA">Introduction to Learning, Nearest Neighbors</a> is the lecture for this one.</p>
+
+                <h3>0.3.2 Gaussian naive Bayes</h3>
+                <p>Naive Bayes scores a class by how common it is times how likely the features are under that class. "Naive" means the features are treated as independent, so the joint density is a product. For a Gaussian class the log score of class \(c\) is</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(\log \pi_c - \tfrac{1}{2}\sum_j \left[\log(2\pi \sigma_{cj}^2) + \dfrac{(x_j - \mu_{cj})^2}{\sigma_{cj}^2}\right]\)
+                </div>
+                <p>The class with the larger score wins. On the two blobs the class means sit far apart, and the script's test half is perfect. Watch <a href="https://www.youtube.com/watch?v=O2L2Uv9pdDA">Naive Bayes, Clearly Explained</a>.</p>
+
+                <h3>0.3.3 Linear SVM</h3>
+                <p>A linear SVM wants every point on the correct side of a line, and it wants the correct side to start at a margin of 1. The hinge is zero when \(y\,w^\top x \ge 1\) and grows linearly when the point is inside the margin or on the wrong side. Labels here are \(\{-1,+1\}\):</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(\ell = \dfrac{1}{N}\sum_i \max(0,\ 1 - y_i w^\top x_i) + \lambda \|w\|^2\)
+                </div>
+                <p>Two hundred subgradient steps, with a column of ones for the bias, separate the blobs. Watch <a href="https://www.youtube.com/watch?v=efR1C6CvhmE">Support Vector Machines Part 1: Main Ideas</a>.</p>
+
+                <h3>0.3.4 k-means</h3>
+                <p>k-means has no labels. It guesses \(k\) centers, assigns every point to the nearest center, then moves each center to the mean of its points. Repeat. On the two blobs with \(k = 2\), each true cloud ends up almost entirely in one cluster. Watch <a href="https://www.youtube.com/watch?v=4b5d3muPQmA">StatQuest: K-means clustering</a>.</p>
+
+                <h3>0.3.5 Bias, variance, and a train/test split</h3>
+                <p>Bias is error from a model that is too stiff to follow the pattern. Variance is error from a model that follows the sample, including its accidents. A depth-2 tree on four points is the high-variance end. Ridge, which pulls weights toward zero, is a way to buy bias in exchange for less variance.</p>
+                <p>You cannot see either number on the rows you trained on. The script shuffles, keeps half for fitting kNN and naive Bayes, and scores accuracy on the other half:</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(\mathrm{accuracy} = \dfrac{1}{N}\sum_i \mathbf{1}[\hat y_i = y_i]\)
+                </div>
+                <p>Watch <a href="https://www.youtube.com/watch?v=EuBBz3bI-aA">Machine Learning Fundamentals: Bias and Variance</a>.</p>
+
+                <div class="navigation">
+                    <a href="ml_trees.html">Prev: 0.2 Trees and Ensembles</a>
+                    <a href="pytorch_install.html">Next: 1.1 Install PyTorch</a>
+                </div>
+            </main>
+
+            <aside class="col-md-2 right-sidebar">
+                <h5><a href="index.html#section00">Classical Machine Learning</a></h5>
+                <ul id="dynamic-sidebar" class="nav flex-column"></ul>
+            </aside>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script type="text/javascript" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="article_script.js"></script>
+    <script>hljs.highlightAll();</script>
+</body>
+
+</html>
