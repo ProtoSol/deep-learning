@@ -1,101 +1,353 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" href="laptop_coding_48.png" type="image/png">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" href="laptop_coding_48.png" type="image/png" />
     <title>Latent Diffusion</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" rel="stylesheet">
-    <link href="article_style.css" rel="stylesheet">
-</head>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css"
+      rel="stylesheet"
+    />
+    <link href="article_style.css" rel="stylesheet" />
+  </head>
 
-<body>
+  <body>
     <div class="container-fluid">
-        <div class="row">
-            <nav class="col-md-2 left-sidebar">
+      <div class="row">
+        <nav class="col-md-2 left-sidebar"></nav>
 
-            </nav>
+        <main class="col-md-8 content">
+          <h2 class="custom-title">6.7 Latent Diffusion</h2>
+          <p class="title-subtext">
+            High-Resolution Image Synthesis with Latent Diffusion Models
+          </p>
+          <p style="color: #a0a0a0">Created Date: 2025-06-16</p>
+          <p>
+            By decomposing the image formation process into a sequential
+            application of denoising autoencoders, diffusion models (DMs)
+            achieve state-of-the-art synthesis results on image data and beyond.
+            Additionally, their formulation allows for a guiding mechanism to
+            control the image generation process without retraining.
+          </p>
 
-            <main class="col-md-8 content">
-                <h2 class="custom-title">6.7 Latent Diffusion</h2>
-                <p class="title-subtext">High-Resolution Image Synthesis with Latent Diffusion Models</p>
-                <p style="color: #a0a0a0;">Created Date: 2025-06-16</p>
-                <p>By decomposing the image formation process into a sequential application of denoising autoencoders, diffusion models (DMs) achieve state-of-the-art synthesis results on image data and beyond. Additionally, their formulation allows for a guiding mechanism to control the image generation process without retraining.</p>
+          <p>
+            Computerphile's
+            <a href="https://www.youtube.com/watch?v=1CIpzeNxIhU"
+              >How AI Image Generators Work</a
+            >
+            is the picture of latent diffusion.
+          </p>
+          <p>
+            However, since these models typically operate directly in pixel
+            space, optimization of powerful DMs often consumes hundreds of GPU
+            days and inference is expensive due to sequential evaluations.
+          </p>
+          <p>
+            To enable DM training on limited computational resources while
+            retaining their quality and flexibility, we apply them in the latent
+            space of powerful pretrained autoencoders. In contrast to previous
+            work, training diffusion models on such a representation allows for
+            the first time to reach a near-optimal point between complexity
+            reduction and detail preservation, greatly boosting visual fidelity.
+          </p>
+          <p>
+            By introducing cross-attention layers into the model architecture,
+            we turn diffusion models into powerful and flexible generators for
+            general conditioning inputs such as text or bounding boxes and
+            high-resolution synthesis becomes possible in a convolutional
+            manner.
+          </p>
+          <p>
+            Our latent diffusion models (LDMs) achieve new state-of-the-art
+            scores for image inpainting and class-conditional image synthesis
+            and highly competitive performance on various tasks, including
+            text-to-image synthesis, unconditional image generation and
+            super-resolution, while significantly reducing computational
+            requirements compared to pixel-based DMs.
+          </p>
 
-                <p>Computerphile's <a href="https://www.youtube.com/watch?v=1CIpzeNxIhU">How AI Image Generators Work</a> is the picture of latent diffusion.</p>
-                <p>However, since these models typically operate directly in pixel space, optimization of powerful DMs often consumes hundreds of GPU days and inference is expensive due to sequential evaluations.</p>
-                <p>To enable DM training on limited computational resources while retaining their quality and flexibility, we apply them in the latent space of powerful pretrained autoencoders. In contrast to previous work, training diffusion models on such a representation allows for the first time to reach a near-optimal point between complexity reduction and detail preservation, greatly boosting visual fidelity.</p>
-                <p>By introducing cross-attention layers into the model architecture, we turn diffusion models into powerful and flexible generators for general conditioning inputs such as text or bounding boxes and high-resolution synthesis becomes possible in a convolutional manner.</p>
-                <p>Our latent diffusion models (LDMs) achieve new state-of-the-art scores for image inpainting and class-conditional image synthesis and highly competitive performance on various tasks, including text-to-image synthesis, unconditional image generation and super-resolution, while significantly reducing computational requirements compared to pixel-based DMs.</p>
+          <h3>6.7.1 Introduction</h3>
+          <p>
+            Image synthesis is one of the computer vision fields with the most
+            spectacular recent development, but also among those with the
+            greatest computational demands. Especially high-resolution synthesis
+            of complex, natural scenes is presently dominated by scaling up
+            likelihood-based models, potentially containing billions of
+            parameters in autoregressive (AR) transformers.
+          </p>
+          <p>
+            In contrast, the promising results of GANs have been revealed to be
+            mostly confined to data with comparably limited variability as their
+            adversarial learning procedure does not easily scale to modeling
+            complex, multi-modal distributions. Recently, diffusion models,
+            which are built from a hierarchy of denoising autoencoders, have
+            shown to achieve impressive results in image synthesis and beyond,
+            and define the state-of-the-art in class-conditional image synthesis
+            and super-resolution.
+          </p>
+          <p>
+            Moreover, even unconditional DMs can readily be applied to tasks
+            such as inpainting and colorization or stroke-based synthesis, in
+            contrast to other types of generative models. Being likelihood-based
+            models, they do not exhibit mode-collapse and training instabilities
+            as GANs and, by heavily exploiting parameter sharing, they can model
+            highly complex distributions of natural images without involving
+            billions of parameters as in AR models.
+          </p>
+          <p>
+            Democratizing High-Resolution Image Synthesis DMs belong to the
+            class of likelihood-based models, whose mode-covering behavior makes
+            them prone to spend excessive amounts of capacity (and thus compute
+            resources) on modeling imperceptible details of the data.
+          </p>
+          <h3>6.7.2 Related Work</h3>
+          <p>
+            Two lines of work meet in this model. The first compresses an image
+            with an autoencoder and then models the code: VQ-VAE and VQGAN
+            quantize to a grid of discrete tokens, and an autoregressive
+            transformer factors that grid in raster order. Those tokens are
+            compact, and the ordering throws away the two-dimensional layout the
+            code still has. The second line is diffusion in pixel space, as in
+            the denoising diffusion probabilistic models of the previous section
+            and the later classifier-guided samplers. Sample quality is high,
+            and every denoising step pays for a full-resolution UNet.
+          </p>
+          <p>
+            Latent diffusion keeps the denoising objective and moves it into the
+            continuous code of a perceptual autoencoder, at a mild downsample
+            where a convolutional UNet still sees spatial structure. GAN
+            generators remain the high-resolution baseline on narrower datasets;
+            they are a poor fit once the data distribution becomes as
+            multi-modal as open-domain images. The design choice relative to
+            both neighbors is where the computation goes: one autoencoder,
+            trained once, and a diffusion model that never evaluates
+            convolutions at the original pixel grid.
+          </p>
 
-                <h3>6.7.1 Introduction</h3>
-                <p>Image synthesis is one of the computer vision fields with the most spectacular recent development, but also among those with the greatest computational demands. Especially high-resolution synthesis of complex, natural scenes is presently dominated by scaling up likelihood-based models, potentially containing billions of parameters in autoregressive (AR) transformers.</p>
-                <p>In contrast, the promising results of GANs have been revealed to be mostly confined to data with comparably limited variability as their adversarial learning procedure does not easily scale to modeling complex, multi-modal distributions. Recently, diffusion models, which are built from a hierarchy of denoising autoencoders, have shown to achieve impressive results in image synthesis and beyond, and define the state-of-the-art in class-conditional image synthesis and super-resolution.</p>
-                <p>Moreover, even unconditional DMs can readily be applied to tasks such as inpainting and colorization or stroke-based synthesis, in contrast to other types of generative models. Being likelihood-based models, they do not exhibit mode-collapse and training instabilities as GANs and, by heavily exploiting parameter sharing, they can model highly complex distributions of natural images without involving billions of parameters as in AR models.</p>
-                <p>Democratizing High-Resolution Image Synthesis DMs belong to the class of likelihood-based models, whose mode-covering behavior makes them prone to spend excessive amounts of capacity (and thus compute resources) on modeling imperceptible details of the data.</p>
-                <h3>6.7.2 Related Work</h3>
-                <p>Two lines of work meet in this model. The first compresses an image with an autoencoder and then models the code: VQ-VAE and VQGAN quantize to a grid of discrete tokens, and an autoregressive transformer factors that grid in raster order. Those tokens are compact, and the ordering throws away the two-dimensional layout the code still has. The second line is diffusion in pixel space, as in the denoising diffusion probabilistic models of the previous section and the later classifier-guided samplers. Sample quality is high, and every denoising step pays for a full-resolution UNet.</p>
-                <p>Latent diffusion keeps the denoising objective and moves it into the continuous code of a perceptual autoencoder, at a mild downsample where a convolutional UNet still sees spatial structure. GAN generators remain the high-resolution baseline on narrower datasets; they are a poor fit once the data distribution becomes as multi-modal as open-domain images. The design choice relative to both neighbors is where the computation goes: one autoencoder, trained once, and a diffusion model that never evaluates convolutions at the original pixel grid.</p>
+          <h3>6.7.3 Method</h3>
+          <p>
+            To lower the computational demands of training diffusion models
+            towards high-resolution image synthesis, we observe that although
+            diffusion models allow to ignore perceptually irrelevant details by
+            undersampling the corresponding loss terms, they still require
+            costly function evaluations in pixel space, which causes huge
+            demands in computation time and energy resources.
+          </p>
+          <p>
+            We propose to circumvent this drawback by introducing an explicit
+            separation of the compressive from the generative learning phase. To
+            achieve this, we utilize an autoencoding model which learns a space
+            that is perceptually equivalent to the image space, but offers
+            significantly reduced computational complexity.
+          </p>
+          <p>
+            Such an approach offers several advantages: (i) By leaving the
+            high-dimensional image space, we obtain DMs which are
+            computationally much more efficient because sampling is performed on
+            a low-dimensional space.
+          </p>
+          <p>
+            (ii) We exploit the inductive bias of DMs inherited from their UNet
+            architecture, which makes them particularly effective for data with
+            spatial structure and therefore alleviates the need for aggressive,
+            quality-reducing compression levels as required by previous
+            approaches.
+          </p>
+          <p>
+            (iii) Finally, we obtain general-purpose compression models whose
+            latent space can be used to train multiple generative models and
+            which can also be utilized for other downstream applications such as
+            single-image CLIP-guided synthesis.
+          </p>
+          <p>
+            The text encoder in that setup is
+            <a href="https://arxiv.org/abs/2103.00020">CLIP</a> (Radford et
+            al.). It embeds an image and a caption into one space and trains by
+            matching the true pair against the other pairs in the batch.
+          </p>
 
-                <h3>6.7.3 Method</h3>
-                <p>To lower the computational demands of training diffusion models towards high-resolution image synthesis, we observe that although diffusion models allow to ignore perceptually irrelevant details by undersampling the corresponding loss terms, they still require costly function evaluations in pixel space, which causes huge demands in computation time and energy resources.</p>
-                <p>We propose to circumvent this drawback by introducing an explicit separation of the compressive from the generative learning phase. To achieve this, we utilize an autoencoding model which learns a space that is perceptually equivalent to the image space, but offers significantly reduced computational complexity.</p>
-                <p>Such an approach offers several advantages: (i) By leaving the high-dimensional image space, we obtain DMs which are computationally much more efficient because sampling is performed on a low-dimensional space.</p>
-                <p>(ii) We exploit the inductive bias of DMs inherited from their UNet architecture, which makes them particularly effective for data with spatial structure and therefore alleviates the need for aggressive, quality-reducing compression levels as required by previous approaches.</p>
-                <p>(iii) Finally, we obtain general-purpose compression models whose latent space can be used to train multiple generative models and which can also be utilized for other downstream applications such as single-image CLIP-guided synthesis.</p>
+          <h4>6.7.3.1 Perceptual Image Compression</h4>
+          <p>
+            Our perceptual compression model is based on previous work and
+            consists of an autoencoder trained by combination of a perceptual
+            loss and a patch-based adversarial objective. This ensures that the
+            reconstructions are confined to the image manifold by enforcing
+            local realism and avoids bluriness introduced by relying solely on
+            pixel-space losses such as \(L_2\) or \(L_1\) objectives.
+          </p>
+          <p>
+            More precisely, given an image \(x \in \mathbb{R}^{H \times W \times
+            3}\) in RGB space, the encoder \(\varepsilon\) encodes \(x\) into a
+            latent representation \(z = \varepsilon(x)\), and the decoder
+            \(\mathcal{D}\) reconstructs the image from the latent, giving
+            \(\tilde{x} = \mathcal{D}(z) = \mathcal{D}(\varepsilon(x))\), where
+            \(z \in \mathbb{R}^{h \times w \times c}\). Importantly, the encoder
+            downsamples the image by a factor \(f = \frac{H}{h} = \frac{W}{w}\),
+            and we investigate different downsampling factors \(f = 2^m\), with
+            \(m \in \mathbb{N}\).
+          </p>
+          <p>
+            In order to avoid arbitrarily high-variance latent spaces, we
+            experiment with two different kinds of regularizations. The first
+            variant, KL-reg., imposes a slight KL-penalty towards a standard
+            normal on the learned latent, similar to a VAE, whereas VQ-reg. uses
+            a vector quantization layer within the decoder.
+          </p>
+          <p>
+            This model can be interpreted as a VQGAN but with the quantization
+            layer absorbed by the decoder. Because our subsequent DM is designed
+            to work with the two-dimensional structure of our learned latent
+            space \(z = \varepsilon(x)\), we can use relatively mild compression
+            rates and achieve very good reconstructions.
+          </p>
+          <p>
+            This is in contrast to previous works, which relied on an arbitrary
+            1D ordering of the learned space \(z\) to model its distribution
+            autoregressively and thereby ignored much of the inherent structure
+            of \(z\). Hence, our compression model preserves details of \(x\)
+            better. The full objective and training details can be found in the
+            supplement.
+          </p>
 
-                <h4>6.7.3.1 Perceptual Image Compression</h4>
-                <p>Our perceptual compression model is based on previous work and consists of an autoencoder trained by combination of a perceptual loss and a patch-based adversarial objective. This ensures that the reconstructions are confined to the image manifold by enforcing local realism and avoids bluriness introduced by relying solely on pixel-space losses such as \(L_2\) or \(L_1\) objectives.</p>
-                <p>More precisely, given an image \(x \in \mathbb{R}^{H \times W \times 3}\) in RGB space, the encoder \(\varepsilon\) encodes \(x\) into a latent representation \(z = \varepsilon(x)\), and the decoder \(\mathcal{D}\) reconstructs the image from the latent, giving \(\tilde{x} = \mathcal{D}(z) = \mathcal{D}(\varepsilon(x))\), where \(z \in \mathbb{R}^{h \times w \times c}\). Importantly, the encoder downsamples the image by a factor \(f = \frac{H}{h} = \frac{W}{w}\), and we investigate different downsampling factors \(f = 2^m\), with \(m \in \mathbb{N}\).</p>
-                <p>In order to avoid arbitrarily high-variance latent spaces, we experiment with two different kinds of regularizations. The first variant, KL-reg., imposes a slight KL-penalty towards a standard normal on the learned latent, similar to a VAE, whereas VQ-reg. uses a vector quantization layer within the decoder.</p>
-                <p>This model can be interpreted as a VQGAN but with the quantization layer absorbed by the decoder. Because our subsequent DM is designed to work with the two-dimensional structure of our learned latent space \(z = \varepsilon(x)\),  we can use relatively mild compression rates and achieve very good reconstructions.</p>
-                <p>This is in contrast to previous works, which relied on an arbitrary 1D ordering of the learned space \(z\) to model its distribution autoregressively and thereby ignored much of the inherent structure of \(z\). Hence, our compression model preserves details of \(x\) better. The full objective and training details can be found in the supplement.</p>
+          <h4>6.7.3.2 Latent Diffusion Models</h4>
+          <p>
+            Diffusion Models are probabilistic models designed to learn a data
+            distribution \(p(x)\) by gradually denoising a normally distributed
+            variable, which corresponds to learning the reverse process of a
+            fixed Markov Chain of length \(T\).
+          </p>
+          <p>
+            For image synthesis, the most successful models rely on a reweighted
+            variant of the variational lower bound on \(p(x)\), which mirrors
+            denoising score-matching.
+          </p>
+          <p>
+            These models can be interpreted as an equally weighted sequence of
+            denoising autoencoders \({\epsilon}_{\theta} (x_t, t)\); \(t = 1,
+            \cdots , T\), which are trained to predict a denoised variant of
+            their input \(x_t\), where \(x_t\) is a noisy version of the input
+            \(x\). The corresponding objective can be simplified to:
+          </p>
 
-                <h4>6.7.3.2 Latent Diffusion Models</h4>
-                <p>Diffusion Models are probabilistic models designed to learn a data distribution \(p(x)\) by gradually denoising a normally distributed variable, which corresponds to learning the reverse process of a fixed Markov Chain of length \(T\).</p>
-                <p>For image synthesis, the most successful models rely on a reweighted variant of the variational lower bound on \(p(x)\), which mirrors denoising score-matching.</p>
-                <p>These models can be interpreted as an equally weighted sequence of denoising autoencoders \({\epsilon}_{\theta} (x_t, t)\); \(t = 1, \cdots , T\), which are trained to predict a denoised variant of their input \(x_t\), where \(x_t\) is a noisy version of the input \(x\). The corresponding objective can be simplified to:</p>
+          <p>with \(t\) uniformly sampled from \(1, \cdots , T\).</p>
 
-                <p>with \(t\) uniformly sampled from \(1, \cdots , T\).</p>
+          <p>
+            Generative Modeling of Latent Representations With our trained
+            perceptual compression models consisting of \(\mathcal{E}\) and
+            \(\mathcal{D}\), we now have access to an efficient, low-dimensional
+            latent space in which high-frequency, imperceptible details are
+            abstracted away. Compared to the high-dimensional pixel space, this
+            space is more suitable for likelihood-based generative models, as
+            they can now (i) focus on the important, semantic bits of the data
+            and (ii) train in a lower dimensional, computationally much more
+            efficient space.
+          </p>
+          <p>
+            Unlike previous work that relied on autoregressive, attention-based
+            transformer models in a highly compressed, discrete latent space, we
+            can take advantage of image-specific inductive biases that our model
+            offers. This includes the ability to build the underlying UNet
+            primarily from 2D convolutional layers, and further focusing the
+            objective on the perceptually most relevant bits using the
+            reweighted bound, which now reads:
+          </p>
 
-                <p>Generative Modeling of Latent Representations With our trained perceptual compression models consisting of \(\mathcal{E}\) and \(\mathcal{D}\), we now have access to an efficient, low-dimensional latent space in which high-frequency, imperceptible details are abstracted away. Compared to the high-dimensional pixel space, this space is more suitable for likelihood-based generative models, as they can now (i) focus on the important, semantic bits of the data and (ii) train in a lower dimensional, computationally much more efficient space.</p>
-                <p>Unlike previous work that relied on autoregressive, attention-based transformer models in a highly compressed, discrete latent space, we can take advantage of image-specific inductive biases that our model offers. This includes the ability to build the underlying UNet primarily from 2D convolutional layers, and further focusing the objective on the perceptually most relevant bits using the reweighted bound, which now reads:</p>
+          <h4>6.7.3.3 Conditioning Mechanisms</h4>
+          <p>
+            Similar to other types of generative models diffusion models are in
+            principle capable of modeling conditional distributions of the form
+            \(p(z|y)\). This can be implemented with a conditional denoising
+            autoencoder
+          </p>
+          <h3>6.7.4 Experiments</h3>
+          <p>
+            The experimental knob carried over from the method section is the
+            downsample factor \(f\). Too small and the diffusion model is still
+            doing most of its work at high resolution. Too large and the
+            autoencoder has already discarded detail the decoder cannot put
+            back. The reported sweeps place the useful operating region at
+            moderate \(f\) (around 4 to 8), for both the KL-regularized latent
+            and the vector-quantized one, which is the "near-optimal point
+            between complexity reduction and detail preservation" claimed in the
+            abstract.
+          </p>
+          <p>
+            With that autoencoder frozen, the same UNet recipe is trained for
+            unconditional synthesis, class-conditional ImageNet, inpainting,
+            super-resolution, and text-to-image. Inpainting and
+            class-conditional synthesis are where the paper reports a new state
+            of the art; text-to-image, unconditional generation, and
+            super-resolution are reported as competitive with pixel-space
+            diffusion at a much smaller training and sampling cost.
+            Cross-attention is the conditioning path shared by the class label,
+            the text tokens, and the layout cues, so those tasks differ in the
+            encoder that produces the context, not in the denoising backbone.
+          </p>
 
-                <h4>6.7.3.3 Conditioning Mechanisms</h4>
-                <p>Similar to other types of generative models diffusion models are in principle capable of modeling conditional distributions of the form \(p(z|y)\). This can be implemented with a conditional denoising autoencoder </p>
-                <h3>6.7.4 Experiments</h3>
-                <p>The experimental knob carried over from the method section is the downsample factor \(f\). Too small and the diffusion model is still doing most of its work at high resolution. Too large and the autoencoder has already discarded detail the decoder cannot put back. The reported sweeps place the useful operating region at moderate \(f\) (around 4 to 8), for both the KL-regularized latent and the vector-quantized one, which is the "near-optimal point between complexity reduction and detail preservation" claimed in the abstract.</p>
-                <p>With that autoencoder frozen, the same UNet recipe is trained for unconditional synthesis, class-conditional ImageNet, inpainting, super-resolution, and text-to-image. Inpainting and class-conditional synthesis are where the paper reports a new state of the art; text-to-image, unconditional generation, and super-resolution are reported as competitive with pixel-space diffusion at a much smaller training and sampling cost. Cross-attention is the conditioning path shared by the class label, the text tokens, and the layout cues, so those tasks differ in the encoder that produces the context, not in the denoising backbone.</p>
+          <h3>6.7.5 Limitations & Societal Impact</h3>
+          <p>
+            Fidelity is capped by the autoencoder. Any structure the encoder
+            fails to put in \(z\) is gone, and a larger \(f\) makes that gap
+            visible as soft texture and small-object errors even when the
+            diffusion model fits the latent perfectly. Sampling is cheaper than
+            a pixel-space chain and it is still sequential: one image is a long
+            series of UNet evaluations. Failure modes of the latent also pass
+            straight through to the sample, because the decoder is not asked to
+            invent detail the code never stored.
+          </p>
+          <p>
+            A model that turns a text prompt into a high-resolution image will
+            be used to depict real people and copyrighted styles. The technical
+            sections here do not prevent that. A deployed system needs a usage
+            policy, a record of the training data, and some detection or
+            watermarking story, decided outside the loss function. Lowering the
+            compute bill makes those uses easier to run, which is the societal
+            side of the same efficiency result.
+          </p>
 
-                <h3>6.7.5 Limitations & Societal Impact</h3>
-                <p>Fidelity is capped by the autoencoder. Any structure the encoder fails to put in \(z\) is gone, and a larger \(f\) makes that gap visible as soft texture and small-object errors even when the diffusion model fits the latent perfectly. Sampling is cheaper than a pixel-space chain and it is still sequential: one image is a long series of UNet evaluations. Failure modes of the latent also pass straight through to the sample, because the decoder is not asked to invent detail the code never stored.</p>
-                <p>A model that turns a text prompt into a high-resolution image will be used to depict real people and copyrighted styles. The technical sections here do not prevent that. A deployed system needs a usage policy, a record of the training data, and some detection or watermarking story, decided outside the loss function. Lowering the compute bill makes those uses easier to run, which is the societal side of the same efficiency result.</p>
+          <h3>6.7.6 Conclusion</h3>
+          <p>
+            Splitting perceptual compression from generative modeling is the
+            whole argument. An autoencoder, trained with a perceptual and
+            adversarial reconstruction loss, supplies a latent that is cheaper
+            than pixels and still spatially organized. Diffusion in that latent,
+            with cross-attention for whatever conditioning tensor is available,
+            matches the sample quality of pixel-space diffusion on the tasks
+            above and spends far less compute per step. The decoder then lifts
+            the denoised code back to an image.
+          </p>
+          <div class="navigation">
+            <a href="dd_prob_model.html"
+              >Prev: 6.5 Diffusion Probability Model</a
+            >
+            <a href="trans_transformer.html"
+              >Next: 7.1 Translate text with Transformer</a
+            >
+          </div>
+        </main>
 
-                <h3>6.7.6 Conclusion</h3>
-                <p>Splitting perceptual compression from generative modeling is the whole argument. An autoencoder, trained with a perceptual and adversarial reconstruction loss, supplies a latent that is cheaper than pixels and still spatially organized. Diffusion in that latent, with cross-attention for whatever conditioning tensor is available, matches the sample quality of pixel-space diffusion on the tasks above and spends far less compute per step. The decoder then lifts the denoised code back to an image.</p>
-                <div class="navigation">
-                    <a href="dd_prob_model.html">Prev: 6.5 Diffusion Probability Model</a>
-                    <a href="trans_transformer.html">Next: 7.1 Translate text with Transformer</a>
-                </div>
-            </main>
-
-            <aside class="col-md-2 right-sidebar">
-                <h5><a href="index.html#section6">Diffusion Model</a></h5>
-                <ul id="dynamic-sidebar" class="nav flex-column">
-                </ul>
-            </aside>
-        </div>
+        <aside class="col-md-2 right-sidebar">
+          <h5><a href="index.html#section6">Diffusion Model</a></h5>
+          <ul id="dynamic-sidebar" class="nav flex-column"></ul>
+        </aside>
+      </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script type="text/javascript" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script
+      type="text/javascript"
+      async
+      src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"
+    ></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
     <script src="article_script.js"></script>
     <script>
-        hljs.highlightAll();
+      hljs.highlightAll();
     </script>
-</body>
-
+  </body>
 </html>

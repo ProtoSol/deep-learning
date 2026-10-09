@@ -309,9 +309,11 @@
             >
             is the book for this stage. It is free to read and walks the whole
             post-training recipe: instruction tuning, the reward model,
-            rejection sampling, PPO, and direct preference optimization. The
-            pendulum script on this page is the same PPO step, with a scalar
-            reward from the environment in place of \(r_\phi\).
+            rejection sampling, PPO, and
+            <a href="https://arxiv.org/abs/2305.18290"
+              >direct preference optimization</a
+            >. The pendulum script on this page is the same PPO step, with a
+            scalar reward from the environment in place of \(r_\phi\).
           </p>
           <p>
             <a href="https://arxiv.org/abs/2307.12950">RLCD</a> (Reinforcement
@@ -321,6 +323,19 @@
             completions become a labeled pair. A preference model trained on
             those pairs supplies the reward, and PPO is the same update as
             above.
+          </p>
+          <p>
+            <a href="https://arxiv.org/abs/2305.18290"
+              >Direct Preference Optimization</a
+            >
+            writes that preference comparison as one classification loss on the
+            policy, so there is no separate reward model and no PPO loop.
+          </p>
+          <p>
+            <a href="https://arxiv.org/abs/2402.03300">GRPO</a>, from the
+            DeepSeekMath paper, keeps the preference signal and replaces the
+            learned critic with the average reward of a group of samples for the
+            same prompt.
           </p>
 
           <div class="navigation">

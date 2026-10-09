@@ -1,52 +1,144 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" href="laptop_coding_48.png" type="image/png">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" href="laptop_coding_48.png" type="image/png" />
     <title>nanoGPT</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" rel="stylesheet">
-    <link href="article_style.css" rel="stylesheet">
-</head>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css"
+      rel="stylesheet"
+    />
+    <link href="article_style.css" rel="stylesheet" />
+  </head>
 
-<body>
+  <body>
     <div class="container-fluid">
-        <div class="row">
-            <nav class="col-md-2 left-sidebar">
+      <div class="row">
+        <nav class="col-md-2 left-sidebar"></nav>
 
-            </nav>
+        <main class="col-md-8 content">
+          <h2 class="custom-title">5.5 nanoGPT</h2>
+          <p class="title-subtext">
+            The simplest, fastest repository for training/finetuning
+            medium-sized GPTs.
+          </p>
+          <p style="color: #a0a0a0">Created Date: 2025-08-12</p>
 
-            <main class="col-md-8 content">
-                <h2 class="custom-title">5.5 nanoGPT</h2>
-                <p class="title-subtext">The simplest, fastest repository for training/finetuning medium-sized GPTs.</p>
-                <p style="color: #a0a0a0;">Created Date: 2025-08-12</p>
+          <a
+            href="https://github.com/pytorch/examples/tree/main/word_language_model"
+            >Word-level Language Modeling using RNN and Transformer</a
+          >
 
-                <a href="https://github.com/pytorch/examples/tree/main/word_language_model">Word-level Language Modeling using RNN and Transformer</a>
+          <p>
+            If you're curious about how AI products like ChatGPT work, this
+            tutorial is for you. We'll start from the very beginning, and all
+            you need is a solid grasp of the Python language. Any other concepts
+            will be referenced as we go. Most importantly, we'll be studying the
+            <a href="https://github.com/artinte/deep-learning">nanoGPT</a>
+            library, an excellent resource for learning how to build large
+            language models from scratch, which was written by the renowned AI
+            educator Andrej Karpathy.
+          </p>
+          <p>
+            The one video for this page is Karpathy's
+            <a href="https://www.youtube.com/watch?v=kCc8FmEb1nY"
+              >Let's build GPT: from scratch, in code, spelled out.</a
+            >
+          </p>
+          <p>
+            nanoGPT is the simplest, fastest repository for training/finetuning
+            medium-sized GPTs. It is a rewrite of
+            <a href="https://github.com/karpathy/minGPT">minGPT</a> that
+            prioritizes teeth over education. Still under active development,
+            but currently the file
+            <span class="highlight">train.py</span> reproduces GPT-2 (124M) on
+            OpenWebText, running on a single 8XA100 40GB node in about 4 days of
+            training. The code itself is plain and readable:
+            <span class="highlight">train.py</span> is a ~300-line boilerplate
+            training loop and <span class="highlight">model.py</span> a
+            ~300-line GPT model definition, which can optionally load the GPT-2
+            weights from OpenAI. That's it.
+          </p>
 
-                <p>If you're curious about how AI products like ChatGPT work, this tutorial is for you. We'll start from the very beginning, and all you need is a solid grasp of the Python language. Any other concepts will be referenced as we go. Most importantly, we'll be studying the <a href="https://github.com/artinte/deep-learning">nanoGPT</a> library, an excellent resource for learning how to build large language models from scratch, which was written by the renowned AI educator Andrej Karpathy.</p>
-                <p>The one video for this page is Karpathy's <a href="https://www.youtube.com/watch?v=kCc8FmEb1nY">Let's build GPT: from scratch, in code, spelled out.</a></p>
-                <p>nanoGPT is the simplest, fastest repository for training/finetuning medium-sized GPTs. It is a rewrite of <a href="https://github.com/karpathy/minGPT">minGPT</a> that prioritizes teeth over education. Still under active development, but currently the file <span class="highlight">train.py</span> reproduces GPT-2 (124M) on OpenWebText, running on a single 8XA100 40GB node in about 4 days of training. The code itself is plain and readable: <span class="highlight">train.py</span> is a ~300-line boilerplate training loop and <span class="highlight">model.py</span> a ~300-line GPT model definition, which can optionally load the GPT-2 weights from OpenAI. That's it.</p>
+          <img
+            src="res/05/nanogpt.jpg"
+            alt="The Different Between nanoGPT and ChatGPT"
+            width="600"
+          />
+          <p style="text-align: center; color: #555555">
+            Figure 1 - The Different Between nanoGPT and ChatGPT
+          </p>
 
-                <img src="res/05/nanogpt.jpg" alt="The Different Between nanoGPT and ChatGPT" width="600">
-                <p style="text-align: center; color: #555555;">Figure 1 - The Different Between nanoGPT and ChatGPT</p>
+          <p>
+            The tutorial is split into two phases. In the first phase, we'll
+            write a character-level generative model from scratch, using
+            Shakespeare's complete works as our training data. This will result
+            in a model that can write in the style of Shakespeare. The second
+            phase involves running a pre-trained GPT model. We won't train it
+            ourselves, as that's too computationally expensive for a personal
+            computer. Instead, we'll download its pre-trained parameters to run
+            inference, and we'll also have the option to finetune it.
+          </p>
 
-                <p>The tutorial is split into two phases. In the first phase, we'll write a character-level generative model from scratch, using Shakespeare's complete works as our training data. This will result in a model that can write in the style of Shakespeare. The second phase involves running a pre-trained GPT model. We won't train it ourselves, as that's too computationally expensive for a personal computer. Instead, we'll download its pre-trained parameters to run inference, and we'll also have the option to finetune it.</p>
+          <h3>5.5.1 Character-Level GPT</h3>
+          <p>
+            If you are not a deep learning professional and you just want to
+            feel the magic and get your feet wet, the fastest way to get started
+            is to train a character-level GPT on the works of Shakespeare.
+          </p>
 
-                <h3>5.5.1 Character-Level GPT</h3>
-                <p>If you are not a deep learning professional and you just want to feel the magic and get your feet wet, the fastest way to get started is to train a character-level GPT on the works of Shakespeare.</p>
-
-                <h4>5.5.1.1 Shakespeare Dataset</h4>
-                <p><a href="https://en.wikipedia.org/wiki/William_Shakespeare">William Shakespeare</a> was an English playwright, poet and actor. He is widely regarded as the greatest writer in the English language and the world's pre-eminent dramatist.</p>
-                <p>The training <a href="https://raw.githubusercontent.com/karpathy/char-rnn/master/data/tinyshakespeare/input.txt">text</a> is a collection of excerpts from several of Shakespeare's classic plays, mainly including the following works:</p>
-                <ul class="with-bullets">
-                    <li><p>Coriolanus: Accounting for the largest proportion, it presents the complete tragic arc of the protagonist Caius Marcius (later known as Coriolanus) – from a Roman hero to being exiled, eventually allying with former enemies, and finally abandoning his revenge due to his mother's persuasion. It involves class conflicts, personal honor, and power struggles.</p></li>
-                    <li><p>Richard III: It tells the story of Richard III's conspiracies and rule, including his usurpation of the throne, elimination of political opponents, and eventual downfall, demonstrating the desire for power and the distortion of human nature.</p></li>
-                    <li><p>Richard II: Centering on the overthrow of Richard II by Henry Bolingbroke (later Henry IV), it explores the themes of the legitimacy of royal power and betrayal.</p></li>
-                </ul>
-                <p>Here is a small excerpt from Coriolanus:</p>
-                <pre><samp>First Citizen:
+          <h4>5.5.1.1 Shakespeare Dataset</h4>
+          <p>
+            <a href="https://en.wikipedia.org/wiki/William_Shakespeare"
+              >William Shakespeare</a
+            >
+            was an English playwright, poet and actor. He is widely regarded as
+            the greatest writer in the English language and the world's
+            pre-eminent dramatist.
+          </p>
+          <p>
+            The training
+            <a
+              href="https://raw.githubusercontent.com/karpathy/char-rnn/master/data/tinyshakespeare/input.txt"
+              >text</a
+            >
+            is a collection of excerpts from several of Shakespeare's classic
+            plays, mainly including the following works:
+          </p>
+          <ul class="with-bullets">
+            <li>
+              <p>
+                Coriolanus: Accounting for the largest proportion, it presents
+                the complete tragic arc of the protagonist Caius Marcius (later
+                known as Coriolanus) – from a Roman hero to being exiled,
+                eventually allying with former enemies, and finally abandoning
+                his revenge due to his mother's persuasion. It involves class
+                conflicts, personal honor, and power struggles.
+              </p>
+            </li>
+            <li>
+              <p>
+                Richard III: It tells the story of Richard III's conspiracies
+                and rule, including his usurpation of the throne, elimination of
+                political opponents, and eventual downfall, demonstrating the
+                desire for power and the distortion of human nature.
+              </p>
+            </li>
+            <li>
+              <p>
+                Richard II: Centering on the overthrow of Richard II by Henry
+                Bolingbroke (later Henry IV), it explores the themes of the
+                legitimacy of royal power and betrayal.
+              </p>
+            </li>
+          </ul>
+          <p>Here is a small excerpt from Coriolanus:</p>
+          <pre><samp>First Citizen:
 Before we proceed any further, hear me speak.
 
 All:
@@ -63,9 +155,22 @@ First, you know Caius Marcius is chief enemy to the people.
 
 All:
 We know't, we know't.</samp></pre>
-                
-                <p>File <a href="https://github.com/artinte/deep-learning/blob/develop/05_transformer/5_nanogpt/shakespeare_char.py">shakespeare_char.py</a> download the <a href="https://raw.githubusercontent.com/karpathy/char-rnn/master/data/tinyshakespeare/input.txt">input.txt</a> to local <span class="highlight">data/</span> directory, and read it in code:</p>
-                <pre><code>data_dir = os.path.join(os.path.dirname(__file__), "data")
+
+          <p>
+            File
+            <a
+              href="https://github.com/artinte/deep-learning/blob/develop/05_transformer/5_nanogpt/shakespeare_char.py"
+              >shakespeare_char.py</a
+            >
+            download the
+            <a
+              href="https://raw.githubusercontent.com/karpathy/char-rnn/master/data/tinyshakespeare/input.txt"
+              >input.txt</a
+            >
+            to local <span class="highlight">data/</span> directory, and read it
+            in code:
+          </p>
+          <pre><code>data_dir = os.path.join(os.path.dirname(__file__), "data")
 os.makedirs(data_dir, exist_ok=True)
 input_file_path = os.path.join(data_dir, "input.txt")
 
@@ -79,34 +184,52 @@ with open(input_file_path, "r") as f:
 
 print("Length of dataset in characters:", len(data))</code></pre>
 
-                <pre><samp>Length of dataset in characters: 1115394</samp></pre>
+          <pre><samp>Length of dataset in characters: 1115394</samp></pre>
 
-                <p>Get all the unique characters that occur in this text:</p>
-                <pre><code>chars = sorted(list(set(data)))
+          <p>Get all the unique characters that occur in this text:</p>
+          <pre><code>chars = sorted(list(set(data)))
 vocab_size = len(chars)
 print("All the unique characters:", "".join(chars))
 print(f"Vocab size: {vocab_size}")</code></pre>
 
-                <pre><samp>All the unique characters: 
+          <pre><samp>All the unique characters:
  !$&',-.3:;?ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz
 Vocab size: 65</samp></pre>
 
-                <p>The vocab <code>chars</code> contains the entire character for our generative model. Predicting the next character means computing the probability of every character in this vocabulary, and then selecting the one with the highest probability to be the predicted output.</p>
-                <a href="https://drive.google.com/file/d/1t49XsswoXnbTJt8T2MdO0ESfLLT9zseB/view?usp=sharing">
-                    <img src="res/05/next_char_pred.jpg" alt="Predict Next Word">
-                </a>
-                <p style="text-align: center; color: #555555;">Figure 2 - Predict Next Word</p>
+          <p>
+            The vocab <code>chars</code> contains the entire character for our
+            generative model. Predicting the next character means computing the
+            probability of every character in this vocabulary, and then
+            selecting the one with the highest probability to be the predicted
+            output.
+          </p>
+          <a
+            href="https://drive.google.com/file/d/1t49XsswoXnbTJt8T2MdO0ESfLLT9zseB/view?usp=sharing"
+          >
+            <img src="res/05/next_char_pred.jpg" alt="Predict Next Word" />
+          </a>
+          <p style="text-align: center; color: #555555">
+            Figure 2 - Predict Next Word
+          </p>
 
-                <pre><code># create a mapping from characters to integers
+          <pre><code># create a mapping from characters to integers
 stoi = {ch: i for i, ch in enumerate(chars)}
 itos = {i: ch for i, ch in enumerate(chars)}
 print(stoi)</code></pre>
-                
-                <pre><samp>{'\n': 0, ' ': 1, '!': 2, '$': 3, '&': 4, "'": 5, ',': 6, '-': 7, '.': 8, '3': 9, ':': 10, ';': 11, '?': 12, 'A': 13, 'B': 14, 'C': 15, 'D': 16, 'E': 17, 'F': 18, 'G': 19, 'H': 20, 'I': 21, 'J': 22, 'K': 23, 'L': 24, 'M': 25, 'N': 26, 'O': 27, 'P': 28, 'Q': 29, 'R': 30, 'S': 31, 'T': 32, 'U': 33, 'V': 34, 'W': 35, 'X': 36, 'Y': 37, 'Z': 38, 'a': 39, 'b': 40, 'c': 41, 'd': 42, 'e': 43, 'f': 44, 'g': 45, 'h': 46, 'i': 47, 'j': 48, 'k': 49, 'l': 50, 'm': 51, 'n': 52, 'o': 53, 'p': 54, 'q': 55, 'r': 56, 's': 57, 't': 58, 'u': 59, 'v': 60, 'w': 61, 'x': 62, 'y': 63, 'z': 64}</samp></pre>
 
-                <p>Why do we need to tokenize? It's because machines can only process numbers, while words and text are abstractions created by humans. Tokenization is the process of converting these human abstractions into a numerical format that a machine can understand and work with. Therefore, we've defined the <code>encode</code> and <code>decode</code> functions to act as a bridge between humans and machines:</p>
+          <pre><samp>{'\n': 0, ' ': 1, '!': 2, '$': 3, '&': 4, "'": 5, ',': 6, '-': 7, '.': 8, '3': 9, ':': 10, ';': 11, '?': 12, 'A': 13, 'B': 14, 'C': 15, 'D': 16, 'E': 17, 'F': 18, 'G': 19, 'H': 20, 'I': 21, 'J': 22, 'K': 23, 'L': 24, 'M': 25, 'N': 26, 'O': 27, 'P': 28, 'Q': 29, 'R': 30, 'S': 31, 'T': 32, 'U': 33, 'V': 34, 'W': 35, 'X': 36, 'Y': 37, 'Z': 38, 'a': 39, 'b': 40, 'c': 41, 'd': 42, 'e': 43, 'f': 44, 'g': 45, 'h': 46, 'i': 47, 'j': 48, 'k': 49, 'l': 50, 'm': 51, 'n': 52, 'o': 53, 'p': 54, 'q': 55, 'r': 56, 's': 57, 't': 58, 'u': 59, 'v': 60, 'w': 61, 'x': 62, 'y': 63, 'z': 64}</samp></pre>
 
-                <pre><code>def encode(s):
+          <p>
+            Why do we need to tokenize? It's because machines can only process
+            numbers, while words and text are abstractions created by humans.
+            Tokenization is the process of converting these human abstractions
+            into a numerical format that a machine can understand and work with.
+            Therefore, we've defined the <code>encode</code> and
+            <code>decode</code> functions to act as a bridge between humans and
+            machines:
+          </p>
+
+          <pre><code>def encode(s):
     # encoder: take a string, output a list of integers
     return [stoi[c] for c in s]
 
@@ -114,17 +237,28 @@ def decode(l):
     # decoder: take a list integers, output a string
     return ''.join([itos[i] for i in l])</code></pre>
 
-
-                <p>Convert the text <em>Hello, World!</em> into tokens. In this case, each character is a token. The <code>encode</code> function maps each character to a unique integer ID. For example, 'H' might become 12, 'e' might become 5, and so on. We can use the <code>decode</code> function to perform the reverse operation: converting a list of numerical tokens back into human-readable text.</p>
-                <pre><code>sample_text = 'Hello, World!'
+          <p>
+            Convert the text <em>Hello, World!</em> into tokens. In this case,
+            each character is a token. The <code>encode</code> function maps
+            each character to a unique integer ID. For example, 'H' might become
+            12, 'e' might become 5, and so on. We can use the
+            <code>decode</code> function to perform the reverse operation:
+            converting a list of numerical tokens back into human-readable text.
+          </p>
+          <pre><code>sample_text = 'Hello, World!'
 print('Tokenize', encode(sample_text))
 print('Decode:', decode(encode(sample_text)))</code></pre>
 
-                <pre><samp>Tokenize [20, 43, 50, 50, 53, 6, 1, 35, 53, 56, 50, 42, 2]
+          <pre><samp>Tokenize [20, 43, 50, 50, 53, 6, 1, 35, 53, 56, 50, 42, 2]
 Decode: Hello, World!</samp></pre>
 
-                <p>Use Python's slicing method to split our data into two categories: a training set (90%) and a validation set (10%). The training set is used to teach the model, while the validation set is used to evaluate its performance.</p>
-                <pre><code># create the train and val splits
+          <p>
+            Use Python's slicing method to split our data into two categories: a
+            training set (90%) and a validation set (10%). The training set is
+            used to teach the model, while the validation set is used to
+            evaluate its performance.
+          </p>
+          <pre><code># create the train and val splits
 n = len(data)
 train_data = data[:int(n*0.9)]
 val_data = data[int(n*0.9):]
@@ -135,18 +269,24 @@ val_ids = encode(val_data)
 print(f'Train has {len(train_ids)} tokens')
 print(f'Val has {len(val_ids)} tokens')</code></pre>
 
-                <pre><samp>Train has 1003854 tokens
+          <pre><samp>Train has 1003854 tokens
 Val has 111540 tokens</samp></pre>
 
-                <p>Save <code>train_ids</code> and <code>val_ids</code> in this binary format makes them much faster to load later when the training process begins:</p>
-                <pre><code># export to bin files
+          <p>
+            Save <code>train_ids</code> and <code>val_ids</code> in this binary
+            format makes them much faster to load later when the training
+            process begins:
+          </p>
+          <pre><code># export to bin files
 train_ids = numpy.array(train_ids, dtype=numpy.uint16)
 val_ids = numpy.array(val_ids, dtype=numpy.uint16)
 train_ids.tofile(os.path.join(data_dir, "train.bin"))
 val_ids.tofile(os.path.join(data_dir, "val.bin"))</code></pre>
 
-                <p>Save the meta information as well, to help us encode/decode later:</p>
-                <pre><code>meta = {
+          <p>
+            Save the meta information as well, to help us encode/decode later:
+          </p>
+          <pre><code>meta = {
     "vocab_size": vocab_size,
     "itos": itos,
     "stoi": stoi,
@@ -155,28 +295,80 @@ val_ids.tofile(os.path.join(data_dir, "val.bin"))</code></pre>
 with open(os.path.join(data_dir, "meta.pkl"), "wb") as f:
     pickle.dump(meta, f)</code></pre>
 
-                <h4>5.5.1.2 Model Architecture</h4>
+          <h4>5.5.1.2 Model Architecture</h4>
 
-                <p>This section will be quite long and requires a lot of prerequisite knowledge, such as an understanding of attention mechanisms and the Transformer architecture. If these concepts are new to you, I highly recommend reading my other detailed articles on these topics, as they are crucial for understanding GPT.</p>
-                <ul class="with-bullets">
-                    <li><p><a href="attention_mechanism.html">Attention Mechanism</a></p></li>
-                    <li><p><a href="transformer_paper.html">Attention Is All You Need</a></p></li>
-                    <li><p><a href="trans_transformer.html">Translate Text with Transformer</a></p></li>
-                </ul>
+          <p>
+            This section will be quite long and requires a lot of prerequisite
+            knowledge, such as an understanding of attention mechanisms and the
+            Transformer architecture. If these concepts are new to you, I highly
+            recommend reading my other detailed articles on these topics, as
+            they are crucial for understanding GPT.
+          </p>
+          <ul class="with-bullets">
+            <li>
+              <p><a href="attention_mechanism.html">Attention Mechanism</a></p>
+            </li>
+            <li>
+              <p>
+                <a href="transformer_paper.html">Attention Is All You Need</a>
+              </p>
+            </li>
+            <li>
+              <p>
+                <a href="trans_transformer.html"
+                  >Translate Text with Transformer</a
+                >
+              </p>
+            </li>
+          </ul>
 
-                <h5>Decoder Only</h5>
-                <p>A GPT decoder-only model is a type of Transformer architecture (Figure 4) , as the name suggests, only uses the decoder portion of the original Transformer model. Unlike the original encoder-decoder model, which has separate components for processing the input (encoder) and generating the output (decoder), a decoder-only model combines these two functions into a single unit. This architecture is particularly well-suited for text generation tasks, as it is designed to predict the next word or token in a sequence. ChatGPT and other large language models (LLMs) are prime examples of this architecture.</p>
-                <p>While removing the encoder, the cross attention in the decoder is also removed. Therefore, the architecture of GPT becomes very simple, as shown below:</p>
+          <h5>Decoder Only</h5>
+          <p>
+            A GPT decoder-only model is a type of Transformer architecture
+            (Figure 4) , as the name suggests, only uses the decoder portion of
+            the original Transformer model. Unlike the original encoder-decoder
+            model, which has separate components for processing the input
+            (encoder) and generating the output (decoder), a decoder-only model
+            combines these two functions into a single unit. This architecture
+            is particularly well-suited for text generation tasks, as it is
+            designed to predict the next word or token in a sequence. ChatGPT
+            and other large language models (LLMs) are prime examples of this
+            architecture.
+          </p>
+          <p>
+            While removing the encoder, the cross attention in the decoder is
+            also removed. Therefore, the architecture of GPT becomes very
+            simple, as shown below:
+          </p>
 
-                <a href="https://drive.google.com/file/d/1KpA0x-iUqkq1lw4KyTiTWxQvEUrzwoNT/view?usp=sharing">
-                    <img src="res/05/simple_gpt.jpg" alt="GPT Architecture">
-                </a>
-                <p style="text-align: center; color: #555555;">Figure 3 - GPT Architecture</p>
+          <a
+            href="https://drive.google.com/file/d/1KpA0x-iUqkq1lw4KyTiTWxQvEUrzwoNT/view?usp=sharing"
+          >
+            <img src="res/05/simple_gpt.jpg" alt="GPT Architecture" />
+          </a>
+          <p style="text-align: center; color: #555555">
+            Figure 3 - GPT Architecture
+          </p>
 
-                <p><a href="word_embed.html">Embedding</a> , <a href="activation_function.html">softmax</a> , <a href="network_scratch.html">linear layer</a> and <a href="res_net.html">Residual network</a> as mentioned in the previous tutorial, the attention module will be covered in the next section. File <a href="https://github.com/artinte/deep-learning/blob/develop/05_transformer/5_nanogpt/train.py">train.py</a> implements the architecture, let's break this down into a few parts.</p>
-                
-                <p>Here is a every common multilayer perceptron (MLP) , it's composed mainly of two symmetric <code>torch.nn.Linear</code> :</p>
-                <pre><code>class MLP(torch.nn.Module):
+          <p>
+            <a href="word_embed.html">Embedding</a> ,
+            <a href="activation_function.html">softmax</a> ,
+            <a href="network_scratch.html">linear layer</a> and
+            <a href="res_net.html">Residual network</a> as mentioned in the
+            previous tutorial, the attention module will be covered in the next
+            section. File
+            <a
+              href="https://github.com/artinte/deep-learning/blob/develop/05_transformer/5_nanogpt/train.py"
+              >train.py</a
+            >
+            implements the architecture, let's break this down into a few parts.
+          </p>
+
+          <p>
+            Here is a every common multilayer perceptron (MLP) , it's composed
+            mainly of two symmetric <code>torch.nn.Linear</code> :
+          </p>
+          <pre><code>class MLP(torch.nn.Module):
     def __init__(self, config):
         super().__init__()
         self.c_fc = torch.nn.Linear(config.n_embd, 4 * config.n_embd, bias=config.bias)
@@ -193,8 +385,12 @@ with open(os.path.join(data_dir, "meta.pkl"), "wb") as f:
         x = self.dropout(x)
         return x</code></pre>
 
-                <p>The <code>Block</code> is the core of GPT , mainly include a <code>CausalSelfAttention</code> and a MLP. Additionally, it includes two residual networks and <code>torch.nn.LayerNorm</code> :</p>
-                <pre><code>class Block(torch.nn.Module):
+          <p>
+            The <code>Block</code> is the core of GPT , mainly include a
+            <code>CausalSelfAttention</code> and a MLP. Additionally, it
+            includes two residual networks and <code>torch.nn.LayerNorm</code> :
+          </p>
+          <pre><code>class Block(torch.nn.Module):
     def __init__(self, config):
         super().__init__()
         self.ln_1 = torch.nn.LayerNorm(config.n_embd, bias=config.bias)
@@ -207,9 +403,12 @@ with open(os.path.join(data_dir, "meta.pkl"), "wb") as f:
         x = x + self.mlp(self.ln_2(x))
         return x</code></pre>
 
-                <h5>Parameters</h5>
-                <p>Before we dive into the deep code details, let's first go over the initial parameters of the system:</p>
-                <pre><code>@dataclass
+          <h5>Parameters</h5>
+          <p>
+            Before we dive into the deep code details, let's first go over the
+            initial parameters of the system:
+          </p>
+          <pre><code>@dataclass
 class GPTConfig:
     block_size: int = 1024
     # GPT-2 vocab_size of 50257, padded up to nearest multiple of 64 (50304) for efficiency.
@@ -221,25 +420,105 @@ class GPTConfig:
     dropout: float = 0.0
     # True: bias in Linears and LayerNorms, like GPT-2. False: a bit better and faster
     bias: bool = (True)</code></pre>
-                <p>Here are the parameters defined in the <code>GPTConfig</code> class:</p>
-                <ul class="with-bullets">
-                    <li><p><code>block_size</code> : This is the maximum context length or the number of tokens the model can look back at to make a prediction. A value of 1024 is standard for many models, but it can be adjusted depending on the task and available memory.</p></li>
-                    <li><p><code>vocab_size</code> : This specifies the size of the vocabulary, which is the total number of unique tokens the model can understand. For the character-level GPT, 128 is sufficient to cover all standard ASCII characters. GPT-2, for example, has a much larger vocabulary of 50,257.</p></li>
-                    <li><p><code>n_layer</code> : This is the number of transformer blocks (or layers) stacked on top of each other. More layers allow the model to learn more complex patterns but also increase computational cost. A value of 12 is a common choice for smaller models.</p></li>
-                    <li><p><code>n_head</code> : This is the number of attention heads in the multi-head attention mechanism. Each head can learn different aspects of the input sequence. A value of 12 means the model will split the embedding dimension into 12 parts and apply attention to each part independently.</p></li>
-                    <li><p><code>n_embd</code> : This is the size of the embedding dimension. It represents the size of the vector used to represent each token in the model. A larger embedding dimension allows for a richer representation of each token's meaning.</p></li>
-                    <li><p><code>dropout</code> : This is a regularization technique used to prevent overfitting. It sets a fraction of the layer's inputs to zero during training. A dropout rate of 0.0 means no dropout is applied.</p></li>
-                    <li><p><code>bias</code> : This is a boolean flag that determines whether a bias term is used in the linear layers and LayerNorms. The original GPT-2 used a bias, but setting it to False can sometimes lead to slightly better performance and faster training.</p></li>
-                </ul>
+          <p>
+            Here are the parameters defined in the <code>GPTConfig</code> class:
+          </p>
+          <ul class="with-bullets">
+            <li>
+              <p>
+                <code>block_size</code> : This is the maximum context length or
+                the number of tokens the model can look back at to make a
+                prediction. A value of 1024 is standard for many models, but it
+                can be adjusted depending on the task and available memory.
+              </p>
+            </li>
+            <li>
+              <p>
+                <code>vocab_size</code> : This specifies the size of the
+                vocabulary, which is the total number of unique tokens the model
+                can understand. For the character-level GPT, 128 is sufficient
+                to cover all standard ASCII characters. GPT-2, for example, has
+                a much larger vocabulary of 50,257.
+              </p>
+            </li>
+            <li>
+              <p>
+                <code>n_layer</code> : This is the number of transformer blocks
+                (or layers) stacked on top of each other. More layers allow the
+                model to learn more complex patterns but also increase
+                computational cost. A value of 12 is a common choice for smaller
+                models.
+              </p>
+            </li>
+            <li>
+              <p>
+                <code>n_head</code> : This is the number of attention heads in
+                the multi-head attention mechanism. Each head can learn
+                different aspects of the input sequence. A value of 12 means the
+                model will split the embedding dimension into 12 parts and apply
+                attention to each part independently.
+              </p>
+            </li>
+            <li>
+              <p>
+                <code>n_embd</code> : This is the size of the embedding
+                dimension. It represents the size of the vector used to
+                represent each token in the model. A larger embedding dimension
+                allows for a richer representation of each token's meaning.
+              </p>
+            </li>
+            <li>
+              <p>
+                <code>dropout</code> : This is a regularization technique used
+                to prevent overfitting. It sets a fraction of the layer's inputs
+                to zero during training. A dropout rate of 0.0 means no dropout
+                is applied.
+              </p>
+            </li>
+            <li>
+              <p>
+                <code>bias</code> : This is a boolean flag that determines
+                whether a bias term is used in the linear layers and LayerNorms.
+                The original GPT-2 used a bias, but setting it to False can
+                sometimes lead to slightly better performance and faster
+                training.
+              </p>
+            </li>
+          </ul>
 
-                <h5>Causal Self Attention</h5>
-                <p><strong>Causal self-attention</strong> is a specific type of self-attention mechanism used in transformer models, particularly for tasks like text generation. Unlike standard self-attention, which allows a token to attend to all other tokens in a sequence, causal self-attention enforces a crucial constraint: a token can only attend to the tokens that come before it in the sequence, and not to the tokens that come after.</p>
-                <img src="res/05/casual_self_attention.webp" alt="Casual Self Attention" width="550">
-                <p style="text-align: center; color: #555555;">Figure 4 - Casual Self Attention</p>
+          <h5>Causal Self Attention</h5>
+          <p>
+            <strong>Causal self-attention</strong> is a specific type of
+            self-attention mechanism used in transformer models, particularly
+            for tasks like text generation. Unlike standard self-attention,
+            which allows a token to attend to all other tokens in a sequence,
+            causal self-attention enforces a crucial constraint: a token can
+            only attend to the tokens that come before it in the sequence, and
+            not to the tokens that come after.
+          </p>
+          <img
+            src="res/05/casual_self_attention.webp"
+            alt="Casual Self Attention"
+            width="550"
+          />
+          <p style="text-align: center; color: #555555">
+            Figure 4 - Casual Self Attention
+          </p>
 
-                <p>This "causal" or "masked" approach is essential for autoregressive models like those used in large language models (LLMs) that predict the next word in a sequence. By preventing a model from "cheating" and looking ahead at future words, it ensures that the prediction for each position is based solely on the preceding context.</p>
-                <p>This is typically implemented by applying a mask to the attention weights, which effectively sets the attention scores for future tokens to negative infinity before applying the softmax function, making their contribution zero.</p>
-                <pre><code>class CausalSelfAttention(torch.nn.Module):
+          <p>
+            This "causal" or "masked" approach is essential for autoregressive
+            models like those used in large language models (LLMs) that predict
+            the next word in a sequence. By preventing a model from "cheating"
+            and looking ahead at future words, it ensures that the prediction
+            for each position is based solely on the preceding context.
+          </p>
+          <p>
+            This is typically implemented by applying a mask to the attention
+            weights, which effectively sets the attention scores for future
+            tokens to negative infinity before applying the softmax function,
+            making their contribution zero.
+          </p>
+          <pre><code>class CausalSelfAttention(torch.nn.Module):
     def __init__(self, config):
         super().__init__()
         assert config.n_embd % config.n_head == 0
@@ -308,17 +587,35 @@ class GPTConfig:
         y = self.resid_dropout(self.c_proj(y))
         return y</code></pre>
 
-                <p>We can understand the code by reading it line by line.</p>
-                <p>Define a <code>CausalSelfAttention</code> , which is subclass of <code>torch.nn.Module</code> , statement <code>assert</code> ensure the embedding dimension (n_embd) is divisible by the number of attention heads (n_head) :</p>
-                <pre><code>class CausalSelfAttention(torch.nn.Module):
+          <p>We can understand the code by reading it line by line.</p>
+          <p>
+            Define a <code>CausalSelfAttention</code> , which is subclass of
+            <code>torch.nn.Module</code> , statement <code>assert</code> ensure
+            the embedding dimension (n_embd) is divisible by the number of
+            attention heads (n_head) :
+          </p>
+          <pre><code>class CausalSelfAttention(torch.nn.Module):
     def __init__(self, config):
         super().__init__()
         assert config.n_embd % config.n_head == 0</code></pre>
-                
-                <p>Define two <code>torch.nn.Linear</code> and <code>torch.nn.Dropout</code> layer.</p>
-                <p>The first linear layer that performs the combined projection for query (Q), key (K) and value (v) vectors. Instead of having three separate linear layers for Q, K, and V, this one layer takes the input embedding <code>(config.n_embd)</code> and projects it to a size that's three times larger <code>(3 * config.n_embd)</code> .</p>
-                <p>The second linear layer takes the concatenated output from all attention heads (config.n_embd) and projects it back to the original embedding dimension.</p>
-                <pre><code># key, query, value projections for all heads, but in a batch
+
+          <p>
+            Define two <code>torch.nn.Linear</code> and
+            <code>torch.nn.Dropout</code> layer.
+          </p>
+          <p>
+            The first linear layer that performs the combined projection for
+            query (Q), key (K) and value (v) vectors. Instead of having three
+            separate linear layers for Q, K, and V, this one layer takes the
+            input embedding <code>(config.n_embd)</code> and projects it to a
+            size that's three times larger <code>(3 * config.n_embd)</code> .
+          </p>
+          <p>
+            The second linear layer takes the concatenated output from all
+            attention heads (config.n_embd) and projects it back to the original
+            embedding dimension.
+          </p>
+          <pre><code># key, query, value projections for all heads, but in a batch
 self.c_attn = torch.nn.Linear(config.n_embd, 3 * config.n_embd, bias=config.bias)
 # output projection
 self.c_proj = torch.nn.Linear(config.n_embd, config.n_embd, bias=config.bias)
@@ -326,8 +623,11 @@ self.c_proj = torch.nn.Linear(config.n_embd, config.n_embd, bias=config.bias)
 self.attn_dropout = torch.nn.Dropout(config.dropout)
 self.resid_dropout = torch.nn.Dropout(config.dropout)</code></pre>
 
-                <p>These is simple, define some variables, because version of PyTorch is great 2.0, so <code>self.flash</code> is <code>True</code> :</p>
-                <pre><code>self.n_head = config.n_head
+          <p>
+            These is simple, define some variables, because version of PyTorch
+            is great 2.0, so <code>self.flash</code> is <code>True</code> :
+          </p>
+          <pre><code>self.n_head = config.n_head
 self.n_embd = config.n_embd
 self.dropout = config.dropout
 # flash attention make GPU go brrrrr but support is only in PyTorch >= 2.0
@@ -343,18 +643,46 @@ if not self.flash:
             1, 1, config.block_size, config.block_size
         ),
     )</code></pre>
-                
-                <p>The <code>forward</code> function receives an input parameter <code>x</code> , which is a small batch of text. And then unpacks the dimensions of the input tensor x. B is the batch size, T is the sequence length, and C is the embedding dimension <code>(n_embd)</code> :</p>
-                <pre><code>def forward(self, x):
+
+          <p>
+            When <code>self.flash</code> is true, that block calls PyTorch's
+            scaled dot-product kernel instead of materializing the attention
+            matrix.
+            <a href="https://arxiv.org/abs/2205.14135">Flash Attention</a> (Tri
+            Dao et al.) is the same softmax attention, computed in tiles so the
+            \(N \times N\) matrix is never stored. The warning in the snippet is
+            the fallback that builds the mask explicitly.
+          </p>
+
+          <p>
+            The <code>forward</code> function receives an input parameter
+            <code>x</code> , which is a small batch of text. And then unpacks
+            the dimensions of the input tensor x. B is the batch size, T is the
+            sequence length, and C is the embedding dimension
+            <code>(n_embd)</code> :
+          </p>
+          <pre><code>def forward(self, x):
     # batch size, sequence length, embedding dimensionality (n_embd)
     B, T, C = x.size()</code></pre>
 
-                <p>This is where the magic of the combined projection happens. The input x is passed through the c_attn linear layer, and the resulting tensor is split into three equal parts along the last dimension, giving us the query, key, and value tensors.</p>
-                <pre><code># calculate query, key, values for all heads in batch and move head forward to be the batch dim
+          <p>
+            This is where the magic of the combined projection happens. The
+            input x is passed through the c_attn linear layer, and the resulting
+            tensor is split into three equal parts along the last dimension,
+            giving us the query, key, and value tensors.
+          </p>
+          <pre><code># calculate query, key, values for all heads in batch and move head forward to be the batch dim
 q, k, v = self.c_attn(x).split(self.n_embd, dim=2)</code></pre>
-                <p>We can write a <a href="https://github.com/artinte/deep-learning/blob/develop/05_transformer/5_nanogpt/simple_demo.py">simple demo</a> to understand above process:</p>
+          <p>
+            We can write a
+            <a
+              href="https://github.com/artinte/deep-learning/blob/develop/05_transformer/5_nanogpt/simple_demo.py"
+              >simple demo</a
+            >
+            to understand above process:
+          </p>
 
-                <pre><code>batch_size = 2
+          <pre><code>batch_size = 2
 seq_length = 3
 n_embed = 4
 
@@ -369,22 +697,30 @@ print('Query shape:', q.shape)
 print('Key shape:', k.shape)
 print('Value shape:', v.shape)</code></pre>
 
-                <pre><samp>Input tensor shape: torch.Size([2, 3, 4])
+          <pre><samp>Input tensor shape: torch.Size([2, 3, 4])
 Result shape: torch.Size([2, 3, 12])
 Query shape: torch.Size([2, 3, 4])
 Key shape: torch.Size([2, 3, 4])
 Value shape: torch.Size([2, 3, 4])</samp></pre>
 
-                <p>The q, k and v variables is the same shape of x , because we use multi-head, so q, k and v need divide <code>self.n_head</code> parts:</p>
-                <pre><code># (B, nh, T, hs)
+          <p>
+            The q, k and v variables is the same shape of x , because we use
+            multi-head, so q, k and v need divide
+            <code>self.n_head</code> parts:
+          </p>
+          <pre><code># (B, nh, T, hs)
 k = k.view(B, T, self.n_head, C // self.n_head).transpose(1, 2)
 # (B, nh, T, hs)
 q = q.view(B, T, self.n_head, C // self.n_head).transpose(1, 2)
 # (B, nh, T, hs)
 v = v.view(B, T, self.n_head, C // self.n_head).transpose(1, 2)</code></pre>
 
-                <p>After being divided, the <code>transpose</code> operation will swap the <code>n_head</code> and <code>seq_len</code> dimensions, like the demo shown:</p>
-                <pre><code>n_head = 2
+          <p>
+            After being divided, the <code>transpose</code> operation will swap
+            the <code>n_head</code> and <code>seq_len</code> dimensions, like
+            the demo shown:
+          </p>
+          <pre><code>n_head = 2
 q = q.view(batch_size, seq_length, n_head, n_embed // n_head).transpose(1, 2)
 k = k.view(batch_size, seq_length, n_head, n_embed // n_head).transpose(1, 2)
 v = v.view(batch_size, seq_length, n_head, n_embed // n_head).transpose(1, 2)
@@ -392,12 +728,17 @@ print('Query divided shape:', q.shape)
 print('Key divided shape:', k.shape)
 print('Value divied shape:', v.shape)</code></pre>
 
-                <pre><samp>Query divided shape: torch.Size([2, 2, 3, 2])
+          <pre><samp>Query divided shape: torch.Size([2, 2, 3, 2])
 Key divided shape: torch.Size([2, 2, 3, 2])
 Value divied shape: torch.Size([2, 2, 3, 2])</samp></pre>
 
-                <p>Function <code>torch.nn.functional.scaled_dot_product_attention</code> calculate the scaled dot product attention, remember we should set <code>is_causal = True</code> :</p>
-                <pre><code># causal self-attention; Self-attend: (B, nh, T, hs) x (B, nh, hs, T) -> (B, nh, T, T)
+          <p>
+            Function
+            <code>torch.nn.functional.scaled_dot_product_attention</code>
+            calculate the scaled dot product attention, remember we should set
+            <code>is_causal = True</code> :
+          </p>
+          <pre><code># causal self-attention; Self-attend: (B, nh, T, hs) x (B, nh, hs, T) -> (B, nh, T, T)
 if self.flash:
     # efficient attention using Flash Attention CUDA kernels
     y = torch.nn.functional.scaled_dot_product_attention(
@@ -409,8 +750,13 @@ if self.flash:
         is_causal=True,
     )</code></pre>
 
-                <p>From a learning perspective, we could also rewrite the <code>scaled_dot_product_attention</code> function. However, in practical applications, it's best to use PyTorch's built-in functions whenever possible.</p>
-                <pre><code>else:
+          <p>
+            From a learning perspective, we could also rewrite the
+            <code>scaled_dot_product_attention</code> function. However, in
+            practical applications, it's best to use PyTorch's built-in
+            functions whenever possible.
+          </p>
+          <pre><code>else:
     # manual implementation of attention
     att = (q @ k.transpose(-2, -1)) * (1.0 / math.sqrt(k.size(-1)))
     att = att.masked_fill(self.bias[:, :, :T, :T] == 0, float("-inf"))
@@ -418,29 +764,54 @@ if self.flash:
     att = self.attn_dropout(att)
     y = att @ v  # (B, nh, T, T) x (B, nh, T, hs) -> (B, nh, T, hs)</code></pre>
 
-                <p>Transforming the output back to the input's shape:</p>
-                <pre><code># re-assemble all head outputs side by side
+          <p>Transforming the output back to the input's shape:</p>
+          <pre><code># re-assemble all head outputs side by side
 y = y.transpose(1, 2).contiguous().view(B, T, C)</code></pre>
 
-                <p>During the entire attention mechanism process, from the input <code>x</code> to the final output <code>z</code> , we can see that their dimensions do not change. The core reason we use multi-head attention is to help lower the model's loss rate. There's a Chinese proverb that says, "Three humble cobblers are better than one master strategist," which roughly captures the same idea. It means that combining multiple, simpler perspectives can lead to a smarter, more robust solution than relying on a single, complex one.</p>
-                <pre><code>y = torch.nn.functional.scaled_dot_product_attention(q, k, v, attn_mask=None, is_causal=True)
+          <p>
+            During the entire attention mechanism process, from the input
+            <code>x</code> to the final output <code>z</code> , we can see that
+            their dimensions do not change. The core reason we use multi-head
+            attention is to help lower the model's loss rate. There's a Chinese
+            proverb that says, "Three humble cobblers are better than one master
+            strategist," which roughly captures the same idea. It means that
+            combining multiple, simpler perspectives can lead to a smarter, more
+            robust solution than relying on a single, complex one.
+          </p>
+          <pre><code>y = torch.nn.functional.scaled_dot_product_attention(q, k, v, attn_mask=None, is_causal=True)
 z = y.transpose(1, 2).contiguous().view(batch_size, seq_length, n_embed)
 print('Result of scaled_dot_product_attention:', y.shape)
 print('Re-assemble of result:', z.shape)</code></pre>
-                <pre><samp>Result of scaled_dot_product_attention: torch.Size([2, 2, 3, 2])
+          <pre><samp>Result of scaled_dot_product_attention: torch.Size([2, 2, 3, 2])
 Re-assemble of result: torch.Size([2, 3, 4])</samp></pre>
 
-                <p>The c_proj linear layer acts as an output projection for the multi-head attention mechanism. Its primary role is to integrate the different perspectives learned by each of the separate attention heads.</p>
-                <p>Even though the layer's input and output dimensions are the same, it performs a crucial, learnable linear transformation that fuses all the information from the heads into a single, cohesive representation. This step is essential for creating a meaningful output that is then ready to be used in the subsequent residual connection.</p>
-                <pre><code># output projection
+          <p>
+            The c_proj linear layer acts as an output projection for the
+            multi-head attention mechanism. Its primary role is to integrate the
+            different perspectives learned by each of the separate attention
+            heads.
+          </p>
+          <p>
+            Even though the layer's input and output dimensions are the same, it
+            performs a crucial, learnable linear transformation that fuses all
+            the information from the heads into a single, cohesive
+            representation. This step is essential for creating a meaningful
+            output that is then ready to be used in the subsequent residual
+            connection.
+          </p>
+          <pre><code># output projection
 y = self.resid_dropout(self.c_proj(y))
 return y</code></pre>
 
+          <h5>GPT Struct</h5>
+          <p>
+            Next, we will assemble the components we've discussed above to
+            create a GPT structure. The following code defines a complete GPT
+            model, which consists of token embeddings, positional encodings,
+            multiple Transformer blocks, and a final classifier head.
+          </p>
 
-                <h5>GPT Struct</h5>
-                <p>Next, we will assemble the components we've discussed above to create a GPT structure. The following code defines a complete GPT model, which consists of token embeddings, positional encodings, multiple Transformer blocks, and a final classifier head.</p>
-
-                <pre><code>class GPT(torch.nn.Module):
+          <pre><code>class GPT(torch.nn.Module):
     def __init__(self, config):
         super().__init__()
         assert config.vocab_size is not None
@@ -492,11 +863,34 @@ return y</code></pre>
         elif isinstance(module, torch.nn.Embedding):
             torch.nn.init.normal_(module.weight, mean=0.0, std=0.02)</code></pre>
 
-                <p class="comment">Instead of using a sine and cosine function for positional encoding, the GPT model uses a learnable <code>torch.nn.Embedding</code> layer because it offers greater expressive power. The <code>wpe = torch.nn.Embedding(config.block_size, config.n_embd)</code> layer creates a lookup table where the model can learn the best vector representation for each position in the sequence, up to <code>block_size</code> .</p>
+          <p class="comment">
+            Instead of using a sine and cosine function for positional encoding,
+            the GPT model uses a learnable <code>torch.nn.Embedding</code> layer
+            because it offers greater expressive power. The
+            <code
+              >wpe = torch.nn.Embedding(config.block_size, config.n_embd)</code
+            >
+            layer creates a lookup table where the model can learn the best
+            vector representation for each position in the sequence, up to
+            <code>block_size</code> .
+          </p>
+          <p>
+            Current decoder models rotate each query and key by the token's
+            position instead of adding a learned table.
+            <a href="https://arxiv.org/abs/2104.09864">RoPE</a> (Su et al.) is
+            that rotation. This file keeps GPT-2's learned embedding.
+          </p>
 
-                <p>Just like other deep learning programs, the data is processed by the GPT model to generate a result. This result is then compared with the expected value, and a loss function is used to calculate the difference between the two. In the next section <a href="nano_gpt.html#training">Training</a> , an optimizer will use this loss to update the model's parameters.</p>
-                
-                <pre><code>def forward(self, idx, targets=None):
+          <p>
+            Just like other deep learning programs, the data is processed by the
+            GPT model to generate a result. This result is then compared with
+            the expected value, and a loss function is used to calculate the
+            difference between the two. In the next section
+            <a href="nano_gpt.html#training">Training</a> , an optimizer will
+            use this loss to update the model's parameters.
+          </p>
+
+          <pre><code>def forward(self, idx, targets=None):
     device = idx.device
     b, t = idx.size()
     assert (
@@ -527,17 +921,57 @@ return y</code></pre>
 
     return logits, loss</code></pre>
 
-                <p>If we pass <code>targets</code> , we are training the model; otherwise, we are predicting (or performing inference). Let's take a detailed look at the loss calculation process in nanGPT.</p>
-                <p>In training phase, <code>logits.view(-1, logits.size(-1))</code> reshapes the model's output. The logits tensor initially has a shape of (batch_size, sequence_length, vocab_size). However, the cross_entropy function expects its input to be a 2D tensor, where each row corresponds to a single sample and each column is a class score.</p>
-                <p>The targets tensor starts with a shape of <code>(batch_size, sequence_length)</code> , holding the true token ID for each position. <code>targets.view(-1)</code> prepares the ground truth labels to match the reshaped logits.</p>
-                <p>The nanGPT codebase uses a target value of -1 for any token that should be ignored during loss calculation. This typically includes padding tokens at the end of sequences and the very first token, as there's no preceding token to predict it from.</p>
-                <p>For more information, we can look at the <a href="https://docs.pytorch.org/docs/stable/generated/torch.nn.functional.cross_entropy.html">torch.nn.functional.cross_entropy</a> documentation.</p>
+          <p>
+            If we pass <code>targets</code> , we are training the model;
+            otherwise, we are predicting (or performing inference). Let's take a
+            detailed look at the loss calculation process in nanGPT.
+          </p>
+          <p>
+            In training phase,
+            <code>logits.view(-1, logits.size(-1))</code> reshapes the model's
+            output. The logits tensor initially has a shape of (batch_size,
+            sequence_length, vocab_size). However, the cross_entropy function
+            expects its input to be a 2D tensor, where each row corresponds to a
+            single sample and each column is a class score.
+          </p>
+          <p>
+            The targets tensor starts with a shape of
+            <code>(batch_size, sequence_length)</code> , holding the true token
+            ID for each position. <code>targets.view(-1)</code> prepares the
+            ground truth labels to match the reshaped logits.
+          </p>
+          <p>
+            The nanGPT codebase uses a target value of -1 for any token that
+            should be ignored during loss calculation. This typically includes
+            padding tokens at the end of sequences and the very first token, as
+            there's no preceding token to predict it from.
+          </p>
+          <p>
+            For more information, we can look at the
+            <a
+              href="https://docs.pytorch.org/docs/stable/generated/torch.nn.functional.cross_entropy.html"
+              >torch.nn.functional.cross_entropy</a
+            >
+            documentation.
+          </p>
 
-                <h4 id="training">5.5.1.3 Training</h4>
-                <p>It's time to training character GPT, to reduce complexity, parameters are not read from the command line. First, execute the <span class="highlight">shakespeare_char.py</span> file, then executing the <span class="highlight">train.py</span> file will start the training process.</p>
-                <p>The implementation in file <a href="https://github.com/artinte/deep-learning/blob/develop/05_transformer/5_nanogpt/train.py">train.py</a> </p>
+          <h4 id="training">5.5.1.3 Training</h4>
+          <p>
+            It's time to training character GPT, to reduce complexity,
+            parameters are not read from the command line. First, execute the
+            <span class="highlight">shakespeare_char.py</span> file, then
+            executing the <span class="highlight">train.py</span> file will
+            start the training process.
+          </p>
+          <p>
+            The implementation in file
+            <a
+              href="https://github.com/artinte/deep-learning/blob/develop/05_transformer/5_nanogpt/train.py"
+              >train.py</a
+            >
+          </p>
 
-                <pre><code>def get_batch(split="train"):
+          <pre><code>def get_batch(split="train"):
     if split == "train":
         data = numpy.memmap(
             os.path.join(data_dir, "train.bin"), dtype=numpy.uint16, mode="r"
@@ -567,7 +1001,7 @@ return y</code></pre>
         x, y = x.to(device), y.to(device)
     return x, y</code></pre>
 
-                <pre><code># helps estimate an arbitrarily accurate loss over either split using many batches
+          <pre><code># helps estimate an arbitrarily accurate loss over either split using many batches
 @torch.no_grad()
 def estimate_loss(batch=200):
     out = {}
@@ -583,11 +1017,30 @@ def estimate_loss(batch=200):
     model.train()
     return out</code></pre>
 
-                <h4>5.5.1.4 Inference</h4>
+          <h4>5.5.1.4 Inference</h4>
 
-                <p><a href="https://github.com/artinte/deep-learning/blob/develop/05_transformer/5_nanogpt/sample.py">sample.py</a></p>
-                <p>A forward pass with no <code>targets</code> is inference. The loss head is skipped, and the only distribution you need is the one at the last position. <code>GPTLanguageModel.generate</code> in <a href="https://github.com/artinte/deep-learning/blob/develop/05_transformer/5_gpt/project_chinese_poetry.py">project_chinese_poetry.py</a> is that loop. The context is cropped to <code>block_size</code>, the causal mask built in <code>__init__</code> is applied, and <code>logits[:, -1, :]</code> is turned into probabilities with a softmax. One id is drawn with <code>multinomial</code>, appended, and the step repeats until the draw is <code>&lt;eos&gt;</code> or the length budget runs out.</p>
-                <pre><code>def generate(self, idx, max_new_tokens):
+          <p>
+            <a
+              href="https://github.com/artinte/deep-learning/blob/develop/05_transformer/5_nanogpt/sample.py"
+              >sample.py</a
+            >
+          </p>
+          <p>
+            A forward pass with no <code>targets</code> is inference. The loss
+            head is skipped, and the only distribution you need is the one at
+            the last position. <code>GPTLanguageModel.generate</code> in
+            <a
+              href="https://github.com/artinte/deep-learning/blob/develop/05_transformer/5_gpt/project_chinese_poetry.py"
+              >project_chinese_poetry.py</a
+            >
+            is that loop. The context is cropped to <code>block_size</code>, the
+            causal mask built in <code>__init__</code> is applied, and
+            <code>logits[:, -1, :]</code> is turned into probabilities with a
+            softmax. One id is drawn with <code>multinomial</code>, appended,
+            and the step repeats until the draw is <code>&lt;eos&gt;</code> or
+            the length budget runs out.
+          </p>
+          <pre><code>def generate(self, idx, max_new_tokens):
     for _ in range(max_new_tokens):
         idx_cond = idx[:, -Config.block_size :]
         logits, _ = self(idx_cond)
@@ -598,42 +1051,132 @@ def estimate_loss(batch=200):
             break
         idx = torch.cat((idx, idx_next), dim=1)
     return idx</code></pre>
-                <p>The script seeds the loop with the characters of <code>白日依山尽，</code>, wrapped in <code>&lt;sos&gt;</code>, and maps the returned ids back through <code>idx_to_word</code>. A Shakespeare character model does the same thing with a string prompt and an ASCII vocabulary. <a href="https://github.com/artinte/deep-learning/blob/develop/05_transformer/5_gpt/causal_self_attention.py">CausalSelfAttention</a> is the module that keeps each new token from reading positions to its right when <code>is_causal</code> is set. The mask is what makes the sample a continuation of the prompt.</p>
-                
-                <h3>5.5.2 Reproducing GPT-2</h3>
-                <p>In February 14, 2019, OpenAI release GPT-2, it was trained simply to predict the next word in 40GB of Internet text. GPT‑2 is a large transformer⁠(opens in a new window)-based language model with 1.5 billion parameters, trained on a dataset of 8 million web pages. GPT‑2 is trained with a simple objective: predict the next word, given all of the previous words within some text. The diversity of the dataset causes this simple goal to contain naturally occurring demonstrations of many tasks across diverse domains. GPT‑2 is a direct scale-up of GPT, with more than 10X the parameters and trained on more than 10X the amount of data.</p>
-                <p>You can read their paper <a href="https://cdn.openai.com/better-language-models/language_models_are_unsupervised_multitask_learners.pdf">Language Models are Unsupervised Multitask Learners</a> for more information.</p>
-                
-                
-                <h3>5.5.3 Finetuning</h3>
-                <p>The character model in the first section is trained from random weights. Finetuning starts from a checkpoint that already predicts the next token, then keeps optimizing that same cross-entropy on a narrower corpus. For the GPT-2 reproduction above, that checkpoint is the released weight file. The 124M model is a 12-layer, 12-head, 768-wide stack, the same depth and width <code>GPTConfig</code> lists, with GPT-2's vocabulary of about 50,000 tokens. The character run on this page sets <code>vocab_size</code> to 128. Continued training uses a smaller learning rate so the pretrained features move a little. A large step size on a small corpus overwrites them.</p>
-                <p><a href="https://github.com/artinte/deep-learning/blob/develop/05_transformer/5_gpt/project_chinese_poetry.py">project_chinese_poetry.py</a> is the domain half of that procedure, trained from scratch on poems. <a href="https://github.com/artinte/deep-learning/blob/develop/05_transformer/5_gpt/preprocess_chinese_poetry.py">preprocess_chinese_poetry.py</a> splits each line into characters, keeps characters that occur at least 30 times, and wraps every poem with <code>&lt;sos&gt;</code> and <code>&lt;eos&gt;</code>. The decoder-only stack uses embedding size 512, 8 heads, and 6 layers. AdamW, a one-cycle schedule, and gradient clipping at 1 train it for 10,000 steps. The padding id is <code>ignore_index</code> in the loss, so only real characters contribute. After that loop, <code>generate</code> is the adapted sampler: a short seed in the new domain, then tokens drawn until <code>&lt;eos&gt;</code>.</p>
+          <p>
+            The script seeds the loop with the characters of
+            <code>白日依山尽，</code>, wrapped in <code>&lt;sos&gt;</code>, and
+            maps the returned ids back through <code>idx_to_word</code>. A
+            Shakespeare character model does the same thing with a string prompt
+            and an ASCII vocabulary.
+            <a
+              href="https://github.com/artinte/deep-learning/blob/develop/05_transformer/5_gpt/causal_self_attention.py"
+              >CausalSelfAttention</a
+            >
+            is the module that keeps each new token from reading positions to
+            its right when <code>is_causal</code> is set. The mask is what makes
+            the sample a continuation of the prompt.
+          </p>
 
-                <h3>5.5.4 Summary</h3>
-                <p>The model in this chapter is a stack of causal self-attention blocks and position-wise MLPs. Training is next-token cross-entropy, whether the tokens are Shakespeare characters or the characters of a poem. Inference is the same forward pass with <code>targets</code> left empty, reading only the last position and sampling. Reproducing GPT-2 scales the stack and the data. Finetuning keeps the stack and continues the same loss on a smaller corpus, at a learning rate small enough to preserve the checkpoint.</p>
-                <p>The pieces you can run from this repository are <a href="https://github.com/artinte/deep-learning/blob/develop/05_transformer/5_gpt/causal_self_attention.py">causal_self_attention.py</a> for the masked attention, and <a href="https://github.com/artinte/deep-learning/blob/develop/05_transformer/5_gpt/project_chinese_poetry.py">project_chinese_poetry.py</a> for the train-then-generate loop, including the <code>&lt;eos&gt;</code> stop and the character-level vocabulary built in <a href="https://github.com/artinte/deep-learning/blob/develop/05_transformer/5_gpt/preprocess_chinese_poetry.py">preprocess_chinese_poetry.py</a>.</p>
-                
-                <div class="navigation">
-                    <a href="nn_transformer.html">Prev: 5.4 nn.Transformer</a>
-                    <a href="bert.html">Next: 5.6 BERT</a>
-                </div>
-            </main>
+          <h3>5.5.2 Reproducing GPT-2</h3>
+          <p>
+            In February 14, 2019, OpenAI release GPT-2, it was trained simply to
+            predict the next word in 40GB of Internet text. GPT‑2 is a large
+            transformer⁠(opens in a new window)-based language model with 1.5
+            billion parameters, trained on a dataset of 8 million web pages.
+            GPT‑2 is trained with a simple objective: predict the next word,
+            given all of the previous words within some text. The diversity of
+            the dataset causes this simple goal to contain naturally occurring
+            demonstrations of many tasks across diverse domains. GPT‑2 is a
+            direct scale-up of GPT, with more than 10X the parameters and
+            trained on more than 10X the amount of data.
+          </p>
+          <p>
+            You can read their paper
+            <a
+              href="https://cdn.openai.com/better-language-models/language_models_are_unsupervised_multitask_learners.pdf"
+              >Language Models are Unsupervised Multitask Learners</a
+            >
+            for more information.
+          </p>
 
-            <aside class="col-md-2 right-sidebar">
-                <h5><a href="index.html#section5">Transformer</a></h5>
-                <ul id="dynamic-sidebar" class="nav flex-column">
-                </ul>
-            </aside>
-        </div>
+          <h3>5.5.3 Finetuning</h3>
+          <p>
+            The character model in the first section is trained from random
+            weights. Finetuning starts from a checkpoint that already predicts
+            the next token, then keeps optimizing that same cross-entropy on a
+            narrower corpus. For the GPT-2 reproduction above, that checkpoint
+            is the released weight file. The 124M model is a 12-layer, 12-head,
+            768-wide stack, the same depth and width
+            <code>GPTConfig</code> lists, with GPT-2's vocabulary of about
+            50,000 tokens. The character run on this page sets
+            <code>vocab_size</code> to 128. Continued training uses a smaller
+            learning rate so the pretrained features move a little. A large step
+            size on a small corpus overwrites them.
+          </p>
+          <p>
+            <a
+              href="https://github.com/artinte/deep-learning/blob/develop/05_transformer/5_gpt/project_chinese_poetry.py"
+              >project_chinese_poetry.py</a
+            >
+            is the domain half of that procedure, trained from scratch on poems.
+            <a
+              href="https://github.com/artinte/deep-learning/blob/develop/05_transformer/5_gpt/preprocess_chinese_poetry.py"
+              >preprocess_chinese_poetry.py</a
+            >
+            splits each line into characters, keeps characters that occur at
+            least 30 times, and wraps every poem with
+            <code>&lt;sos&gt;</code> and <code>&lt;eos&gt;</code>. The
+            decoder-only stack uses embedding size 512, 8 heads, and 6 layers.
+            AdamW, a one-cycle schedule, and gradient clipping at 1 train it for
+            10,000 steps. The padding id is <code>ignore_index</code> in the
+            loss, so only real characters contribute. After that loop,
+            <code>generate</code> is the adapted sampler: a short seed in the
+            new domain, then tokens drawn until <code>&lt;eos&gt;</code>.
+          </p>
+
+          <h3>5.5.4 Summary</h3>
+          <p>
+            The model in this chapter is a stack of causal self-attention blocks
+            and position-wise MLPs. Training is next-token cross-entropy,
+            whether the tokens are Shakespeare characters or the characters of a
+            poem. Inference is the same forward pass with
+            <code>targets</code> left empty, reading only the last position and
+            sampling. Reproducing GPT-2 scales the stack and the data.
+            Finetuning keeps the stack and continues the same loss on a smaller
+            corpus, at a learning rate small enough to preserve the checkpoint.
+          </p>
+          <p>
+            The pieces you can run from this repository are
+            <a
+              href="https://github.com/artinte/deep-learning/blob/develop/05_transformer/5_gpt/causal_self_attention.py"
+              >causal_self_attention.py</a
+            >
+            for the masked attention, and
+            <a
+              href="https://github.com/artinte/deep-learning/blob/develop/05_transformer/5_gpt/project_chinese_poetry.py"
+              >project_chinese_poetry.py</a
+            >
+            for the train-then-generate loop, including the
+            <code>&lt;eos&gt;</code> stop and the character-level vocabulary
+            built in
+            <a
+              href="https://github.com/artinte/deep-learning/blob/develop/05_transformer/5_gpt/preprocess_chinese_poetry.py"
+              >preprocess_chinese_poetry.py</a
+            >.
+          </p>
+
+          <div class="navigation">
+            <a href="nn_transformer.html">Prev: 5.4 nn.Transformer</a>
+            <a href="bert.html">Next: 5.6 BERT</a>
+          </div>
+        </main>
+
+        <aside class="col-md-2 right-sidebar">
+          <h5><a href="index.html#section5">Transformer</a></h5>
+          <ul id="dynamic-sidebar" class="nav flex-column"></ul>
+        </aside>
+      </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script type="text/javascript" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script
+      type="text/javascript"
+      async
+      src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"
+    ></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
     <script src="article_script.js"></script>
     <script>
-        hljs.highlightAll();
+      hljs.highlightAll();
     </script>
-</body>
-
+  </body>
 </html>
