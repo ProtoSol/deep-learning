@@ -147,7 +147,7 @@ class OurNeuralNetwork:
     def feedforward(self, x):
         out_h1 = self.h1.feedforward(x)
         out_h2 = self.h2.feedforward(x)
-        
+
         # The inputs for o1 are the outputs from h1 and h2.
         out_o1 = self.o1.feedforward(numpy.array([out_h1, out_h2]))
         return out_o1
@@ -404,7 +404,7 @@ print(mse_loss(y_pred, y_true))</code></pre>
                 <p>We did it! This tells us that if we were to increase \(w_1\), \(L\) would increase a tiny bit as a result.</p>
 
                 <h4>1.7.3.4 Stochastic Gradient Descent</h4>
-                <p>We have all the tools we need to train a neural network now! We’ll use an optimization algorithm called <a href="">stochastic gradient descent (SGD)</a> that tells us how to change our weights and biases to minimize loss. It’s basically just this update equation:</p>
+                <p>We have all the tools we need to train a neural network now! We’ll use an optimization algorithm called <a href="optimizer.html">stochastic gradient descent (SGD)</a> that tells us how to change our weights and biases to minimize loss. It’s basically just this update equation:</p>
                 <div class="highlight-math" style="text-align: center; overflow-x: auto;">
                     \(w_1 \leftarrow w_1 - η \frac{\partial L}{\partial w_1}\)
                 </div>
@@ -422,7 +422,7 @@ print(mse_loss(y_pred, y_true))</code></pre>
                     <li><p>Go back to step 1.</p></li>
                 </ol>
                 <p>Let’s see it in action!</p>
-                
+
                 <h4>1.7.3.5 Code: A Complete Network</h4>
                 <p>It’s finally time to implement a complete neural network:</p>
                 <pre><code>class OurNeuralNetwork:
@@ -445,7 +445,7 @@ print(mse_loss(y_pred, y_true))</code></pre>
         self.b1 = rng.random()
         self.b2 = rng.random()
         self.b3 = rng.random()
-    
+
     def feedforward(self, x):
         # x is a numpy array with 2 elements.
         h1 = sigmoid(self.w1 * x[0] + self.w2 * x[1] + self.b1)
@@ -466,7 +466,7 @@ print(mse_loss(y_pred, y_true))</code></pre>
                 sum_o1 = self.w5 * h1 + self.w6 * h2 + self.b3
                 o1 = sigmoid(sum_o1)
                 y_pred = o1
-                
+
                 # Calculate partial derivatives.
                 d_l_d_ypred = -2 * (y_true - y_pred)
                 # neuron o1
@@ -483,7 +483,7 @@ print(mse_loss(y_pred, y_true))</code></pre>
                 d_h2_d_w3 = x[0] * deriv_sigmoid(sum_h2)
                 d_h2_d_w4 = x[1] * deriv_sigmoid(sum_h2)
                 d_h2_d_b2 = deriv_sigmoid(sum_h2)
-                
+
                 # Update weights and biaes.
                 # neuron h1
                 self.w1 -= learn_rate * d_l_d_ypred * d_ypred_d_h1 * d_h1_d_w1
@@ -497,12 +497,12 @@ print(mse_loss(y_pred, y_true))</code></pre>
                 self.w5 -= learn_rate * d_l_d_ypred * d_ypred_d_w5
                 self.w6 -= learn_rate * d_l_d_ypred * d_ypred_d_w6
                 self.b3 -= learn_rate * d_l_d_ypred * d_ypred_d_b3
-                
+
             if epoch % 10 == 0:
                 y_preds = numpy.apply_along_axis(self.feedforward, 1, data)
                 loss = mse_loss(y_trues, y_preds)
                 loss_list.append(loss)
-        
+
         return loss_list</code></pre>
                 <p>Our loss steadily decreases as the network learns:</p>
                 <img src="res/01/simple_network_loss.png" alt="Simple Network Loss" width="600">
@@ -549,9 +549,9 @@ for epoch in range(epochs):
 
     if epoch % 10 == 0:
         history.append(loss.item())</code></pre>
-                
+
                 <img src="res/01/simple_net_torch.png" alt="Simple Network Torch" width="600">
-                
+
                 <h3>1.7.5 Now What?</h3>
                 <p>You made it! A quick recap of what we did:</p>
                 <ul class="with-bullets">

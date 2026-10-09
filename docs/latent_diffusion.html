@@ -170,6 +170,23 @@
             al.). It embeds an image and a caption into one space and trains by
             matching the true pair against the other pairs in the batch.
           </p>
+          <p>
+            Later image-text models change that loss, or put a language model
+            on top of the vision encoder. A vision-language model reads the
+            image with a frozen encoder and lets a language model continue from
+            those tokens.
+            <a href="https://arxiv.org/abs/2303.15343">SigLIP</a> (Zhai et al.)
+            scores each image-text pair with a sigmoid, so a pair is its own
+            yes or no and the batch is not one softmax.
+            <a href="https://arxiv.org/abs/2201.12086">BLIP</a> (Li et al.)
+            trains a captioner that rewrites noisy web text and a filter that
+            drops pairs the captioner does not believe.
+            <a href="https://arxiv.org/abs/2301.12597">BLIP-2</a> freezes the
+            vision encoder and the language model and trains a small adapter
+            between them. The vision encoder in that slot is often CLIP,
+            SigLIP, or the DINO features on the
+            <a href="vision_transformer.html">Vision Transformer</a> page.
+          </p>
 
           <h4>6.7.3.1 Perceptual Image Compression</h4>
           <p>

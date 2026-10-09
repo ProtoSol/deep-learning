@@ -28,7 +28,7 @@
                 <p>Umar Jamil's <a href="https://www.youtube.com/watch?v=PXWYUTMt-AU">LoRA</a> explains the low-rank update and codes it in PyTorch.</p>
                 <p>We propose Low-Rank Adaptation, or LoRA, which freezes the pretrained model weights and injects trainable rank decomposition matrices into each layer of the Transformer architecture, greatly reducing the number of trainable parameters for downstream tasks.</p>
                 <p>Compared to GPT-3 175B fine-tuned with Adam, LoRA can reduce the number of trainable parameters by 10,000 times and the GPU memory requirement by 3 times. LoRA performs on-par or better than finetuning in model quality on RoBERTa, DeBERTa, GPT-2, and GPT-3, despite having fewer trainable parameters, a higher training throughput, and, unlike adapters, no additional inference latency.</p>
-                <p>We also provide an empirical investigation into rank-deficiency in language model adaptation, which sheds light on the efficacy of LoRA. We release a package that facilitates the integration of LoRA with PyTorch models and provide our implementations and model checkpoints for RoBERTa, DeBERTa, and GPT-2 at https://github.com/microsoft/LoRA.</p>
+                <p>We also provide an empirical investigation into rank-deficiency in language model adaptation, which sheds light on the efficacy of LoRA. We release a package that facilitates the integration of LoRA with PyTorch models and provide our implementations and model checkpoints for RoBERTa, DeBERTa, and GPT-2 at <a href="https://github.com/microsoft/LoRA">https://github.com/microsoft/LoRA</a>.</p>
 
                 <h3>13.1.1 Introduction</h3>
                 <p>Many applications in natural language processing rely on adapting one large-scale, pre-trained language model to multiple down stream applications. Such adaptation is usually done via fine-tuning, which updates all the parameters of the pre-trained model. The major downside of fine-tuning is that the new model contains as many parameters as in the original model. As larger models are trained every few months, this changes from a mere "inconvenience" for GPT-2 (Radford et al., b) or RoBERTa large (Liu et al., 2019) to a critical deployment challenge for GPT-3 (Brown et al., 2020) with 175 billion trainable parameters.</p>
@@ -48,7 +48,7 @@
                 </ul>
 
                 <p>Terminologies and Conventions We make frequent references to the Transformer architecture and use the conventional terminologies for its dimensions.</p>
-                
+
                 <h3>13.1.2 Problem Statement</h3>
                 <p>Full fine-tuning writes a new copy of every weight. For a model the size of the ones named in the introduction, one copy per task dominates disk and the cost of swapping tasks on a server.</p>
                 <p>The change that matters at adaptation time is a small update \(\Delta W\) on top of weights that already encode the language. This repo does not fine-tune a 175B model. <a href="https://github.com/artinte/deep-learning/blob/develop/13_optimize/1_lora/layers.py">layers.py</a> only stores the knobs of that update: rank <code>r</code>, scale <code>lora_alpha</code>, dropout, and whether the factors have been merged into the frozen weight.</p>
@@ -56,7 +56,7 @@
                 <h3>13.1.3 Aren't Existing Solutions Good Enough?</h3>
                 <p>Adapters insert extra layers, so every token pays more depth at inference time. Prefix and prompt methods reserve part of the context window for learned tokens, which shortens the text the model can read. Both avoid storing a full copy of the weights, and both change either latency or usable length.</p>
                 <p>The method section below keeps the update low-rank so it can be folded back into \(W\) after training, and inference then matches an ordinary fine-tuned layer. <a href="https://github.com/artinte/deep-learning/blob/develop/13_optimize/1_lora/layers.py">layers.py</a> records that plan with <code>merge_weights</code> and a <code>merged</code> flag. The matrix product itself, and any head-to-head timing against adapters, is outside the file.</p>
-                
+
                 <h3>13.1.4 Our Method</h3>
                 <p>We describe the simple design of LoRA and its practical benefits. The principles outlined here apply to any dense layers in deep learning models, though we only focus on certain weights in Transformer language models in our experiments as the motivating use case.</p>
 
@@ -67,7 +67,7 @@
                 <div>
                     \(h = W_0 x + \Delta x = W_0 x + B A x\)
                 </div>
-                
+
                 <p>We illustrate our reparametrization in Figure 1. We use a random Gaussian initialization for \(A\) and zero for B, so \(\Delta W = B A\) is zero at the beginning of training. We then scale \(\Delta W x\) by \(\frac{\alpha}{r}\), where \(\alpha\) is a constant in \(r\). When optimizing with Adam, tuning \(\alpha\) is roughly the same as tuning the learning rate if we scale the initialization appropriately.  As a result, we simply set \(\alpha\) to the first \(r\) we try and do not tune it. This scaling helps to reduce the need to retune hyperparameters when we vary \(r\) (Yang & Hu, 2021).</p>
 
                 <h5>A Generalization of Full Fine-tuning</h5>
@@ -84,7 +84,7 @@
                 <h5>Practical Benefits and Limitations</h5>
                 <p>The most significant benefit comes from the reduction in memory and storage usage. For a large Transformer trained with Adam, we reduce that VRAM usage by up to 2/3 if \(r \ll d_{model}\) as we do not need to store the optimizer states for the frozen parameters.</p>
                 <p>LoRA also has its limitations. For example, it is not straightforward to batch inputs to different tasks with different A and B in a single forward pass, if one chooses to absorb A and B into W to eliminate additional inference latency. Though it is possible to not merge the weights and dynamically choose the LoRA modules to use for samples in a batch for scenarios where latency is not critical.</p>
-                
+
                 <h3>13.1.5 Empirical Experiments</h3>
                 <p>The comparisons this chapter is aiming at pit a low-rank update against full fine-tuning on encoder models such as RoBERTa and DeBERTa, and on decoder models such as GPT-2 and GPT-3, sweeping the rank and which attention matrices are trained. Those sweeps are not rerun here.</p>
                 <p>The checked-in code stops at the scaffolding. <a href="https://github.com/artinte/deep-learning/blob/develop/13_optimize/1_lora/layers.py">layers.py</a> is a mixin that stores <code>r</code>, <code>lora_alpha</code>, an optional <code>Dropout</code> when <code>lora_dropout &gt; 0</code>, and the merge flag. <a href="https://github.com/artinte/deep-learning/blob/develop/07_text/3_lang_model/project_gemma_lora_fintune.py">project_gemma_lora_fintune.py</a> imports <code>LoraConfig</code> and <code>SFTTrainer</code> and sets <code>model_name</code> to <code>google/gemma-2b</code>. It never builds a config or starts a trainer.</p>
@@ -100,7 +100,7 @@
                 <h5>Prompt Engineering and Fine-Tuning</h5>
                 <p>Prompt engineering leaves every weight frozen and puts the task in the text: a few examples, a learned prefix of tokens, or a soft prompt trained in embedding space. The task state is tiny. The cost is context length, because those tokens occupy the window.</p>
                 <p>Fine-tuning updates weights instead, so the full context stays available for the input, and each task stores its own checkpoint. LoRA sits between the two: the base weights stay frozen, the trainable state is the factor pair, and after merging there is no extra prefix. <a href="https://github.com/artinte/deep-learning/blob/develop/13_optimize/1_lora/layers.py">layers.py</a> keeps the fields those factors need, <code>r</code> and <code>lora_alpha</code>, and it does not run either adaptation.</p>
-                
+
                 <h3>13.1.7 Understanding the Low-Rank Updates</h3>
                 <p>Section 13.1.4 writes the update as \(\Delta W = BA\) with rank \(r\) far below the layer width. The useful question is why a small \(r\) is enough: during adaptation, the change in a pretrained matrix is concentrated in a few directions.</p>
                 <p>A direct check is the spectrum of the trained product \(BA\). If the singular values drop quickly, extra rank buys little accuracy. This repo cannot draw that spectrum. <a href="https://github.com/artinte/deep-learning/blob/develop/13_optimize/1_lora/layers.py">layers.py</a> never allocates \(A\) or \(B\). It keeps <code>r</code> and <code>lora_alpha</code>, the numerator of the \(\alpha / r\) scale the method section applies to \(BAx\).</p>

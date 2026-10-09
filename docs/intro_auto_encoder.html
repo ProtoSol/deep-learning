@@ -597,6 +597,12 @@ pyplot.show()</code></pre>
             MNIST dataset. A VAE is a probabilistic take on the autoencoder, a
             model which takes high dimensional input data and compresses it into
             a smaller representation.
+            <a href="https://arxiv.org/abs/1312.6114"
+              >Auto-Encoding Variational Bayes</a
+            >
+            (Kingma and Welling) is the paper: the encoder outputs a
+            distribution, and the loss is reconstruction plus the KL term in the
+            training section below.
           </p>
           <p>
             Unlike a traditional autoencoder, which maps the input onto a latent
@@ -746,6 +752,20 @@ pyplot.show()</code></pre>
             <a href="https://arxiv.org/abs/2404.08471">V-JEPA</a> (Bardes et
             al.) does the same on video, predicting the embedding of a masked
             span of frames.
+          </p>
+
+          <h3>9.8.8 Masked Autoencoder</h3>
+          <p>
+            A masked autoencoder hides most of the patches and trains the
+            decoder to draw those pixels back in. The encoder runs only on the
+            patches that remain, which is why the pretraining is cheap, and a
+            small decoder reconstructs the hidden ones.
+            <a href="https://arxiv.org/abs/2111.06377"
+              >Masked Autoencoders Are Scalable Vision Learners</a
+            >
+            (He et al.) is that recipe on a ViT. BERT's masked tokens are the
+            same idea on words. JEPA, in the previous section, predicts the
+            embedding of the hidden part and never draws the pixels.
           </p>
 
           <div class="navigation">

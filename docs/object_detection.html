@@ -206,7 +206,10 @@ model.roi_heads.box_predictor = torchvision.models.detection.faster_rcnn.FastRCN
                 <p>Before that loop, the same file checks that <code>forward</code> accepts a batch from the loader. It takes two images, keeps each target dict as it is, and calls <code>model(images, targets)</code> in training mode. The return value is a dict of losses. A second call switches the model to <code>eval</code> and passes two random tensors with different heights, 300 and 500, both width 400. <code>predictions[0]</code> is the dict of boxes, labels, and scores for the first image.</p>
                 <p>A later block runs the trained Mask R-CNN on <code>FudanPed00046.png</code>. It keeps the first three channels, moves them to <code>device</code>, and calls the model under <code>torch.no_grad()</code>. Boxes are drawn with the score in the label text, and masks are drawn where the predicted probability is above 0.7. That is the inference path of the same <code>forward</code>.</p>
 
-                <h3>9.1.5 Wrapping up</h3>
+                <h3>9.1.5 One stage: YOLO</h3>
+                <p>The model trained above is two-stage. A region proposal network suggests boxes, then a second head classifies each box and, for Mask R-CNN, paints a mask. <a href="https://arxiv.org/abs/1506.02640">YOLO</a> (Redmon et al.), the talk linked at the top of this page, does both in one forward pass. The image is cut into a grid, and each cell predicts a box and a class. There is no separate proposal step.</p>
+
+                <h3>9.1.6 Wrapping up</h3>
 
                 <p>In this tutorial, we have learned how to create own training pipeline for object detection models on a custom dataset. For that, we wrote a torch.utils.data.Dataset class that returns the images and the ground truth boxes and segmentation masks. we also leveraged a Mask R-CNN model pre-trained on COCO train2017 in order to perform transfer learning on this new dataset.</p>
 

@@ -77,6 +77,8 @@ print(result['text'])</code></pre>
                 <p><a href="https://github.com/artinte/deep-learning/blob/develop/08_audio/2_whisper/core/utils.py">utils.py</a> is the small shared helpers: <code>exact_div</code> for the sample-rate arithmetic in <code>audio.py</code>, and argument parsers (<code>str2bool</code>, <code>optional_int</code>, <code>optional_float</code>) for the command-line entry. <code>exact_div</code> raises if the division does not come out even, which is how a bad hop length fails immediately instead of as a shape error inside the encoder.</p>
 
 
+                <p>Whisper writes text for a recording. Isolating one sound inside a mixture is a different job. <a href="https://arxiv.org/abs/2512.18099">SAM Audio</a> (Shi et al.) takes a text description, a visual mask, or a time span and returns that source plus the residual. The prompt and the mask decoder are the same idea as <a href="segment_anything.html">Segment Anything</a>.</p>
+
                 <div class="navigation">
                     <a href="speech_feature.html">Prev: 8.1 Speech Feature Extraction</a>
                     <a href="text_to_speech.html">Next: 8.3 Text-to-Speech</a>

@@ -41,11 +41,11 @@ torchaudio.save("temp/temp.mp3", audio_tensor.cpu(), 24000)</code></pre>
 
                 <h3>8.3.2 Finetuning</h3>
                 <p>A new voice or a new language means more paired data: waveforms and their transcripts, at a sample rate the vocoder expects. Finetuning updates the text-to-semantic model, the semantic-to-audio model, or both. Keep the pretrained pair as the initialization. Training from scratch needs the scale of the original JUWELS run, which this folder does not repeat.</p>
-                <p>Hold out a few sentences and generate them after each checkpoint, the same <code>pipe.generate</code> call as the quick start with the new weights substituted. If the audio collapses to noise, the semantic tokens and the vocoder have drifted apart; finetune one stage at a time and leave the other frozen. The next page, speech separation, is a different problem — pulling two voices apart — and does not share these checkpoints.</p>
+                <p>Hold out a few sentences and generate them after each checkpoint, the same <code>pipe.generate</code> call as the quick start with the new weights substituted. If the audio collapses to noise, the semantic tokens and the vocoder have drifted apart; finetune one stage at a time and leave the other frozen. Pulling two voices apart is a different problem and does not share these checkpoints. The next page is music transcription.</p>
 
                 <div class="navigation">
                     <a href="speech_recognition.html">Prev: 8.2 Automatic Speech Recognition</a>
-                    <a href="speech_separation.html">Next: 8.4 Speech Separation</a>
+                    <a href="music_transcription.html">Next: 8.4 Music Transcription</a>
                 </div>
             </main>
 

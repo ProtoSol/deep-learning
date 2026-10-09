@@ -90,7 +90,11 @@ x = torch.cat([image, prompt_map(points)], dim=1)
 logits = self.decoder(self.encoder(x))</code></pre>
                 <p>A real SAM image encoder is a ViT, the prompt encoder also accepts boxes and masks, and the mask decoder is two-way attention between prompt tokens and the image embedding. Those pieces are the same three roles: visual encoder, prompt, mask head. The U-Net chapter is the dense, unprompted version of the mask head, trained on Oxford-IIIT Pet. This script is the prompted version with no dataset download.</p>
 
-                <h3>9.7.9 Conclusion</h3>
+                <h3>9.7.9 The image model, and audio</h3>
+                <p>The still-image model this page generalizes is <a href="https://arxiv.org/abs/2304.02643">Segment Anything</a> (Kirillov et al.). A point, a box, or a mask is the prompt. A ViT encodes the image, a prompt encoder encodes the click, and a lightweight mask decoder writes the mask. <a href="https://arxiv.org/abs/2408.00714">SAM 2</a> (Ravi et al.) is the video model above: the same decoder, plus a memory of the object across frames.</p>
+                <p><a href="https://arxiv.org/abs/2512.18099">SAM Audio</a> (Shi et al.) applies the prompt idea to a mixture of sounds. Text, a visual mask, or a time span names the source to keep, and the model returns that stem together with whatever is left. That is source separation. The speech page in the audio chapter is recognition, which writes text from one recording.</p>
+
+                <h3>9.7.10 Conclusion</h3>
                 <p>SAM 2 carries promptable segmentation from a still image to a video stream. A memory of the object and of earlier prompts lets one lightweight decoder emit a masklet in real time. The same weights still serve still images when that memory is empty. The data engine that produced SA-V is part of the result: the model and the dataset improved together.</p>
                 <p>The practical outcome in the introduction is fewer corrections on video and a faster image segmenter than the original SAM. The release includes the checkpoints, the SA-V dataset, the training code, and the interactive demo, so the zero-shot protocol can be checked outside this summary.</p>
 

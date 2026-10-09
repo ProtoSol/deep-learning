@@ -30,7 +30,7 @@
 
                 <p>If you’re familiar with other deep learning frameworks, check out the section <a href="#quick-start">Quickstart</a> first to quickly familiarize yourself with PyTorch’s API.</p>
                 <p>If you’re new to deep learning frameworks, head right into the section <a href="#tensor">Tensors</a> of our step-by-step guide.</p>
-                
+
                 <h3 id="quick-start">2.3.1 Quickstart</h3>
                 <p>This section runs through the API for common tasks in machine learning. File <a href="https://github.com/artinte/deep-learning/blob/develop/02_dnn/3_torch_basic/quick_start.py">quick_start.py</a> records the full process, refer to the links in each section to dive deeper.</p>
 
@@ -87,7 +87,7 @@ class NeuralNetwork(torch.nn.Module):
             torch.nn.ReLU(),
             torch.nn.Linear(512, 10)
         )
-        
+
     def forward(self, x):
         x = self.flatten(x)
         logits = self.linear_relu_stack(x)
@@ -121,16 +121,16 @@ optimizer = torch.optim.SGD(model.parameters(), lr=1e-3)</code></pre>
     model.train()
     for batch, (X, y) in enumerate(dataloader):
         X, y= X.to(device), y.to(device)
-        
+
         # Compute prediction error.
         pred = model(X)
         loss = loss_fn(pred, y)
-        
+
         # backpropagation
         loss.backward()
         optimizer.step()
         optimizer.zero_grad()
-        
+
         if batch % 100 == 0:
             loss, current = loss.item(), (batch + 1) * len(X)
             print(f"loss: {loss:>7f}  [{current:>5d}/{size:>5d}]")</code></pre>
@@ -171,7 +171,7 @@ loss: 2.264372  [38464/60000]
 loss: 2.281450  [44864/60000]
 loss: 2.262312  [51264/60000]
 loss: 2.248378  [57664/60000]
-Test Error: 
+Test Error:
     Accuracy: 44.1%, Avg loss: 2.254247
 
 ...
@@ -188,8 +188,8 @@ loss: 0.311450  [38464/60000]
 loss: 0.496438  [44864/60000]
 loss: 0.452633  [51264/60000]
 loss: 0.487647  [57664/60000]
-Test Error: 
-    Accuracy: 89.2%, Avg loss: 0.392691 
+Test Error:
+    Accuracy: 89.2%, Avg loss: 0.392691
 
 Epoch 20
 -------------------------------
@@ -203,11 +203,11 @@ loss: 0.300410  [38464/60000]
 loss: 0.485814  [44864/60000]
 loss: 0.441437  [51264/60000]
 loss: 0.481266  [57664/60000]
-Test Error: 
-    Accuracy: 89.4%, Avg loss: 0.382875 
+Test Error:
+    Accuracy: 89.4%, Avg loss: 0.382875
 
 Done!</samp></pre>
-                
+
 
 
                 <h3 id="tensor">2.3.2 Tensors</h3>
@@ -215,7 +215,7 @@ Done!</samp></pre>
                 <p>Tensors are similar to NumPy’s ndarrays, except that tensors can run on GPUs or other hardware accelerators. In fact, tensors and NumPy arrays can often share the same underlying memory, eliminating the need to copy data (see Bridge with NumPy). Tensors are also optimized for automatic differentiation (we’ll see more about that later in the Autograd section). If you’re familiar with ndarrays, you’ll be right at home with the Tensor API. If not, follow along!</p>
 
                 <h4>2.3.2.1 Initializing a Tensor</h4>
-                <p>Tensors can be initialized in various ways. Take a look at the following examples in file <a href="">tensor_demo.py</a> .</p>
+                <p>Tensors can be initialized in various ways. Take a look at the following examples in file <a href="https://github.com/artinte/deep-learning/blob/develop/01_basic/2_tensor/demo_create.py">demo_create.py</a> .</p>
                 <p>The constructors used in this repo are in <a href="https://github.com/artinte/deep-learning/blob/develop/01_basic/2_tensor/demo_create.py">demo_create.py</a>. It builds a rank-3 tensor from nested lists, then makes the same 2×2 numbers from a Python list and from a NumPy array. <code>torch.tensor</code> copies the data. <code>torch.as_tensor</code> on that array can share the buffer when the dtype and device already match.</p>
 
                 <h5>Directly from Data</h5>
@@ -243,7 +243,7 @@ print(f"Ones Tensor: \n {x_ones} \n")
 x_rand = torch.rand_like(x_data, dtype=torch.float)
 print(f"Random Tensor: \n {x_rand} \n")</code></pre>
 
-                <pre><samp>Ones Tensor: 
+                <pre><samp>Ones Tensor:
  tensor([[1, 1],
         [1, 1]])
 
@@ -292,7 +292,7 @@ Device tensor is stored on: cpu</samp></pre>
                 <h4>2.3.2.3 Operations on Tensors</h4>
                 <p>Over 1200 tensor operations, including arithmetic, linear algebra, matrix manipulation (transposing, indexing, slicing), sampling and more are comprehensively described <a href="https://docs.pytorch.org/docs/stable/torch.html">here</a> .</p>
                 <p>A training step uses a short subset of that list: add a bias, multiply by a weight, index a batch, or reduce with <code>sum</code> and <code>mean</code>. The indexing patterns checked in this repo are in <a href="https://github.com/artinte/deep-learning/blob/develop/01_basic/2_tensor/demo_indexing.py">demo_indexing.py</a>. <a href="https://github.com/artinte/deep-learning/blob/develop/01_basic/2_tensor/demo_operate.py">demo_operate.py</a> covers the elementwise arithmetic, broadcasting, reductions, and the shape ops <code>view</code>, <code>transpose</code>, <code>squeeze</code>, <code>permute</code>, and <code>flatten</code>.</p>
-                
+
                 <h5>Accelerator</h5>
                 <p>Each of these operations can be run on the CPU and Accelerator such as CUDA, MPS, MTIA, or XPU.</p>
                 <p>By default, tensors are created on the CPU. We need to explicitly move tensors to the accelerator using <code>.to</code> method (after checking for accelerator availability). Keep in mind that copying large tensors across devices can be expensive in terms of time and memory!</p>
@@ -302,7 +302,7 @@ if torch.accelerator.is_available():
     tensor = tensor.to(torch.accelerator.current_accelerator())
 print(f"Device tensor is stored on: {tensor.device}")</code></pre>
                 <pre><samp>Device tensor is stored on: cuda:0</samp></pre>
-                
+
                 <h5>Standard MumPy-like Indexing and Slicing</h5>
                 <p>Tensors use the same index and slice notation as NumPy. <a href="https://github.com/artinte/deep-learning/blob/develop/01_basic/2_tensor/demo_indexing.py">demo_indexing.py</a> checks a 3×3 example: <code>tensor2d[1, 2]</code> is the entry in row 1, column 2, <code>tensor2d[:, 1]</code> is a whole column, and <code>tensor2d[1:, 1:]</code> is the bottom-right block. A negative index counts from the end, so <code>tensor2d[-1, -1]</code> is the last entry.</p>
                 <p>A boolean mask keeps the entries that pass a comparison: <code>tensor1d &gt; 25</code> selects the tail of <code>[10, 20, 30, 40, 50]</code>. Two integer tensors pick scattered coordinates, as in <code>tensor2d[row_indices, col_indices]</code>. The ellipsis fills any leading axes, so <code>tensor3d[..., 0]</code> matches <code>tensor3d[:, :, 0]</code>.</p>
@@ -345,7 +345,7 @@ b = torch.randn(3, requires_grad=True)
 z = torch.matmul(x, w) + b
 loss = torch.nn.functional.binary_cross_entropy_with_logits(z, y)</code></pre>
 
-                
+
 
                 <h3>2.3.7 Optimization Model Parameters</h3>
                 <p>The update rule in <a href="https://github.com/artinte/deep-learning/blob/develop/02_dnn/3_torch_basic/demo_quick_start.py">demo_quick_start.py</a> is SGD with learning rate <code>1e-3</code> on <code>model.parameters()</code>. The loss is <code>CrossEntropyLoss</code> on the 10 logits and the integer digit labels. The listing in section 2.3.1.3 is this same loop.</p>

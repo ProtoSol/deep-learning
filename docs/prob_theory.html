@@ -32,7 +32,7 @@
                 <div class="highlight-math" style="text-align: center; overflow-x: auto;">
                     \(f(x) = \frac{1}{\sigma \sqrt{2\pi}} e^{-\frac{{(x - \mu)}^2}{2 {\sigma}^2}}\)
                 </div>
-                <p>The parameter \(\mu\) is the <a href="#mean_median">mean</a> or expectation of the distribution (and also its median and mode), while the parameter \({\sigma}^2\) is the <a href="deviation_variance">variance</a>. The standard deviation of the distribution is \(\sigma\) (sigma). A random variable with a Gaussian distribution is said to be normally distributed, and is called a normal deviate.</p>
+                <p>The parameter \(\mu\) is the <a href="#mean_median">mean</a> or expectation of the distribution (and also its median and mode), while the parameter \({\sigma}^2\) is the <a href="#deviation_variance">variance</a>. The standard deviation of the distribution is \(\sigma\) (sigma). A random variable with a Gaussian distribution is said to be normally distributed, and is called a normal deviate.</p>
                 <p>The file <a href="https://github.com/artinte/deep-learning/blob/develop/06_diffusion/1_prob_theory/normal_distribute.py">normal_distribute.py</a> sets \(\mu = 2\) and \(\sigma^2 = 10\), and uses <a href="https://numpy.org/">NumPy</a> to plot the normal distribution:</p>
                 <img src="res/06/simple_normal.png" alt="Simple Normal Distribution" width="600">
                 <p>Image below illustrates a normal distribution curve, often referred to as a bell curve, showing how data is distributed around the mean (\(\mu\)) in a general normal distribution. The curve is symmetric with its peak at the mean \(\mu\), representing the highest probability density. The horizontal axis is labeled in units of standard deviation \(\sigma\), and the percentages indicate the proportion of data falling within each range:</p>
@@ -55,7 +55,7 @@
                     <li><p>If the number of data points is odd, the median is the middle value.</p></li>
                     <li><p>If even, it is the average of the two middle values.</p></li>
                 </ol>
-                
+
                 <h4 id="deviation_variance">6.1.1.2 Standard Deviation and Variance</h4>
                 <p>Variance measures how spread out a set of numbers is. It's the average of the squared differences from the mean. You and your friends have just measured the heights of your dogs (in millimeters):</p>
                 <img src="res/06/height_dogs.jpg" alt="Statistics Dogs Graph" width="600">
@@ -282,7 +282,7 @@ t, S = simulate_gbm()</code></pre>
                     \(S_{i+1} = S_i + \mu S_i \Delta t + \sigma S_i \Delta W_i\)
                 </div>
                 <p>The returned arrays \(t, S\) can then be plotted to visualize the simulated path of the Geometric Brownian Motion</p>
-                
+
                 <img src="res/06/simulate_gbm.png" width="600">
                 <p style="text-align: center; color: #555555;">Figure 6 - Geometric Brownian Motion</p>
 
