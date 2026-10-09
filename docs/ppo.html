@@ -87,6 +87,32 @@
               </p>
             </li>
           </ol>
+          <h3>REINFORCE</h3>
+          <p>
+            <a href="https://link.springer.com/article/10.1007/BF00992696"
+              >REINFORCE</a
+            >
+            (Williams, 1992) is the policy gradient this clip is built on. A
+            trajectory collects actions from \(\pi\), and the return \(G_t\) is
+            the discounted sum of rewards from time \(t\) on. The gradient of
+            the expected return is
+          </p>
+          <div
+            class="highlight-math"
+            style="text-align: center; overflow-x: auto"
+          >
+            \(\nabla J(\theta) = \mathbb{E}\left[\nabla_\theta \log
+            \pi_\theta(a_t \mid s_t)\, G_t\right]\)
+          </div>
+          <p>
+            An action that was followed by a large return is made more likely.
+            Subtracting a learned value \(V(s_t)\) from \(G_t\) does not change
+            the expected gradient, and it cuts the variance. That difference is
+            the advantage. The value network later on this page is the learned
+            baseline, which is the actor-critic. PPO then refuses a step that
+            would move \(\pi\) too far from the policy that collected the
+            batch. The formula below is that refusal.
+          </p>
           <p>
             The precise formula of the loss is the clipped surrogate. With the
             probability ratio \(r_t(\theta) = \pi_\theta(a_t|s_t) /

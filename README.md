@@ -17,6 +17,7 @@ Then open `http://localhost:8000/`. The study order is on that index. These chec
 python 01_basic/5_calculus/demo_calculus_figures.py
 python 01_basic/6_gradient/demo_compound.py
 python 01_basic/7_nn_stratch/demo_simple_network_numpy.py
+python 02_dnn/7_stability/train_stability.py
 python 00_ml/linear_models.py
 python 00_ml/tree_models.py
 python 00_ml/other_models.py
@@ -424,6 +425,10 @@ The different between an optimizer's adjustments (e.g., Adam) and a scheduler's 
 - Optimizer (e.g., Adam): Primarily responsible for updating model parameters using gradient information to minimize loss. Its adjustments focus on how much each individual parameter should change in each training step.
 
 - LR Scheduler: Focuses on modifying the global learning rate over time. Its adjustments control the overall "intensity" of updates across all parameters, independent of the optimizer's per-parameter logic.
+
+  2.7 [Training that Generalizes](docs/train_stable.html)
+
+He initialization keeps a deep ReLU stack near unit scale. The same stack with weights of scale 1 overflows. Dropout, layer norm, and the train/validation/test split are on the same page. `python 02_dnn/7_stability/train_stability.py` prints `train_stability ok`.
 
 ### 03 Convolutional Network
 

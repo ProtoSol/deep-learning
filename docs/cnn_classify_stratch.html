@@ -265,7 +265,7 @@ assert output.shape == (26, 26, 8)</code></pre>
                 <p>File <a href="https://github.com/artinte/deep-learning/blob/develop/03_cnn/1_scratch/max_pool.py">max_pool.py</a> implement a MaxPool2 class with the same methods as our conv class from the previous section:</p>
                 <pre><code>class MaxPool2:
     # A Max Pooling layer with a 2x2 filter.
-    
+
     def iterate_regions(self, image):
         '''
         Generates non-overlapping 2x2 image regions to pool over.
@@ -288,10 +288,10 @@ assert output.shape == (26, 26, 8)</code></pre>
         '''
         h, w, num_filters = input.shape
         output = numpy.zeros((h // 2, w // 2, num_filters))
-        
+
         for im_region, i, j in self.iterate_regions(input):
             <span class="highlight">output[i, j] = numpy.amax(im_region, axis=(0, 1))</span>
-    
+
         return output</code></pre>
 
                 <p>This class works similarly to the <code>Conv3x3</code> class we implemented previously. The critical line is again highlighted: to find the max from a given image region, we use <a href="https://numpy.org/doc/stable/reference/generated/numpy.amax.html">numpy.amax()</a>, NumPy's array max method. We set <code>axis=(0, 1)</code> because we only want to maximize over the first two dimensions, height and width, and not the third <code>num_filters</code>.</p>
@@ -338,12 +338,12 @@ assert output.shape == (13, 13, 8)</code></pre>
                 <p>You know the drill by now - File <a href="https://github.com/artinte/deep-learning/blob/develop/03_cnn/1_scratch/softmax.py">softmax.py</a> implement a <code>Softmax</code> layer class:</p>
                 <pre><code>class Softmax:
     # A standard fully-connected layer with softmax activation.
-    
+
     def __init__(self, input_len, nodes):
         # We divide by input_len to reduce the variance of our initial values.
         self.weights = numpy.random.randn(input_len, nodes) / input_len
         self.bias = numpy.zeros(nodes)
-    
+
     def forward(self, input):
         '''
         Performs a forward pass of the softmax layer using the given input.
@@ -352,7 +352,7 @@ assert output.shape == (13, 13, 8)</code></pre>
         '''
         input = input.flatten()
         input_len, nodes = self.weights.shape
-        
+
         totals = numpy.dot(input, self.weights) + self.bias
         exp = numpy.exp(totals)
         return exp / numpy.sum(exp, axis=0)</code></pre>
@@ -378,7 +378,7 @@ def forward(input, label):
     - image is a 2d numpy array
     - label is a digit
     '''
-    
+
     # We transform the image from [0, 255] to [-0.5, 0.5] to make it easier
     # to work with. This is standard practice.
     out = conv.forward(input / 255 - 0.5)
@@ -388,7 +388,7 @@ def forward(input, label):
     # Calculate cross-entropy loss and accuracy. np.log() is the natural log.
     loss = -numpy.log(out[label])
     acc = 1 if numpy.argmax(out) == label else 0
-    
+
     return out, loss, acc
 
 loss = 0
@@ -398,7 +398,7 @@ for i, (image, label) in enumerate(zip(x_test[:400], y_test[:400])):
     out, l, acc = forward(image, label)
     loss += l
     num_correct += acc
-    
+
     if (i + 1) % 100 == 0:
         print('Step' + str(i + 1) + ': loss = ' + str(round(loss / 100, 4)) +
                 ', accuracy = ' + str(num_correct / 100))
@@ -458,7 +458,7 @@ gradient = conv.backprop(gradient)</code></pre>
                 <pre><code># Calculate initial gradient
 gradient = np.zeros(10)
 gradient[label] = -1 / out[label]</code></pre>
-                
+
                 <p>We’re almost ready to implement our first backward phase - we just need to first perform the forward phase caching we discussed earlier:</p>
                 <pre><code>class Softmax:
     # ...
@@ -578,7 +578,7 @@ gradient[label] = -1 / out[label]</code></pre>
     # Calculate initial gradient.
     gradient = numpy.zeros(10)
     gradient[label] = -1 / out[label]
-    
+
     gradient = softmax.backprop(gradient, lr)
     # gradient = pool.backprop(gradient)
     # gradient = conv.backprop(gradient, lr)
@@ -623,7 +623,7 @@ Step 1000: loss = 1.3272, accuracy = 0.75</samp></pre>
     for im_region, i, j in self.iterate_regions(self.last_input):
         h, w, f = im_region.shape
         amax = numpy.amax(im_region, axis=(0, 1))
-        
+
         for i2 in range(h):
             for j2 in range(w):
                 for f2 in range(f):
@@ -685,7 +685,7 @@ Step 1000: loss = 1.3272, accuracy = 0.75</samp></pre>
                     \]
                 </div>
                 <p>We can put it all together to find the loss gradient for specific filter weights:</p>
-                <div class="highlight-math" style="text-align: center; overflow-x: auto;">    
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
                     \(\frac{\partial L}{\partial filter(x, y)} = \sum_{i} \sum_{j} \frac{\partial L}{\partial out(i, j)} * \frac{\partial out(i, j)}{\partial filter(x, y)}\)
                 </div>
                 <p>We’re ready to implement backprop for our conv layer:</p>
@@ -701,10 +701,10 @@ Step 1000: loss = 1.3272, accuracy = 0.75</samp></pre>
         for im_region, i, j in self.iterate_regions(self.last_input):
             for f in range(self.num_filters):
                 dl_dfilters[f] += im_region * dl_dout[i, j, f]
-        
+
         # Update filters.
         self.filters -= learn_rate * dl_dfilters
-        
+
         # We aren't returning anything here since we use Conv3x3 as
         # the first layer in our CNN. Otherwise, we'd need to return
         # the loss gradient for this layer's inputs, just like every
@@ -728,7 +728,7 @@ for epoch in range(10):
                 ', accuracy = ' + str(num_correct / 500))
             loss = 0
             num_correct = 0
-        
+
         l, acc = train(image, label)
         loss += l
         num_correct += acc
@@ -777,7 +777,7 @@ Test accuracy: 0.9325</samp></pre>
 
                 <p>Thanking for reading!</p>
                 <div class="navigation">
-                    <a href="optimizer.html">Prev: 2.6 Optimizer</a>
+                    <a href="train_stable.html">Prev: 2.7 Training that Generalizes</a>
                     <a href="alex_net.html">Next: 3.2 AlexNet</a>
                 </div>
             </main>

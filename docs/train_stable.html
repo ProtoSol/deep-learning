@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" href="laptop_coding_48.png" type="image/png" />
+    <title>Training that Generalizes</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css"
+      rel="stylesheet"
+    />
+    <link href="article_style.css" rel="stylesheet" />
+  </head>
+
+  <body>
+    <div class="container-fluid">
+      <div class="row">
+        <nav class="col-md-2 left-sidebar"></nav>
+
+        <main class="col-md-8 content">
+          <h2 class="custom-title">2.7 Training that Generalizes</h2>
+          <p class="title-subtext"></p>
+          <p style="color: #a0a0a0">Created Date: 2026-10-09</p>
+
+          <p>
+            The optimizer page updates the weights. This page is why a deep
+            stack can be updated at all, and why a low training loss is not the
+            same as a model that works on new data. The same four ideas show up
+            in the convnet, the transformer, and the language-model pages:
+            the scale of the initial weights, a normalization inside each
+            block, a penalty that keeps the fit from memorizing the batch, and
+            a split of the data so the number you report was not used to choose
+            the model.
+          </p>
+
+          <h3>2.7.1 Initialization</h3>
+          <p>
+            A linear layer multiplies the incoming activation by a weight
+            matrix. If every entry of that matrix is drawn with standard
+            deviation 1, each output is a sum of many large terms. A ReLU then
+            keeps the positive half. Stack that a dozen times and the
+            activations overflow. The backward pass multiplies the same scales,
+            so the gradient vanishes or explodes with them.
+          </p>
+          <p>
+            <a href="https://arxiv.org/abs/1502.01852">He initialization</a>
+            (He et al.) draws the weights of a ReLU layer at
+          </p>
+          <div class="highlight-math" style="text-align: center; overflow-x: auto">
+            \(\mathrm{std} = \sqrt{2 / \mathrm{fan\_in}}\)
+          </div>
+          <p>
+            where \(\mathrm{fan\_in}\) is the number of inputs to the layer.
+            The 2 pays for the ReLU throwing away the negative half, so the
+            variance of the activation stays near the variance it came in with.
+            <a href="http://proceedings.mlr.press/v9/glorot10a/glorot10a.pdf"
+              >Xavier initialization</a
+            >
+            (Glorot and Bengio) is the same correction for a tanh layer, which
+            does not discard half the values, so the 2 is absent.
+          </p>
+          <p>
+            <a
+              href="https://github.com/artinte/deep-learning/blob/develop/02_dnn/7_stability/train_stability.py"
+              >train_stability.py</a
+            >
+            runs both draws through 16 ReLU layers of width 64. The He stack
+            finishes finite, with a standard deviation of order 1. The scale-1
+            stack does not.
+          </p>
+          <pre><code>he_scale = numpy.sqrt(2.0 / width)
+he_h = relu_stack(he_scale, depth, width, batch, rng)
+unit_h = relu_stack(1.0, depth, width, batch, rng)</code></pre>
+
+          <h3>2.7.2 Normalization</h3>
+          <p>
+            Initialization sets the scale at step 0. Training moves the
+            weights, and the next layer then sees a distribution it was not
+            initialized for.
+            <a href="https://arxiv.org/abs/1502.03167">Batch normalization</a>
+            (Ioffe and Szegedy) recenters and rescales each channel using the
+            mean and variance of the current minibatch. At evaluation time those
+            two numbers are the running averages stored during training.
+          </p>
+          <p>
+            A transformer token does not share a batch axis with its neighbors
+            in the same way a convnet channel does.
+            <a href="https://arxiv.org/abs/1607.06450">Layer normalization</a>
+            (Ba, Kiros, and Hinton) computes the mean and variance across the
+            features of one token. That is the <code>LayerNorm</code> the
+            transformer blocks already call. RMSNorm drops the mean shift and
+            divides by the root mean square of the features. The residual
+            connection on the
+            <a href="res_net.html">ResNet</a> page is why a normalized block can
+            be stacked: the block learns a change, and the skip carries the
+            previous scale through.
+          </p>
+
+          <h3>2.7.3 Regularization</h3>
+          <p>
+            <a href="https://jmlr.org/papers/v15/srivastava14a.html">Dropout</a>
+            (Srivastava et al.) zeros each unit with probability \(p\) during
+            training and multiplies the survivors by \(1/(1-p)\), so the
+            expected activation matches the activation at test time, when no
+            units are dropped. The network cannot rely on one co-adapted
+            feature.
+          </p>
+          <p>
+            Weight decay is the \(\lambda \theta\) term already written on the
+            <a href="optimizer.html#adamw">AdamW</a> section. It pulls each
+            weight toward zero on its own step, separate from the adaptive
+            update. Early stopping watches a held-out loss and keeps the
+            checkpoint from before that loss starts to rise. The weights that
+            minimize the training loss are not the weights you ship.
+          </p>
+          <p>
+            On a GPU, <code>torch.amp</code> runs the forward pass in fp16 or
+            bf16 and scales the loss so the small gradients do not underflow
+            when they are cast back. The update rule is unchanged.
+          </p>
+
+          <h3>2.7.4 The split and the first debug</h3>
+          <p>
+            Train, validation, and test are three jobs. The training rows update
+            the weights. The validation rows choose the checkpoint, the
+            learning rate, and the width. The test rows are reported once, after
+            those choices are frozen. A number computed on data that was used
+            to choose the model is a training number.
+          </p>
+          <p>
+            The first debug is smaller than a new architecture. Take a handful
+            of training rows and ask the model to fit them perfectly. A net that
+            cannot reach perfect accuracy on data it is allowed to memorize is
+            broken: the learning rate, the initialization, or the loss is wrong.
+            Only after that fit works is a gap between train and validation
+            evidence of overfitting.
+          </p>
+          <p>
+            Accuracy hides a rare class. Precision is the fraction of predicted
+            positives that are positive. Recall is the fraction of real
+            positives the model found. A model that labels everything negative
+            scores a high accuracy on a rare event and a recall of zero.
+          </p>
+
+          <div class="navigation">
+            <a href="optimizer.html">Prev: 2.6 Optimizer</a>
+            <a href="cnn_classify_stratch.html">Next: 3.1 CNN from Stratch</a>
+          </div>
+        </main>
+
+        <aside class="col-md-2 right-sidebar">
+          <h5><a href="index.html#section2">Fully Connected Network</a></h5>
+          <ul id="dynamic-sidebar" class="nav flex-column"></ul>
+        </aside>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script
+      type="text/javascript"
+      async
+      src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"
+    ></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="article_script.js"></script>
+    <script>
+      hljs.highlightAll();
+    </script>
+  </body>
+</html>

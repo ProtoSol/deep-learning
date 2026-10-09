@@ -119,6 +119,11 @@
                 <li>
                   <a class="nav-link" href="optimizer.html">2.6 Optimizer</a>
                 </li>
+                <li>
+                  <a class="nav-link" href="train_stable.html"
+                    >2.7 Training that Generalizes</a
+                  >
+                </li>
               </ul>
             </li>
             <li class="nav-item">
@@ -600,7 +605,8 @@
                 <pre><code>python 01_basic/2_tensor/demo_create.py
 python 01_basic/5_calculus/demo_calculus_figures.py
 python 01_basic/6_gradient/demo_compound.py
-python 01_basic/7_nn_stratch/demo_simple_network_numpy.py</code></pre>
+python 01_basic/7_nn_stratch/demo_simple_network_numpy.py
+python 02_dnn/7_stability/train_stability.py</code></pre>
               </li>
               <li>
                 <p>A CNN shape check, the RNN chapter, then the LSTM cell.</p>
@@ -961,6 +967,23 @@ python 05_transformer/7_vit/vit_scratch.py</code></pre>
               <a
                 href="https://towardsdatascience.com/neural-network-optimizers-from-scratch-in-python-af76ee087aab/"
                 >Neural Network Optimizers from Scratch in Python</a
+              >
+            </p>
+
+            <h3 id="section2-sub7">
+              <a href="train_stable.html" style="color: inherit"
+                >2.7 Training that Generalizes</a
+              >
+            </h3>
+            <p>
+              He initialization, batch and layer normalization, dropout, and the
+              train/validation/test split. A model that cannot fit a handful of
+              training rows is broken before any architecture change is worth
+              trying.
+            </p>
+            <p>
+              <a href="https://arxiv.org/abs/1502.01852"
+                >Delving Deep into Rectifiers</a
               >
             </p>
           </section>
@@ -2015,7 +2038,11 @@ python 05_transformer/7_vit/vit_scratch.py</code></pre>
             <p>
               This tutorial demonstrates how to use PyTorch and torchrl to train
               a parametric policy network to solve the Inverted Pendulum task
-              from the OpenAI-Gym/Farama-Gymnasium control library. The same
+              from the OpenAI-Gym/Farama-Gymnasium control library. The clip is
+              a bound on
+              <a href="https://link.springer.com/article/10.1007/BF00992696"
+                >REINFORCE</a
+              >, with a learned value as the baseline. The same
               update is the post-training step for a language model: Nathan
               Lambert's
               <a href="https://rlhfbook.com/">RLHF book</a>, the

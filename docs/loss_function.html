@@ -47,7 +47,7 @@
                 <p>where \(N\) is the batch size. If <code>reduction</code> is not <code>'none'</code> (default <code>'mean'</code>), then:</p>
                 <div class="highlight-math" style="text-align: center; overflow-x: auto;">
                     \[
-                    \ell(x, y) = 
+                    \ell(x, y) =
                     \begin{cases}
                     \text{mean}(L), & \text{if } \texttt{reduction} = \texttt{mean} \\
                     \text{sum}(L), & \text{if } \texttt{reduction} = \texttt{sum}
@@ -112,6 +112,11 @@ print(f"CrossEntropyLoss: {loss.item():.4f}")</code></pre>
 
                 <pre><samp>CrossEntropyLoss: 0.3185</samp></pre>
                 <p>The matching picture is StatQuest's <a href="https://www.youtube.com/watch?v=6ArSys5qHAU">Neural Networks Part 6: Cross Entropy</a>.</p>
+                <p>Shannon's <a href="https://people.math.harvard.edu/~ctm/home/text/others/shannon/entropy/entropy.pdf">1948 paper</a> defines the entropy of a distribution \(p\), \(H(p) = -\sum_i p_i \log p_i\). The cross-entropy of a model \(q\) against \(p\) splits into that entropy plus the KL divergence from \(p\) to \(q\):</p>
+                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
+                    \(H(p, q) = H(p) + \mathrm{KL}(p \,\|\, q)\)
+                </div>
+                <p>A one-hot label has entropy 0, so the classification loss above is the KL, which is \(-\log q\) on the correct class. Perplexity is the exponential of the mean token cross-entropy. A perplexity of \(k\) means the model is as unsure as a uniform guess over \(k\) tokens. The KL term on the <a href="intro_auto_encoder.html">variational autoencoder</a> page is the same divergence, from the encoder's Gaussian to a standard normal.</p>
 
                 <h3 id="bce-loss">2.5.3 BCELoss</h3>
 
@@ -122,7 +127,7 @@ print(f"CrossEntropyLoss: {loss.item():.4f}")</code></pre>
                 </div>
                 <p><a href="https://github.com/artinte/deep-learning/blob/develop/02_dnn/5_loss_function/demo_bce_loss.py">demo_bce_loss.py</a> builds four probabilities <code>[0.9, 0.2, 0.1, 0.8]</code> and four targets <code>[1, 0, 0, 1]</code>, both float32. <code>BCELoss</code> with its default mean reduction averages the four terms, and the script prints that scalar rounded to four decimals.</p>
                 <p>Binary cross-entropy is the loss inside logistic regression. StatQuest's <a href="https://www.youtube.com/watch?v=yIYKR4sgzI8">Logistic Regression</a> derives that curve and the loss that trains it. Hinge loss, the other linear classifier loss, is with the SVM in <a href="ml_models.html">0.3 Other Models</a>.</p>
-                
+
                 <div class="navigation">
                     <a href="activation_function.html">Prev: 2.4 Activation Function</a>
                     <a href="optimizer.html">Next: 2.6 Optimizer</a>

@@ -1052,6 +1052,16 @@ def estimate_loss(batch=200):
         idx = torch.cat((idx, idx_next), dim=1)
     return idx</code></pre>
           <p>
+            That draw is one sample from the full softmax. Dividing the logits
+            by a temperature before the softmax sharpens the distribution when
+            the temperature is below 1 and flattens it when the temperature is
+            above 1. Greedy decoding is the temperature taken to 0: always emit
+            the largest logit. Top-k keeps the \(k\) largest logits, sets the
+            rest to \(-\infty\), and renormalizes, so a rare token in the tail
+            cannot be drawn. The loop above does neither. It samples the
+            unmodified distribution.
+          </p>
+          <p>
             The script seeds the loop with the characters of
             <code>白日依山尽，</code>, wrapped in <code>&lt;sos&gt;</code>, and
             maps the returned ids back through <code>idx_to_word</code>. A
