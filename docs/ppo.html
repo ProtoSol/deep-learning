@@ -1,111 +1,351 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" href="laptop_coding_48.png" type="image/png">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" href="laptop_coding_48.png" type="image/png" />
     <title>PPO</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" rel="stylesheet">
-    <link href="article_style.css" rel="stylesheet">
-</head>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css"
+      rel="stylesheet"
+    />
+    <link href="article_style.css" rel="stylesheet" />
+  </head>
 
-<body>
+  <body>
     <div class="container-fluid">
-        <div class="row">
-            <nav class="col-md-2 left-sidebar">
+      <div class="row">
+        <nav class="col-md-2 left-sidebar"></nav>
 
-            </nav>
+        <main class="col-md-8 content">
+          <h2 class="custom-title">10.5 PPO</h2>
+          <p class="title-subtext">
+            Reinforcement Learning (PPO) with TorchRL Tutorial
+          </p>
+          <p style="color: #a0a0a0">Created Date: 2025-06-19</p>
 
-            <main class="col-md-8 content">
-                <h2 class="custom-title">10.5 PPO</h2>
-                <p class="title-subtext">Reinforcement Learning (PPO) with TorchRL Tutorial</p>
-                <p style="color: #a0a0a0;">Created Date: 2025-06-19</p>
+          <p>
+            This tutorial demonstrates how to use PyTorch and
+            <code>torchrl</code> to train a parametric policy network to solve
+            the Inverted Pendulum task from the OpenAI-Gym/Farama-Gymnasium
+            control library.
+          </p>
 
-                <p>This tutorial demonstrates how to use PyTorch and <code>torchrl</code> to train a parametric policy network to solve the Inverted Pendulum task from the OpenAI-Gym/Farama-Gymnasium control library.</p>
+          <p>
+            Edan Meyer's
+            <a href="https://www.youtube.com/watch?v=HrapVFNBN64"
+              >Proximal Policy Optimization Explained</a
+            >
+            is the picture for this page. John Schulman's bootcamp lecture is
+            <a href="https://www.youtube.com/watch?v=xvRrgxcpaHY"
+              >Natural Policy Gradients, TRPO, PPO</a
+            >.
+          </p>
+          <p>
+            Proximal Policy Optimization (PPO) is a policy-gradient algorithm
+            where a batch of data is being collected and directly consumed to
+            train the policy to maximise the expected return given some
+            proximality constraints. You can think of it as a sophisticated
+            version of REINFORCE, the foundational policy-optimization
+            algorithm. For more information, see the Proximal Policy
+            Optimization Algorithms paper.
+          </p>
+          <p>
+            PPO is usually regarded as a fast and efficient method for online,
+            on-policy reinforcement algorithm. TorchRL provides a loss-module
+            that does all the work for you, so that you can rely on this
+            implementation and focus on solving your problem rather than
+            re-inventing the wheel every time you want to train a policy.
+          </p>
+          <p>
+            For completeness, here is a brief overview of what the loss
+            computes, even though this is taken care of by our ClipPPOLoss
+            module—the algorithm works as follows:
+          </p>
+          <ol>
+            <li>
+              <p>
+                we will sample a batch of data by playing the policy in the
+                environment for a given number of steps.
+              </p>
+            </li>
+            <li>
+              <p>
+                Then, we will perform a given number of optimization steps with
+                random sub-samples of this batch using a clipped version of the
+                REINFORCE loss.
+              </p>
+            </li>
+            <li>
+              <p>
+                The clipping will put a pessimistic bound on our loss: lower
+                return estimates will be favored compared to higher ones.
+              </p>
+            </li>
+          </ol>
+          <p>
+            The precise formula of the loss is the clipped surrogate. With the
+            probability ratio \(r_t(\theta) = \pi_\theta(a_t|s_t) /
+            \pi_{\theta_{\mathrm{old}}}(a_t|s_t)\) and the advantage \(A_t\),
+          </p>
+          <div
+            class="highlight-math"
+            style="text-align: center; overflow-x: auto"
+          >
+            \(L^{\mathrm{CLIP}}(\theta) = \mathbb{E}_t\left[\min\big(r_t(\theta)
+            A_t,\; \mathrm{clip}(r_t(\theta), 1-\epsilon, 1+\epsilon)\,
+            A_t\big)\right]\)
+          </div>
 
-                <p>Edan Meyer's <a href="https://www.youtube.com/watch?v=HrapVFNBN64">Proximal Policy Optimization Explained</a> is the picture for this page. John Schulman's bootcamp lecture is <a href="https://www.youtube.com/watch?v=xvRrgxcpaHY">Natural Policy Gradients, TRPO, PPO</a>.</p>
-                <p>Proximal Policy Optimization (PPO) is a policy-gradient algorithm where a batch of data is being collected and directly consumed to train the policy to maximise the expected return given some proximality constraints. You can think of it as a sophisticated version of REINFORCE, the foundational policy-optimization algorithm. For more information, see the Proximal Policy Optimization Algorithms paper.</p>
-                <p>PPO is usually regarded as a fast and efficient method for online, on-policy reinforcement algorithm. TorchRL provides a loss-module that does all the work for you, so that you can rely on this implementation and focus on solving your problem rather than re-inventing the wheel every time you want to train a policy.</p>
-                <p>For completeness, here is a brief overview of what the loss computes, even though this is taken care of by our ClipPPOLoss module—the algorithm works as follows: </p>
-                <ol>
-                    <li><p>we will sample a batch of data by playing the policy in the environment for a given number of steps.</p></li>
-                    <li><p>Then, we will perform a given number of optimization steps with random sub-samples of this batch using a clipped version of the REINFORCE loss.</p></li>
-                    <li><p>The clipping will put a pessimistic bound on our loss: lower return estimates will be favored compared to higher ones.</p></li>
-                </ol>
-                <p>The precise formula of the loss is the clipped surrogate. With the probability ratio \(r_t(\theta) = \pi_\theta(a_t|s_t) / \pi_{\theta_{\mathrm{old}}}(a_t|s_t)\) and the advantage \(A_t\),</p>
-                <div class="highlight-math" style="text-align: center; overflow-x: auto;">
-                    \(L^{\mathrm{CLIP}}(\theta) = \mathbb{E}_t\left[\min\big(r_t(\theta) A_t,\; \mathrm{clip}(r_t(\theta), 1-\epsilon, 1+\epsilon)\, A_t\big)\right]\)
-                </div>
+          <p>
+            There are two components in that loss: in the first part of the
+            minimum operator, we simply compute an importance-weighted version
+            of the REINFORCE loss (for example, a REINFORCE loss that we have
+            corrected for the fact that the current policy configuration lags
+            the one that was used for the data collection). The second part of
+            that minimum operator is a similar loss where we have clipped the
+            ratios when they exceeded or were below a given pair of thresholds.
+          </p>
 
-                <p>There are two components in that loss: in the first part of the minimum operator, we simply compute an importance-weighted version of the REINFORCE loss (for example, a REINFORCE loss that we have corrected for the fact that the current policy configuration lags the one that was used for the data collection). The second part of that minimum operator is a similar loss where we have clipped the ratios when they exceeded or were below a given pair of thresholds.</p>
+          <p>
+            This loss ensures that whether the advantage is positive or
+            negative, policy updates that would produce significant shifts from
+            the previous configuration are being discouraged.
+          </p>
 
-                <p>This loss ensures that whether the advantage is positive or negative, policy updates that would produce significant shifts from the previous configuration are being discouraged.</p>
+          <p>This tutorial is structured as follows:</p>
+          <ol>
+            <li>
+              <p>
+                First, we will define a set of hyperparameters we will be using
+                for training.
+              </p>
+            </li>
+            <li>
+              <p>
+                Next, we will focus on creating our environment, or simulator,
+                using TorchRL’s wrappers and transforms.
+              </p>
+            </li>
+            <li>
+              <p>
+                Next, we will design the policy network and the value model,
+                which is indispensable to the loss function. These modules will
+                be used to configure our loss module.
+              </p>
+            </li>
+            <li>
+              <p>Next, we will create the replay buffer and data loader.</p>
+            </li>
+            <li>
+              <p>
+                Finally, we will run our training loop and analyze the results.
+              </p>
+            </li>
+          </ol>
+          <p>
+            Throughout this tutorial, we’ll be using the tensordict library.
+            TensorDict is the lingua franca of TorchRL: it helps us abstract
+            what a module reads and writes and care less about the specific data
+            description and more about the algorithm itself.
+          </p>
 
-                <p>This tutorial is structured as follows:</p>
-                <ol>
-                    <li><p>First, we will define a set of hyperparameters we will be using for training.</p></li>
-                    <li><p>Next, we will focus on creating our environment, or simulator, using TorchRL’s wrappers and transforms.</p></li>
-                    <li><p>Next, we will design the policy network and the value model, which is indispensable to the loss function. These modules will be used to configure our loss module.</p></li>
-                    <li><p>Next, we will create the replay buffer and data loader.</p></li>
-                    <li><p>Finally, we will run our training loop and analyze the results.</p></li>
-                </ol>
-                <p>Throughout this tutorial, we’ll be using the tensordict library. TensorDict is the lingua franca of TorchRL: it helps us abstract what a module reads and writes and care less about the specific data description and more about the algorithm itself.</p>
+          <p>
+            The script that follows this outline is
+            <a
+              href="https://github.com/artinte/deep-learning/blob/develop/10_rl/5_ppo/simple_ppo.py"
+              >simple_ppo.py</a
+            >. It trains on <code>InvertedDoublePendulum-v4</code> for 50,000
+            frames, enough to see the return move, and the comment in the file
+            says a full run is closer to one million frames.
+          </p>
 
-                <p>The script that follows this outline is <a href="https://github.com/artinte/deep-learning/blob/develop/10_rl/5_ppo/simple_ppo.py">simple_ppo.py</a>. It trains on <code>InvertedDoublePendulum-v4</code> for 50,000 frames, enough to see the return move, and the comment in the file says a full run is closer to one million frames.</p>
+          <h3>10.5.1 Define Hyperparameters</h3>
+          <p>
+            The network width is <code>num_cells = 256</code>. The optimizer is
+            Adam at <code>3e-4</code>, with gradients clipped to norm
+            <code>1.0</code>. Data comes in batches of
+            <code>frames_per_batch = 1000</code>, and each batch is optimized
+            for <code>num_epochs = 10</code> passes over minibatches of
+            <code>64</code>. The clip range is <code>clip_epsilon = 0.2</code>,
+            which is \(\epsilon\) in the formula above. Discount
+            <code>gamma = 0.99</code> and GAE trace
+            <code>lmbda = 0.95</code> build the advantage. A small entropy
+            bonus, <code>1e-4</code>, keeps the policy from collapsing to one
+            action too early. The device is a CUDA GPU when one is visible and
+            the process was not started with fork.
+          </p>
 
-                <h3>10.5.1 Define Hyperparameters</h3>
-                <p>The network width is <code>num_cells = 256</code>. The optimizer is Adam at <code>3e-4</code>, with gradients clipped to norm <code>1.0</code>. Data comes in batches of <code>frames_per_batch = 1000</code>, and each batch is optimized for <code>num_epochs = 10</code> passes over minibatches of <code>64</code>. The clip range is <code>clip_epsilon = 0.2</code>, which is \(\epsilon\) in the formula above. Discount <code>gamma = 0.99</code> and GAE trace <code>lmbda = 0.95</code> build the advantage. A small entropy bonus, <code>1e-4</code>, keeps the policy from collapsing to one action too early. The device is a CUDA GPU when one is visible and the process was not started with fork.</p>
+          <h3>10.5.2 Define an environment</h3>
+          <p>
+            The simulator is Gymnasium's inverted double pendulum, wrapped by
+            TorchRL. <code>ObservationNorm</code> standardizes the observation
+            using statistics gathered from 1,000 random steps.
+            <code>DoubleToFloat</code> makes the dtype match the network.
+            <code>StepCounter</code> records how long an episode lasts, which is
+            the quantity you want to see grow: a balanced pendulum survives more
+            steps. <code>check_env_specs</code> confirms the observation,
+            reward, and action specs agree before any training, and a rollout of
+            three steps is printed so you can see the TensorDict keys.
+          </p>
 
-                <h3>10.5.2 Define an environment</h3>
-                <p>The simulator is Gymnasium's inverted double pendulum, wrapped by TorchRL. <code>ObservationNorm</code> standardizes the observation using statistics gathered from 1,000 random steps. <code>DoubleToFloat</code> makes the dtype match the network. <code>StepCounter</code> records how long an episode lasts, which is the quantity you want to see grow: a balanced pendulum survives more steps. <code>check_env_specs</code> confirms the observation, reward, and action specs agree before any training, and a rollout of three steps is printed so you can see the TensorDict keys.</p>
+          <h3>10.5.3 Policy</h3>
+          <p>
+            The actor is three tanh layers of width 256, then a linear map to
+            twice the action dimension. <code>NormalParamExtractor</code> splits
+            that vector into a location and a scale.
+            <code>ProbabilisticActor</code> turns the pair into a
+            <code>TanhNormal</code> squashed into the environment's action
+            bounds, and it returns the log-probability. That log-probability is
+            the numerator of \(r_t\). A reset TensorDict is passed through the
+            policy once, before the collector exists, to force the lazy layers
+            to materialize.
+          </p>
 
-                <h3>10.5.3 Policy</h3>
-                <p>The actor is three tanh layers of width 256, then a linear map to twice the action dimension. <code>NormalParamExtractor</code> splits that vector into a location and a scale. <code>ProbabilisticActor</code> turns the pair into a <code>TanhNormal</code> squashed into the environment's action bounds, and it returns the log-probability. That log-probability is the numerator of \(r_t\). A reset TensorDict is passed through the policy once, before the collector exists, to force the lazy layers to materialize.</p>
+          <h3>10.5.4 Value Network</h3>
+          <p>
+            The critic has the same three tanh layers and ends in a single
+            linear unit. <code>ValueOperator</code> reads the
+            <code>observation</code> key and writes a state value. PPO needs it
+            twice: inside GAE, to form advantages, and inside the value loss, so
+            the next batch's advantages are less wrong. Actor and critic do not
+            share a trunk in this script.
+          </p>
 
-                <h3>10.5.4 Value Network</h3>
-                <p>The critic has the same three tanh layers and ends in a single linear unit. <code>ValueOperator</code> reads the <code>observation</code> key and writes a state value. PPO needs it twice: inside GAE, to form advantages, and inside the value loss, so the next batch's advantages are less wrong. Actor and critic do not share a trunk in this script.</p>
+          <h3>10.5.5 Data Collector</h3>
+          <p>
+            <code>SyncDataCollector</code> rolls the policy out in the
+            environment until it has <code>frames_per_batch</code> transitions,
+            and stops after <code>total_frames</code>.
+            <code>split_trajs=False</code> keeps the batch as one TensorDict
+            rather than a list of episodes. Each iteration of the training loop
+            is one of these batches. The collector, not the loss, is what talks
+            to the pendulum.
+          </p>
 
-                <h3>10.5.5 Data Collector</h3>
-                <p><code>SyncDataCollector</code> rolls the policy out in the environment until it has <code>frames_per_batch</code> transitions, and stops after <code>total_frames</code>. <code>split_trajs=False</code> keeps the batch as one TensorDict rather than a list of episodes. Each iteration of the training loop is one of these batches. The collector, not the loss, is what talks to the pendulum.</p>
+          <h3>10.5.6 Replay Buffer</h3>
+          <p>
+            The buffer stores one batch and no more:
+            <code>LazyTensorStorage(max_size=frames_per_batch)</code> with
+            <code>SamplerWithoutReplacement</code>. It is not a long-term replay
+            memory of the DQN kind. PPO is on-policy. The buffer only shuffles
+            the batch just collected so the inner loop can draw minibatches of
+            64 without repeating a transition inside one epoch.
+          </p>
 
-                <h3>10.5.6 Replay Buffer</h3>
-                <p>The buffer stores one batch and no more: <code>LazyTensorStorage(max_size=frames_per_batch)</code> with <code>SamplerWithoutReplacement</code>. It is not a long-term replay memory of the DQN kind. PPO is on-policy. The buffer only shuffles the batch just collected so the inner loop can draw minibatches of 64 without repeating a transition inside one epoch.</p>
+          <h3>10.5.7 Loss Function</h3>
+          <p>
+            <code>ClipPPOLoss</code> implements the clipped surrogate from the
+            introduction, plus a value loss and an entropy bonus. Advantages
+            come from <code>GAE</code> with the critic, averaged over the batch.
+            The three pieces the training loop adds are
+            <code>loss_objective</code> (the clipped policy term),
+            <code>loss_critic</code> (smooth L1 on the value, coefficient 1),
+            and <code>loss_entropy</code>. The clip is what stops a minibatch
+            from dragging \(\pi_\theta\) far from the policy that collected the
+            data.
+          </p>
 
-                <h3>10.5.7 Loss Function</h3>
-                <p><code>ClipPPOLoss</code> implements the clipped surrogate from the introduction, plus a value loss and an entropy bonus. Advantages come from <code>GAE</code> with the critic, averaged over the batch. The three pieces the training loop adds are <code>loss_objective</code> (the clipped policy term), <code>loss_critic</code> (smooth L1 on the value, coefficient 1), and <code>loss_entropy</code>. The clip is what stops a minibatch from dragging \(\pi_\theta\) far from the policy that collected the data.</p>
+          <h3>10.5.8 Training Loop</h3>
+          <p>
+            For each collected batch the script recomputes advantages, flattens
+            the TensorDict, and loads the buffer. Then, ten epochs of
+            minibatches: evaluate the loss, sum the three terms, call
+            <code>backward</code>, clip the gradient norm, and step Adam. A
+            cosine schedule decays the learning rate to zero across the number
+            of batches. Every tenth batch the policy is rolled out for 1,000
+            steps with <code>ExplorationType.DETERMINISTIC</code>, so the logged
+            return is the mean action, not a sample. The progress bar prints the
+            latest eval return, the training reward, the longest episode, and
+            the learning rate.
+          </p>
 
-                <h3>10.5.8 Training Loop</h3>
-                <p>For each collected batch the script recomputes advantages, flattens the TensorDict, and loads the buffer. Then, ten epochs of minibatches: evaluate the loss, sum the three terms, call <code>backward</code>, clip the gradient norm, and step Adam. A cosine schedule decays the learning rate to zero across the number of batches. Every tenth batch the policy is rolled out for 1,000 steps with <code>ExplorationType.DETERMINISTIC</code>, so the logged return is the mean action, not a sample. The progress bar prints the latest eval return, the training reward, the longest episode, and the learning rate.</p>
+          <h3>10.5.9 Result</h3>
+          <p>
+            At the end the script plots four curves: average training reward,
+            the longest training episode, the eval return, and the longest eval
+            episode. On this pendulum the step count is the story. Early on the
+            pole falls immediately. A run that is learning holds it up for more
+            of the 1,000-step horizon, and the eval return climbs with that.
+            Fifty thousand frames is a smoke test. If the curves are still
+            noise, raise <code>total_frames</code> before changing the network.
+          </p>
 
-                <h3>10.5.9 Result</h3>
-                <p>At the end the script plots four curves: average training reward, the longest training episode, the eval return, and the longest eval episode. On this pendulum the step count is the story. Early on the pole falls immediately. A run that is learning holds it up for more of the 1,000-step horizon, and the eval return climbs with that. Fifty thousand frames is a smoke test. If the curves are still noise, raise <code>total_frames</code> before changing the network.</p>
+          <h3>10.5.10 Conslusion and Next Steps</h3>
+          <p>
+            PPO here is on-policy, clipped, and advantage-based. The previous
+            chapter's DQN is off-policy and value-based; it replays old
+            transitions, and this script throws each batch away after the inner
+            epochs. The next chapter, function approximation, is what both of
+            them rely on: a neural net standing in for a table of values or a
+            table of action probabilities, which is the only way the pendulum's
+            continuous state fits in memory.
+          </p>
 
-                <h3>10.5.10 Conslusion and Next Steps</h3>
-                <p>PPO here is on-policy, clipped, and advantage-based. The previous chapter's DQN is off-policy and value-based; it replays old transitions, and this script throws each batch away after the inner epochs. The next chapter, function approximation, is what both of them rely on: a neural net standing in for a table of values or a table of action probabilities, which is the only way the pendulum's continuous state fits in memory.</p>
+          <h3>10.5.11 Post-training</h3>
+          <p>
+            The same clipped update is how a language model is trained after
+            pretraining. A person compares two answers, a reward model is fit to
+            those comparisons, and PPO then raises the probability of answers
+            the reward model scores higher. A KL penalty keeps the new policy
+            from walking away from the pretrained model:
+          </p>
+          <div
+            class="highlight-math"
+            style="text-align: center; overflow-x: auto"
+          >
+            \(\max_\pi \mathbb{E}_{x, y \sim \pi}[r_\phi(x, y)] - \beta
+            \,\mathrm{KL}(\pi(\cdot \mid x) \,\|\, \pi_{\mathrm{ref}}(\cdot \mid
+            x))\)
+          </div>
+          <p>
+            Nathan Lambert's
+            <a href="https://rlhfbook.com/"
+              >Reinforcement Learning from Human Feedback</a
+            >
+            is the book for this stage. It is free to read and walks the whole
+            post-training recipe: instruction tuning, the reward model,
+            rejection sampling, PPO, and direct preference optimization. The
+            pendulum script on this page is the same PPO step, with a scalar
+            reward from the environment in place of \(r_\phi\).
+          </p>
+          <p>
+            <a href="https://arxiv.org/abs/2307.12950">RLCD</a> (Reinforcement
+            Learning from Contrastive Distillation) builds the preference pairs
+            without a human rater. One prompt asks the model to follow a
+            principle, another asks it to break that principle, and the two
+            completions become a labeled pair. A preference model trained on
+            those pairs supplies the reward, and PPO is the same update as
+            above.
+          </p>
 
-                <div class="navigation">
-                    <a href="dqn.html">Prev: 10.4 DQN</a>
-                    <a href="function_appro.html">Next: 10.6 Function Approximation</a>
-                </div>
-            </main>
+          <div class="navigation">
+            <a href="dqn.html">Prev: 10.4 DQN</a>
+            <a href="function_appro.html">Next: 10.6 Function Approximation</a>
+          </div>
+        </main>
 
-            <aside class="col-md-2 right-sidebar">
-                <h5><a href="index.html#section10">Reinforcement Learning</a></h5>
-                <ul id="dynamic-sidebar" class="nav flex-column">
-                </ul>
-            </aside>
-        </div>
+        <aside class="col-md-2 right-sidebar">
+          <h5><a href="index.html#section10">Reinforcement Learning</a></h5>
+          <ul id="dynamic-sidebar" class="nav flex-column"></ul>
+        </aside>
+      </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script type="text/javascript" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script
+      type="text/javascript"
+      async
+      src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"
+    ></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
     <script src="article_script.js"></script>
     <script>
-        hljs.highlightAll();
+      hljs.highlightAll();
     </script>
-</body>
-
+  </body>
 </html>
